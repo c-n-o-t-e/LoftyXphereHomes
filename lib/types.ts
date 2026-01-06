@@ -1,0 +1,49 @@
+export interface Apartment {
+  id: string;
+  name: string;
+  shortDescription: string;
+  location: {
+    city: string;
+    area: string;
+  };
+  pricePerNight: number;
+  images: string[];
+  amenities: string[];
+  houseRules: string[];
+  capacity: number;
+  beds: number;
+  baths: number;
+  bookingUrl?: string;
+  rating: number;
+  reviews: number;
+}
+
+export interface Testimonial {
+  id: string;
+  name: string;
+  location: string;
+  rating: number;
+  comment: string;
+  date: string;
+}
+
+export interface ContactFormData {
+  name: string;
+  email: string;
+  phone: string;
+  category: "booking" | "partnership" | "long-stay" | "complaints";
+  message: string;
+}
+
+export interface BookingInquiryFormData {
+  fullName: string;
+  email: string;
+  phone: string;
+  cityVisiting: string;
+  checkInDate: string;
+  checkOutDate: string;
+  numberOfGuests: number;
+  apartmentId: string;
+  message: string;
+}
+

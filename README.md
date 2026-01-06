@@ -1,36 +1,232 @@
-This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
+# LoftyXphereHomes - Premium Shortlet Website
 
-## Getting Started
+A production-ready website for LoftyXphereHomes, a premium shortlet apartment rental brand in Nigeria.
 
-First, run the development server:
+## 🚀 Features
 
-```bash
-npm run dev
-# or
-yarn dev
-# or
-pnpm dev
-# or
-bun dev
+- **Premium Design**: Clean, luxury aesthetic with smooth animations
+- **Responsive**: Mobile-first design that works on all devices
+- **SEO Optimized**: Complete metadata, sitemap, and robots.txt
+- **Fast Performance**: Optimized images, fonts, and code splitting
+- **Form Validation**: Robust forms with Zod and React Hook Form
+- **Type Safe**: Full TypeScript implementation
+- **Scalable**: Easy to add new apartments and features
+
+## 🛠 Tech Stack
+
+- **Next.js 14+** (App Router)
+- **TypeScript**
+- **Tailwind CSS**
+- **ShadCN/UI** (Form, Modal, Carousel, Navigation)
+- **Framer Motion** (Animations)
+- **React Hook Form** + **Zod** (Form validation)
+- **next/image** (Optimized images)
+
+## 📁 Project Structure
+
+```
+├── app/
+│   ├── apartments/          # Apartment listing and detail pages
+│   ├── about/              # About page
+│   ├── booking/            # Booking page with inquiry form
+│   ├── contact/            # Contact page
+│   ├── gallery/            # Image gallery
+│   ├── terms/              # Terms & conditions
+│   ├── privacy/            # Privacy policy
+│   ├── layout.tsx          # Root layout with Navbar & Footer
+│   ├── page.tsx            # Homepage
+│   ├── sitemap.ts          # SEO sitemap
+│   └── robots.ts            # SEO robots.txt
+├── components/
+│   ├── ui/                 # ShadCN UI components
+│   ├── Navbar.tsx          # Navigation bar
+│   ├── Footer.tsx           # Footer component
+│   ├── Hero.tsx             # Homepage hero section
+│   ├── ApartmentCard.tsx    # Apartment card component
+│   ├── TrustSignals.tsx     # Trust signals section
+│   ├── TestimonialSlider.tsx # Testimonials carousel
+│   ├── AmenitiesSection.tsx  # Amenities display
+│   ├── LocationHighlight.tsx # Location showcase
+│   ├── BookingInquiryForm.tsx # Booking inquiry form
+│   └── ContactForm.tsx       # Contact form
+├── lib/
+│   ├── data/
+│   │   ├── apartments.ts    # Apartment data
+│   │   └── testimonials.ts  # Testimonial data
+│   ├── types.ts             # TypeScript types
+│   └── constants.ts         # App constants
+└── public/
+    └── apartments/          # Apartment images
 ```
 
-Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
+## 🚦 Getting Started
 
-You can start editing the page by modifying `app/page.tsx`. The page auto-updates as you edit the file.
+### Prerequisites
 
-This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
+- Node.js 18+ 
+- npm or yarn
 
-## Learn More
+### Installation
 
-To learn more about Next.js, take a look at the following resources:
+1. **Clone the repository** (or navigate to the project directory)
 
-- [Next.js Documentation](https://nextjs.org/docs) - learn about Next.js features and API.
-- [Learn Next.js](https://nextjs.org/learn) - an interactive Next.js tutorial.
+2. **Install dependencies:**
+   ```bash
+   npm install
+   ```
 
-You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js) - your feedback and contributions are welcome!
+3. **Set up environment variables:**
+   ```bash
+   cp .env.example .env.local
+   ```
+   
+   Edit `.env.local` and add your configuration:
+   - `NEXT_PUBLIC_SITE_URL`: Your website URL
+   - `NEXT_PUBLIC_DEFAULT_BOOKING_URL`: Default booking platform URL
+   - Apartment-specific booking URLs (optional)
 
-## Deploy on Vercel
+4. **Add apartment images:**
+   - Place apartment images in `public/apartments/`
+   - Follow naming convention: `{city}-{id}-{number}.jpg`
+   - Example: `abuja-01-1.jpg`, `lagos-01-1.jpg`
 
-The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
+5. **Run the development server:**
+   ```bash
+   npm run dev
+   ```
 
-Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
+6. **Open your browser:**
+   Navigate to [http://localhost:3000](http://localhost:3000)
+
+## 📝 Available Scripts
+
+- `npm run dev` - Start development server
+- `npm run build` - Build for production
+- `npm run start` - Start production server
+- `npm run lint` - Run ESLint
+
+## 🏗 Building for Production
+
+```bash
+npm run build
+```
+
+The production build will be in the `.next` directory.
+
+## 🚢 Deployment
+
+### Vercel (Recommended)
+
+1. Push your code to GitHub/GitLab/Bitbucket
+2. Import your repository in [Vercel](https://vercel.com)
+3. Add environment variables in Vercel dashboard
+4. Deploy!
+
+### Other Platforms
+
+The app can be deployed to any platform that supports Next.js:
+- Netlify
+- AWS Amplify
+- Railway
+- DigitalOcean App Platform
+
+## 📸 Adding New Apartments
+
+Edit `lib/data/apartments.ts` and add a new apartment object:
+
+```typescript
+{
+  id: "lofty-city-04",
+  name: "Lofty City Suite",
+  shortDescription: "Description here",
+  location: { city: "Lagos", area: "Victoria Island" },
+  pricePerNight: 50000,
+  images: ["/apartments/city-04-1.jpg", ...],
+  amenities: [...],
+  houseRules: [...],
+  capacity: 2,
+  beds: 1,
+  baths: 1,
+  rating: 4.8,
+  reviews: 25,
+  bookingUrl: process.env.NEXT_PUBLIC_BOOKING_CITY_04,
+}
+```
+
+## 🎨 Customization
+
+### Colors & Styling
+
+Edit `app/globals.css` to customize the color scheme and styling.
+
+### Fonts
+
+Fonts are configured in `app/layout.tsx`. Currently using:
+- **Inter** (primary)
+- **Playfair Display** (accent/luxury)
+
+### Components
+
+All reusable components are in the `components/` directory. Modify as needed.
+
+## 📊 Analytics Setup (Optional)
+
+### Google Analytics
+
+1. Uncomment the Google Analytics section in `app/layout.tsx`
+2. Add `NEXT_PUBLIC_GA_ID` to your `.env.local`
+3. Replace with your Google Analytics ID
+
+### PostHog
+
+1. Uncomment the PostHog section in `app/layout.tsx`
+2. Add `NEXT_PUBLIC_POSTHOG_KEY` and `NEXT_PUBLIC_POSTHOG_HOST` to `.env.local`
+
+## 🔒 Environment Variables
+
+See `.env.example` for all available environment variables.
+
+## 📄 Pages
+
+- `/` - Homepage with hero, featured apartments, trust signals, testimonials
+- `/apartments` - All apartment listings
+- `/apartments/[id]` - Individual apartment details
+- `/booking` - Booking page with redirect and inquiry form
+- `/about` - About us page
+- `/contact` - Contact form
+- `/gallery` - Image gallery with lightbox
+- `/terms` - Terms & conditions
+- `/privacy` - Privacy policy
+
+## 🐛 Troubleshooting
+
+### Images not showing
+
+- Ensure images are in `public/apartments/`
+- Check image paths match the `images` array in apartment data
+- Verify image file names match exactly (case-sensitive)
+
+### Forms not submitting
+
+- Forms currently log to console (implement API endpoint)
+- Check browser console for validation errors
+- Ensure all required fields are filled
+
+## 📚 Documentation
+
+- [Next.js Documentation](https://nextjs.org/docs)
+- [Tailwind CSS](https://tailwindcss.com/docs)
+- [ShadCN/UI](https://ui.shadcn.com)
+- [Framer Motion](https://www.framer.com/motion/)
+
+## 📝 License
+
+This project is proprietary and confidential.
+
+## 🤝 Support
+
+For support, email info@loftyxpherehomes.com or call +234 800 000 0000.
+
+---
+
+Built with ❤️ for LoftyXphereHomes

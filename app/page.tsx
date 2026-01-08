@@ -4,6 +4,7 @@ import TrustSignals from "@/components/TrustSignals";
 import TestimonialSlider from "@/components/TestimonialSlider";
 import AmenitiesSection from "@/components/AmenitiesSection";
 import LocationHighlight from "@/components/LocationHighlight";
+import BlogSection from "@/components/BlogSection";
 import { getFeaturedApartments } from "@/lib/data/apartments";
 import { Button } from "@/components/ui/button";
 import Link from "next/link";
@@ -47,8 +48,10 @@ export default function Home() {
 
       <TrustSignals />
       <AmenitiesSection />
+      <BlogSection />
       <LocationHighlight />
       <TestimonialSlider />
+      
 
       {/* CTA Section */}
       <section className="py-20 bg-gray-900 text-white">

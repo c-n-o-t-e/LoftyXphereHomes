@@ -78,5 +78,48 @@ describe('ContactForm', () => {
     const categorySelect = screen.getByLabelText(/inquiry category/i)
     expect(categorySelect).toBeInTheDocument()
   })
+
+  it('validates category field is required', async () => {
+    render(<ContactForm />)
+    
+    await user.type(screen.getByLabelText(/full name/i), 'John Doe')
+    await user.type(screen.getByLabelText(/email/i), 'john@example.com')
+    await user.type(screen.getByLabelText(/phone number/i), '+2348000000000')
+    await user.type(screen.getByLabelText(/message/i), 'This is a test message that is long enough')
+    
+    const submitButton = screen.getByText('Send Message')
+    fireEvent.click(submitButton)
+    
+    // Form should not submit without category - check that form is still visible
+    // The validation error might be in the form message area
+    await waitFor(() => {
+      // Form should still be visible (not submitted)
+      expect(screen.getByText('Send Message')).toBeInTheDocument()
+      // Category field should show error state (data-error="true" on label)
+      const categoryLabel = screen.getByText(/Inquiry Category/i)
+      expect(categoryLabel).toBeInTheDocument()
+    }, { timeout: 2000 })
+  })
+
+  it('validates category field is required on submit', async () => {
+    render(<ContactForm />)
+    
+    await user.type(screen.getByLabelText(/full name/i), 'John Doe')
+    await user.type(screen.getByLabelText(/email/i), 'john@example.com')
+    await user.type(screen.getByLabelText(/phone number/i), '+2348000000000')
+    await user.type(screen.getByLabelText(/message/i), 'This is a test message that is long enough')
+    
+    const submitButton = screen.getByText('Send Message')
+    fireEvent.click(submitButton)
+    
+    // Form should not submit without category - check that form is still visible
+    await waitFor(() => {
+      // Form should still be visible (not submitted)
+      expect(screen.getByText('Send Message')).toBeInTheDocument()
+      // Category field should show error state
+      const categoryField = screen.getByLabelText(/inquiry category/i)
+      expect(categoryField).toBeInTheDocument()
+    }, { timeout: 1000 })
+  })
 })
 

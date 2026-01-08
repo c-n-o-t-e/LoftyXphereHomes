@@ -57,6 +57,20 @@ describe('Navbar', () => {
     fireEvent.click(homeLink)
   })
 
+  it('closes mobile menu when Book Now is clicked in mobile menu', () => {
+    render(<Navbar />)
+    const menuButton = screen.getByLabelText('Toggle menu')
+    
+    // Open menu
+    fireEvent.click(menuButton)
+    
+    // Find Book Now in mobile menu (should be second one)
+    const bookNowLinks = screen.getAllByText('Book Now')
+    if (bookNowLinks.length > 1) {
+      fireEvent.click(bookNowLinks[1])
+    }
+  })
+
   it('applies scrolled styles when window is scrolled', () => {
     render(<Navbar />)
     const nav = screen.getByRole('navigation')

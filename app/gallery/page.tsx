@@ -9,6 +9,8 @@ import { apartments } from "@/lib/data/apartments";
 import {
   Dialog,
   DialogContent,
+  DialogTitle,
+  DialogDescription,
 } from "@/components/ui/dialog";
 
 export default function GalleryPage() {
@@ -79,12 +81,24 @@ export default function GalleryPage() {
 
       {/* Lightbox Modal */}
       <Dialog open={!!selectedImage} onOpenChange={() => setSelectedImage(null)}>
-        <DialogContent className="max-w-6xl w-full p-0 bg-transparent border-0">
+        <DialogContent className="max-w-6xl w-full p-0 bg-transparent border-0" showCloseButton={false}>
+          <DialogTitle className="sr-only">
+            {selectedImage && selectedApartment
+              ? `Gallery image from ${apartments.find((apt) => apt.id === selectedApartment)?.name || "apartment"}`
+              : "Gallery image"}
+          </DialogTitle>
+          <DialogDescription className="sr-only">
+            Viewing a gallery image in full size. Use the close button to return to the gallery.
+          </DialogDescription>
           {selectedImage && (
             <div className="relative w-full h-[80vh]">
               <Image
                 src={selectedImage}
-                alt="Gallery image"
+                alt={
+                  selectedApartment
+                    ? `Gallery image from ${apartments.find((apt) => apt.id === selectedApartment)?.name || "apartment"}`
+                    : "Gallery image"
+                }
                 fill
                 className="object-contain rounded-lg"
               />

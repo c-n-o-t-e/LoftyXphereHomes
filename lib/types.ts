@@ -1,3 +1,15 @@
+export interface Review {
+  id: string;
+  apartmentId: string;
+  guestName: string;
+  guestLocation?: string;
+  rating: number;
+  comment: string;
+  date: string;
+  source?: "airbnb" | "manual";
+  airbnbListingId?: string;
+}
+
 export interface Apartment {
   id: string;
   name: string;
@@ -14,8 +26,11 @@ export interface Apartment {
   beds: number;
   baths: number;
   bookingUrl?: string;
+  airbnbUrl?: string;
+  airbnbListingId?: string;
   rating: number;
   reviews: number;
+  reviewList?: Review[];
 }
 
 export interface Testimonial {
@@ -25,6 +40,8 @@ export interface Testimonial {
   rating: number;
   comment: string;
   date: string;
+  apartmentId?: string;
+  source?: "airbnb" | "manual";
 }
 
 export interface ContactFormData {

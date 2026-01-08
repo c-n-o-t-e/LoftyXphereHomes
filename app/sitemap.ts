@@ -1,5 +1,6 @@
 import { MetadataRoute } from "next";
 import { apartments } from "@/lib/data/apartments";
+import { blogPosts } from "@/lib/data/blog";
 import { SITE_URL } from "@/lib/constants";
 
 export default function sitemap(): MetadataRoute.Sitemap {
@@ -18,6 +19,12 @@ export default function sitemap(): MetadataRoute.Sitemap {
       lastModified: new Date(),
       changeFrequency: "daily",
       priority: 0.9,
+    },
+    {
+      url: `${baseUrl}/blog`,
+      lastModified: new Date(),
+      changeFrequency: "weekly",
+      priority: 0.8,
     },
     {
       url: `${baseUrl}/booking`,
@@ -57,6 +64,14 @@ export default function sitemap(): MetadataRoute.Sitemap {
     },
   ];
 
+  // Dynamic blog pages
+  const blogPages: MetadataRoute.Sitemap = blogPosts.map((post) => ({
+    url: `${baseUrl}/blog/${post.id}`,
+    lastModified: new Date(post.publishedDate),
+    changeFrequency: "monthly",
+    priority: 0.7,
+  }));
+
   // Dynamic apartment pages
   const apartmentPages: MetadataRoute.Sitemap = apartments.map((apartment) => ({
     url: `${baseUrl}/apartments/${apartment.id}`,
@@ -65,6 +80,6 @@ export default function sitemap(): MetadataRoute.Sitemap {
     priority: 0.8,
   }));
 
-  return [...staticPages, ...apartmentPages];
+  return [...staticPages, ...apartmentPages, ...blogPages];
 }
 

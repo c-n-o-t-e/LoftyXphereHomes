@@ -1,5 +1,6 @@
 import { Metadata } from "next";
 import { ContactForm } from "@/components/ContactForm";
+import GoogleMap from "@/components/GoogleMap";
 import { Mail, Phone, MapPin } from "lucide-react";
 
 export const metadata: Metadata = {
@@ -10,7 +11,7 @@ export const metadata: Metadata = {
 export default function ContactPage() {
   return (
     <div className="pt-20 pb-20 bg-gray-50 min-h-screen">
-      <div className="container mx-auto px-4 sm:px-6 lg:px-8 max-w-4xl">
+      <div className="container mx-auto px-4 sm:px-6 lg:px-8 max-w-6xl">
         <div className="text-center mb-12 pt-12">
           <h1 className="text-4xl md:text-5xl font-bold text-gray-900 mb-4">
             Get In Touch
@@ -42,13 +43,22 @@ export default function ContactPage() {
               <MapPin className="h-6 w-6" />
             </div>
             <h3 className="font-semibold text-gray-900 mb-2">Location</h3>
-            <p className="text-gray-600 text-sm">Lagos & Abuja, Nigeria</p>
+            <p className="text-gray-600 text-sm">430 Magnus Abe Street, Wuye, Abuja</p>
           </div>
         </div>
 
-        <div className="bg-white rounded-2xl shadow-lg p-8 md:p-12">
-          <h2 className="text-2xl font-bold text-gray-900 mb-6">Send us a Message</h2>
-          <ContactForm />
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-8 mb-12">
+          {/* Contact Form */}
+          <div className="bg-white rounded-2xl shadow-lg p-8 md:p-12">
+            <h2 className="text-2xl font-bold text-gray-900 mb-6">Send us a Message</h2>
+            <ContactForm />
+          </div>
+
+          {/* Google Map */}
+          <div className="bg-white rounded-2xl shadow-lg p-8 md:p-12">
+            <h2 className="text-2xl font-bold text-gray-900 mb-6">Find Us</h2>
+            <GoogleMap />
+          </div>
         </div>
       </div>
     </div>

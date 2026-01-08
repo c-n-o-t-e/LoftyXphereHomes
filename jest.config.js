@@ -19,6 +19,7 @@ const customJestConfig = {
     '!**/*.d.ts',
     '!**/node_modules/**',
     '!**/.next/**',
+    '!components/ui/**', // Exclude ShadCN UI components (third-party)
   ],
   coverageThreshold: {
     global: {

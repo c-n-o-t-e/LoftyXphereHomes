@@ -76,5 +76,14 @@ describe('ApartmentCard', () => {
     expect(image).toBeInTheDocument()
     expect(image).toHaveAttribute('src', expect.stringContaining('unsplash.com'))
   })
+
+  it('uses fallback image when apartment has no images', () => {
+    const apartmentNoImages = { ...mockApartment, images: [] }
+    render(<ApartmentCard apartment={apartmentNoImages} index={0} />)
+    const image = screen.getByAltText('Test Apartment')
+    expect(image).toBeInTheDocument()
+    // Should use fallback image
+    expect(image).toHaveAttribute('src', expect.stringContaining('unsplash.com'))
+  })
 })
 

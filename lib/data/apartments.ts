@@ -41,6 +41,8 @@ export const apartments: Apartment[] = [
         rating: 4.8,
         reviews: 34,
         bookingUrl: process.env.NEXT_PUBLIC_BOOKING_ABUJA_01,
+        airbnbUrl: process.env.NEXT_PUBLIC_AIRBNB_ABUJA_01, // e.g., "https://www.airbnb.com/rooms/12345678"
+        airbnbListingId: process.env.NEXT_PUBLIC_AIRBNB_LISTING_ID_ABUJA_01, // e.g., "12345678"
     },
     {
         id: "lofty-lagos-01",

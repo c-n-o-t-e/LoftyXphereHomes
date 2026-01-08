@@ -5,7 +5,7 @@ import { getApartmentById } from "@/lib/data/apartments";
 import { MapPin, Users, Bed, Bath, Star, Check } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import Link from "next/link";
-import { SITE_NAME, CHECK_IN_TIME, CHECK_OUT_TIME } from "@/lib/constants";
+import { CHECK_IN_TIME, CHECK_OUT_TIME } from "@/lib/constants";
 
 interface PageProps {
   params: Promise<{ id: string }>;
@@ -109,7 +109,7 @@ export default async function ApartmentDetailPage({ params }: PageProps) {
               <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
                 {apartment.amenities.map((amenity) => (
                   <div key={amenity} className="flex items-center text-gray-700">
-                    <Check className="h-5 w-5 text-green-600 mr-2 flex-shrink-0" />
+                    <Check className="h-5 w-5 text-green-600 mr-2 shrink-0" />
                     <span>{amenity}</span>
                   </div>
                 ))}

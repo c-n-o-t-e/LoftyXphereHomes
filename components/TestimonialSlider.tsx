@@ -53,7 +53,7 @@ export default function TestimonialSlider() {
                       />
                     ))}
                   </div>
-                  <p className="text-gray-700 mb-4 flex-grow leading-relaxed">
+                  <p className="text-gray-700 mb-4 grow leading-relaxed">
                     &quot;{testimonial.comment}&quot;
                   </p>
                   <div className="border-t pt-4">

@@ -42,6 +42,13 @@ export function ContactForm() {
 
   const form = useForm<ContactFormData>({
     resolver: zodResolver(contactFormSchema),
+    defaultValues: {
+      name: '',
+      email: '',
+      phone: '',
+      category: undefined,
+      message: '',
+    },
   });
 
   const onSubmit = async (data: ContactFormData) => {

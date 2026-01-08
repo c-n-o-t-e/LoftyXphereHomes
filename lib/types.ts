@@ -47,3 +47,16 @@ export interface BookingInquiryFormData {
   message: string;
 }
 
+export interface BlogPost {
+  id: string;
+  title: string;
+  excerpt: string;
+  content: string;
+  author: string;
+  authorRole: string;
+  publishedDate: string;
+  image: string;
+  category: string;
+  readTime: number;
+  tags: string[];
+}

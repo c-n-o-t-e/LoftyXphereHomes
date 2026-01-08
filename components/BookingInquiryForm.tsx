@@ -49,8 +49,15 @@ export function BookingInquiryForm({ defaultApartmentId }: BookingInquiryFormPro
   const form = useForm<BookingInquiryFormData>({
     resolver: zodResolver(bookingInquirySchema),
     defaultValues: {
-      apartmentId: defaultApartmentId || "",
+      fullName: '',
+      email: '',
+      phone: '',
+      cityVisiting: '',
+      checkInDate: '',
+      checkOutDate: '',
       numberOfGuests: 1,
+      apartmentId: defaultApartmentId || "",
+      message: '',
     },
   });
 

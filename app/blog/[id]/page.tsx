@@ -53,32 +53,32 @@ export default async function BlogPostPage({ params }: PageProps) {
         {/* Header */}
         <div className="mb-8 pt-8">
           <div className="mb-4">
-            <span className="inline-block bg-gray-100 text-gray-800 px-3 py-1 rounded-full text-sm font-semibold">
+            <span className="inline-block bg-[#FA5C5C]/10 text-[#FA5C5C] px-3 py-1 rounded-full text-sm font-semibold border border-[#FA5C5C]/20">
               {post.category}
             </span>
           </div>
-          <h1 className="text-4xl md:text-5xl font-bold text-gray-900 mb-6">
+          <h1 className="text-4xl md:text-5xl font-bold text-black mb-6">
             {post.title}
           </h1>
-          <div className="flex flex-wrap items-center gap-4 text-gray-600 text-sm">
+          <div className="flex flex-wrap items-center gap-4 text-black/70 text-sm">
             <div className="flex items-center">
-              <User className="h-4 w-4 mr-2" />
-              <span className="font-medium">{post.author}</span>
-              <span className="ml-2 text-gray-500">{post.authorRole}</span>
+              <User className="h-4 w-4 mr-2 text-[#FA5C5C]" />
+              <span className="font-medium text-black">{post.author}</span>
+              <span className="ml-2 text-black/60">{post.authorRole}</span>
             </div>
             <div className="flex items-center">
-              <Calendar className="h-4 w-4 mr-2" />
+              <Calendar className="h-4 w-4 mr-2 text-[#FA5C5C]" />
               {formatDate(post.publishedDate)}
             </div>
             <div className="flex items-center">
-              <Clock className="h-4 w-4 mr-2" />
+              <Clock className="h-4 w-4 mr-2 text-[#FA5C5C]" />
               {post.readTime} min read
             </div>
           </div>
         </div>
 
         {/* Featured Image */}
-        <div className="relative h-96 rounded-2xl overflow-hidden mb-12">
+        <div className="relative h-96 rounded-2xl overflow-hidden mb-12 border border-black/10">
           <Image
             src={post.image}
             alt={post.title}
@@ -91,17 +91,17 @@ export default async function BlogPostPage({ params }: PageProps) {
         {/* Content */}
         <article className="prose prose-lg max-w-none">
           <div
-            className="text-gray-700 leading-relaxed"
+            className="text-black/80 leading-relaxed"
             dangerouslySetInnerHTML={{ __html: post.content }}
           />
 
           {/* Tags */}
-          <div className="mt-12 pt-8 border-t">
+          <div className="mt-12 pt-8 border-t border-black/10">
             <div className="flex flex-wrap gap-2">
               {post.tags.map((tag) => (
                 <span
                   key={tag}
-                  className="bg-gray-100 text-gray-700 px-3 py-1 rounded-full text-sm"
+                  className="bg-black/5 text-black/80 px-3 py-1 rounded-full text-sm border border-black/10"
                 >
                   #{tag}
                 </span>

@@ -5,18 +5,18 @@ import { SITE_NAME } from "@/lib/constants";
 
 export const metadata: Metadata = {
   title: "Blog",
-  description: "Discover tips, guides, and insights about shortlet accommodations, Abuja, Lagos, and making the most of your stay.",
+  description: "Discover tips, guides, and insights about shortlet accommodations in Wuye, Abuja, and making the most of your stay.",
 };
 
 export default function BlogPage() {
   return (
-    <div className="pt-20 pb-20 bg-white min-h-screen">
+    <div className="pt-20 pb-24 bg-white min-h-screen">
       <div className="container mx-auto px-4 sm:px-6 lg:px-8">
-        <div className="text-center mb-12 pt-12">
-          <h1 className="text-4xl md:text-5xl font-bold text-gray-900 mb-4">
+        <div className="text-center mb-16 pt-12">
+          <h1 className="text-4xl md:text-5xl lg:text-6xl font-bold text-black mb-6">
             Our Blog
           </h1>
-          <p className="text-lg text-gray-600 max-w-2xl mx-auto">
+          <p className="text-lg md:text-xl text-black/70 max-w-2xl mx-auto leading-relaxed">
             Tips, guides, and insights to enhance your shortlet experience
           </p>
         </div>

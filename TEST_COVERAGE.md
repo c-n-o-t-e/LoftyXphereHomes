@@ -31,7 +31,6 @@ __tests__/
 │   ├── TrustSignals.test.tsx            # Trust signals section
 │   ├── TestimonialSlider.test.tsx       # Testimonials carousel
 │   ├── AmenitiesSection.test.tsx        # Amenities section
-│   ├── LocationHighlight.test.tsx       # Location highlight
 │   ├── BookingInquiryForm.test.tsx      # Booking form
 │   └── ContactForm.test.tsx             # Contact form
 └── lib/
@@ -102,15 +101,7 @@ __tests__/
     - ✅ Renders description
     - ✅ Renders all amenities
 
-8. **LocationHighlight.test.tsx**
-
-    - ✅ Renders section heading
-    - ✅ Renders both cities
-    - ✅ Renders area information
-    - ✅ Renders apartment counts
-    - ✅ Renders view buttons
-
-9. **BookingInquiryForm.test.tsx**
+8. **BookingInquiryForm.test.tsx**
 
     - ✅ Renders all form fields
     - ✅ Shows validation errors

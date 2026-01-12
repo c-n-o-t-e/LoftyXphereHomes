@@ -71,9 +71,9 @@ export function ContactForm() {
   if (isSubmitted) {
     return (
       <div className="text-center py-12">
-        <div className="w-16 h-16 bg-green-100 rounded-full flex items-center justify-center mx-auto mb-4">
+        <div className="w-16 h-16 bg-[#FA5C5C]/10 rounded-full flex items-center justify-center mx-auto mb-4">
           <svg
-            className="w-8 h-8 text-green-600"
+            className="w-8 h-8 text-[#FA5C5C]"
             fill="none"
             stroke="currentColor"
             viewBox="0 0 24 24"
@@ -86,8 +86,8 @@ export function ContactForm() {
             />
           </svg>
         </div>
-        <h3 className="text-2xl font-bold text-gray-900 mb-2">Message Sent!</h3>
-        <p className="text-gray-600">
+        <h3 className="text-2xl font-bold text-black mb-2">Message Sent!</h3>
+        <p className="text-black/70">
           We&apos;ve received your message and will get back to you soon.
         </p>
       </div>

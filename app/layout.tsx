@@ -27,7 +27,7 @@ export const metadata: Metadata = {
     "shortlet",
     "apartment rental",
     "Nigeria",
-    "Lagos",
+    "Wuye",
     "Abuja",
     "premium accommodation",
     "short stay",

@@ -14,7 +14,7 @@ export const testimonials: Testimonial[] = [
     name: "Michael Chen",
     location: "Singapore",
     rating: 5,
-    comment: "Best shortlet experience in Lagos! The apartment had everything we needed, and the Wi-Fi was incredibly fast - perfect for remote work. The host was responsive and helpful throughout our stay.",
+    comment: "Best shortlet experience in Wuye, Abuja! The apartment had everything we needed, and the Wi-Fi was incredibly fast - perfect for remote work. The host was responsive and helpful throughout our stay.",
     date: "February 2024",
   },
   {
@@ -22,7 +22,7 @@ export const testimonials: Testimonial[] = [
     name: "Amina Hassan",
     location: "Nigeria",
     rating: 5,
-    comment: "We stayed at the Lofty Lagos Premium for a week and it felt like home. The space was immaculate, the amenities were top-notch, and the security made us feel safe. Highly recommend!",
+    comment: "We stayed at the Lofty Wuye Premium for a week and it felt like home. The space was immaculate, the amenities were top-notch, and the security made us feel safe. Highly recommend!",
     date: "January 2024",
   },
   {
@@ -46,7 +46,7 @@ export const testimonials: Testimonial[] = [
     name: "James Okafor",
     location: "Nigeria",
     rating: 5,
-    comment: "Perfect for business travelers! The workspace setup was ideal, and the 24/7 power supply meant no interruptions. The location in Victoria Island was convenient for meetings.",
+    comment: "Perfect for business travelers! The workspace setup was ideal, and the 24/7 power supply meant no interruptions. The location in Wuye, Abuja was convenient for meetings.",
     date: "October 2023",
   },
 ];

@@ -46,7 +46,6 @@ A production-ready website for LoftyXphereHomes, a premium shortlet apartment re
 │   ├── TrustSignals.tsx     # Trust signals section
 │   ├── TestimonialSlider.tsx # Testimonials carousel
 │   ├── AmenitiesSection.tsx  # Amenities display
-│   ├── LocationHighlight.tsx # Location showcase
 │   ├── BookingInquiryForm.tsx # Booking inquiry form
 │   └── ContactForm.tsx       # Contact form
 ├── lib/

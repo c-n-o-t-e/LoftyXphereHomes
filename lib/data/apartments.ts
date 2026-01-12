@@ -2,13 +2,13 @@ import { Apartment } from "../types";
 
 export const apartments: Apartment[] = [
     {
-        id: "lofty-abuja-01",
-        name: "Lofty Abuja Suite",
+        id: "lofty-wuye-04",
+        name: "Lofty Wuye Suite",
         shortDescription:
-            "Elegant 1-bedroom suite in the heart of Wuse 2, perfect for business travelers and couples.",
+            "Elegant 1-bedroom suite in the heart of Wuye, perfect for business travelers and couples.",
         location: {
             city: "Abuja",
-            area: "Wuse 2",
+            area: "Wuye",
         },
         pricePerNight: 45000,
         images: [
@@ -40,16 +40,16 @@ export const apartments: Apartment[] = [
         baths: 1,
         rating: 4.8,
         reviews: 34,
-        bookingUrl: process.env.NEXT_PUBLIC_BOOKING_ABUJA_01,
+        bookingUrl: process.env.NEXT_PUBLIC_BOOKING_WUYE_04,
     },
     {
-        id: "lofty-lagos-01",
-        name: "Lofty Lagos Premium",
+        id: "lofty-wuye-01",
+        name: "Lofty Wuye Premium",
         shortDescription:
-            "Spacious 2-bedroom apartment in Victoria Island with stunning city views and modern amenities.",
+            "Spacious 2-bedroom apartment in Wuye with stunning city views and modern amenities.",
         location: {
-            city: "Lagos",
-            area: "Victoria Island",
+            city: "Abuja",
+            area: "Wuye",
         },
         pricePerNight: 65000,
         images: [
@@ -84,16 +84,16 @@ export const apartments: Apartment[] = [
         baths: 2,
         rating: 4.9,
         reviews: 52,
-        bookingUrl: process.env.NEXT_PUBLIC_BOOKING_LAGOS_01,
+        bookingUrl: process.env.NEXT_PUBLIC_BOOKING_WUYE_01,
     },
     {
-        id: "lofty-abuja-02",
-        name: "Lofty Abuja Executive",
+        id: "lofty-wuye-05",
+        name: "Lofty Wuye Executive",
         shortDescription:
-            "Luxury 3-bedroom penthouse in Maitama, ideal for families and extended stays.",
+            "Luxury 3-bedroom penthouse in Wuye, ideal for families and extended stays.",
         location: {
             city: "Abuja",
-            area: "Maitama",
+            area: "Wuye",
         },
         pricePerNight: 85000,
         images: [
@@ -130,16 +130,16 @@ export const apartments: Apartment[] = [
         baths: 3,
         rating: 4.7,
         reviews: 28,
-        bookingUrl: process.env.NEXT_PUBLIC_BOOKING_ABUJA_02,
+        bookingUrl: process.env.NEXT_PUBLIC_BOOKING_WUYE_05,
     },
     {
-        id: "lofty-lagos-02",
-        name: "Lofty Lagos Studio",
+        id: "lofty-wuye-02",
+        name: "Lofty Wuye Studio",
         shortDescription:
-            "Modern studio apartment in Lekki Phase 1, perfect for solo travelers and remote workers.",
+            "Modern studio apartment in Wuye, perfect for solo travelers and remote workers.",
         location: {
-            city: "Lagos",
-            area: "Lekki Phase 1",
+            city: "Abuja",
+            area: "Wuye",
         },
         pricePerNight: 35000,
         images: [
@@ -170,16 +170,16 @@ export const apartments: Apartment[] = [
         baths: 1,
         rating: 4.6,
         reviews: 41,
-        bookingUrl: process.env.NEXT_PUBLIC_BOOKING_LAGOS_02,
+        bookingUrl: process.env.NEXT_PUBLIC_BOOKING_WUYE_02,
     },
     {
-        id: "lofty-abuja-03",
-        name: "Lofty Abuja Comfort",
+        id: "lofty-wuye-06",
+        name: "Lofty Wuye Comfort",
         shortDescription:
-            "Cozy 2-bedroom apartment in Garki, close to business districts and shopping centers.",
+            "Cozy 2-bedroom apartment in Wuye, close to business districts and shopping centers.",
         location: {
             city: "Abuja",
-            area: "Garki",
+            area: "Wuye",
         },
         pricePerNight: 55000,
         images: [
@@ -211,16 +211,16 @@ export const apartments: Apartment[] = [
         baths: 2,
         rating: 4.5,
         reviews: 19,
-        bookingUrl: process.env.NEXT_PUBLIC_BOOKING_ABUJA_03,
+        bookingUrl: process.env.NEXT_PUBLIC_BOOKING_WUYE_06,
     },
     {
-        id: "lofty-lagos-03",
-        name: "Lofty Lagos Family Home",
+        id: "lofty-wuye-03",
+        name: "Lofty Wuye Family Home",
         shortDescription:
-            "Spacious 4-bedroom family home in Ikoyi with private garden and premium finishes.",
+            "Spacious 4-bedroom family home in Wuye with private garden and premium finishes.",
         location: {
-            city: "Lagos",
-            area: "Ikoyi",
+            city: "Abuja",
+            area: "Wuye",
         },
         pricePerNight: 120000,
         images: [
@@ -259,7 +259,7 @@ export const apartments: Apartment[] = [
         baths: 4,
         rating: 4.9,
         reviews: 67,
-        bookingUrl: process.env.NEXT_PUBLIC_BOOKING_LAGOS_03,
+        bookingUrl: process.env.NEXT_PUBLIC_BOOKING_WUYE_03,
     },
 ];
 

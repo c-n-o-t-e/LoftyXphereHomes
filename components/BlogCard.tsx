@@ -39,23 +39,23 @@ export default function BlogCard({ post, index = 0 }: BlogCardProps) {
               className="object-cover group-hover:scale-105 transition-transform duration-500"
               sizes="(max-width: 768px) 100vw, (max-width: 1200px) 50vw, 33vw"
             />
-            <div className="absolute top-4 left-4 bg-white/90 backdrop-blur-sm px-3 py-1 rounded-full">
-              <span className="text-sm font-semibold text-gray-900">{post.category}</span>
+            <div className="absolute top-4 left-4 bg-white/95 backdrop-blur-sm px-3 py-1 rounded-full border border-black/10">
+              <span className="text-sm font-semibold text-black">{post.category}</span>
             </div>
           </div>
         </Link>
         <CardContent className="p-6 flex flex-col flex-grow">
           <Link href={`/blog/${post.id}`}>
-            <h3 className="text-xl font-bold text-gray-900 mb-3 group-hover:text-gray-700 transition-colors line-clamp-2">
+            <h3 className="text-xl font-bold text-black mb-3 group-hover:text-[#FA5C5C] transition-colors line-clamp-2">
               {post.title}
             </h3>
-            <p className="text-gray-600 text-sm mb-4 line-clamp-3 flex-grow">
+            <p className="text-black/70 text-sm mb-4 line-clamp-3 flex-grow">
               {post.excerpt}
             </p>
           </Link>
 
-          <div className="space-y-3 pt-4 border-t">
-            <div className="flex items-center text-xs text-gray-500 space-x-4">
+          <div className="space-y-3 pt-4 border-t border-black/10">
+            <div className="flex items-center text-xs text-black/60 space-x-4">
               <div className="flex items-center">
                 <Calendar className="h-3 w-3 mr-1" />
                 {formatDate(post.publishedDate)}
@@ -65,7 +65,7 @@ export default function BlogCard({ post, index = 0 }: BlogCardProps) {
                 {post.readTime} min read
               </div>
             </div>
-            <div className="flex items-center text-sm text-gray-600">
+            <div className="flex items-center text-sm text-black/70">
               <User className="h-4 w-4 mr-2" />
               <span className="font-medium">{post.author}</span>
             </div>

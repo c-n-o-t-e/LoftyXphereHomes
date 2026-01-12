@@ -39,9 +39,9 @@ export default function ApartmentCard({ apartment, index = 0 }: ApartmentCardPro
               className="object-cover group-hover:scale-105 transition-transform duration-500"
               sizes="(max-width: 768px) 100vw, (max-width: 1200px) 50vw, 33vw"
             />
-            <div className="absolute top-4 right-4 bg-white/90 backdrop-blur-sm px-3 py-1 rounded-full flex items-center space-x-1">
-              <Star className="h-4 w-4 fill-yellow-400 text-yellow-400" />
-              <span className="text-sm font-semibold text-gray-900">
+            <div className="absolute top-4 right-4 bg-white/95 backdrop-blur-sm px-3 py-1 rounded-full flex items-center space-x-1 border border-black/10">
+              <Star className="h-4 w-4 fill-[#FA5C5C] text-[#FA5C5C]" />
+              <span className="text-sm font-semibold text-black">
                 {apartment.rating}
               </span>
             </div>
@@ -49,21 +49,21 @@ export default function ApartmentCard({ apartment, index = 0 }: ApartmentCardPro
         </Link>
         <CardContent className="p-6">
           <Link href={`/apartments/${apartment.id}`}>
-            <h3 className="text-xl font-bold text-gray-900 mb-2 group-hover:text-gray-700 transition-colors">
+            <h3 className="text-xl font-bold text-black mb-2 group-hover:text-[#FA5C5C] transition-colors">
               {apartment.name}
             </h3>
-            <p className="text-gray-600 text-sm mb-4 line-clamp-2">
+            <p className="text-black/70 text-sm mb-4 line-clamp-2">
               {apartment.shortDescription}
             </p>
           </Link>
 
           <div className="space-y-3 mb-4">
-            <div className="flex items-center text-sm text-gray-600">
-              <MapPin className="h-4 w-4 mr-2" />
+            <div className="flex items-center text-sm text-black/70">
+              <MapPin className="h-4 w-4 mr-2 text-[#FA5C5C]" />
               {apartment.location.area}, {apartment.location.city}
             </div>
 
-            <div className="flex items-center space-x-4 text-sm text-gray-600">
+            <div className="flex items-center space-x-4 text-sm text-black/70">
               <div className="flex items-center">
                 <Users className="h-4 w-4 mr-1" />
                 {apartment.capacity}
@@ -78,15 +78,15 @@ export default function ApartmentCard({ apartment, index = 0 }: ApartmentCardPro
               </div>
             </div>
 
-            <div className="flex items-center justify-between pt-2 border-t">
+            <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between pt-3 border-t border-black/10 gap-3">
               <div>
-                <p className="text-2xl font-bold text-gray-900">
+                <p className="text-xl sm:text-2xl font-bold text-black">
                   {formatPrice(apartment.pricePerNight)}
                 </p>
-                <p className="text-xs text-gray-500">per night</p>
+                <p className="text-xs text-black/60">per night</p>
               </div>
-              <Button asChild className="rounded-full">
-                <Link href={`/apartments/${apartment.id}`}>View Details</Link>
+              <Button asChild className="rounded-full bg-[#FA5C5C] hover:bg-[#E84A4A] text-white w-full sm:w-auto min-h-[44px] px-6 text-sm sm:text-base">
+                <Link href={`/apartments/${apartment.id}`} className="w-full sm:w-auto text-center">View Details</Link>
               </Button>
             </div>
           </div>

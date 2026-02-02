@@ -23,6 +23,7 @@ import {
 } from "@/components/ui/select";
 import { apartments } from "@/lib/data/apartments";
 import { useState } from "react";
+import { supabase } from "@/app/supabase-client";
 
 const bookingInquirySchema = z.object({
   fullName: z.string().min(2, "Name must be at least 2 characters"),
@@ -61,14 +62,27 @@ export function BookingInquiryForm({ defaultApartmentId }: BookingInquiryFormPro
     },
   });
 
-  const onSubmit = async (data: BookingInquiryFormData) => {
+  const onSubmit = async (info: BookingInquiryFormData) => {
     setIsSubmitting(true);
     
     // Here you would typically send the data to your API
     // For now, we'll simulate an API call
     await new Promise((resolve) => setTimeout(resolve, 1000));
-    
-    console.log("Booking inquiry submitted:", data);
+
+    const { data, error } = await supabase.from("guests").insert({
+      name: info.fullName,  
+      email: info.email,
+      phone: info.phone,
+      check_in: info.checkInDate,
+      check_out: info.checkOutDate,
+    });
+
+    if (error) {
+      console.log("Error submitting booking inquiry:", error);
+    } else {
+      console.log("Booking inquiry submitted:", info);
+    }
+
     setIsSubmitting(false);
     setIsSubmitted(true);
     

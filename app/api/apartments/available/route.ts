@@ -1,0 +1,92 @@
+import { NextRequest, NextResponse } from "next/server";
+import { prisma } from "@/lib/db";
+import { apartments } from "@/lib/data/apartments";
+
+/**
+ * GET /api/apartments/available?checkIn=YYYY-MM-DD&checkOut=YYYY-MM-DD&guests=N
+ *
+ * Returns list of apartment IDs that are available for the given date range.
+ * An apartment is available if it has NO overlapping bookings (PAID or PENDING).
+ *
+ * Overlap logic: A booking overlaps if existingCheckIn < requestedCheckOut AND existingCheckOut > requestedCheckIn
+ *
+ * Example:
+ * - Bob books ApartmentHappy 14th→19th
+ * - Search 11th→13th: Available (no overlap)
+ * - Search 15th→17th: NOT available (overlaps with 14th→19th)
+ * - Search 19th→22nd: Available (Bob checks out 19th, new guest can check in)
+ */
+export async function GET(request: NextRequest) {
+  const { searchParams } = new URL(request.url);
+  const checkIn = searchParams.get("checkIn");
+  const checkOut = searchParams.get("checkOut");
+  const guestsParam = searchParams.get("guests");
+  const guests = guestsParam ? parseInt(guestsParam, 10) : undefined;
+
+  // Get all apartment IDs from static data
+  const allApartmentIds = apartments.map((apt) => apt.id);
+
+  // If no dates provided, return all apartments (filtered by guests if specified)
+  if (!checkIn || !checkOut) {
+    let availableIds = allApartmentIds;
+    if (guests && guests > 0) {
+      availableIds = apartments
+        .filter((apt) => apt.capacity >= guests)
+        .map((apt) => apt.id);
+    }
+    return NextResponse.json({ availableApartmentIds: availableIds });
+  }
+
+  try {
+    const requestedCheckIn = new Date(checkIn);
+    const requestedCheckOut = new Date(checkOut);
+
+    // Find all bookings that overlap with the requested date range
+    // Overlap condition: existingCheckIn < requestedCheckOut AND existingCheckOut > requestedCheckIn
+    const overlappingBookings = await prisma.booking.findMany({
+      where: {
+        status: { in: ["PAID", "PENDING"] },
+        checkIn: { lt: requestedCheckOut },
+        checkOut: { gt: requestedCheckIn },
+      },
+      select: {
+        apartmentId: true,
+      },
+    });
+
+    // Get set of apartment IDs that are booked (unavailable)
+    const bookedApartmentIds = new Set(
+      overlappingBookings.map((b) => b.apartmentId)
+    );
+
+    // Filter to get available apartments
+    let availableApartments = apartments.filter(
+      (apt) => !bookedApartmentIds.has(apt.id)
+    );
+
+    // Filter by guest capacity if specified
+    if (guests && guests > 0) {
+      availableApartments = availableApartments.filter(
+        (apt) => apt.capacity >= guests
+      );
+    }
+
+    const availableIds = availableApartments.map((apt) => apt.id);
+
+    return NextResponse.json({
+      availableApartmentIds: availableIds,
+      checkIn,
+      checkOut,
+      guests,
+      totalAvailable: availableIds.length,
+      totalBooked: bookedApartmentIds.size,
+    });
+  } catch (error) {
+    console.error("Error checking apartment availability:", error);
+    // On error, return all apartments (graceful degradation)
+    return NextResponse.json({
+      availableApartmentIds: allApartmentIds,
+      error: "Failed to check availability, showing all apartments",
+    });
+  }
+}

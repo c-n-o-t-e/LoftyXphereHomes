@@ -53,15 +53,14 @@ export function ContactForm() {
 
   const onSubmit = async (data: ContactFormData) => {
     setIsSubmitting(true);
-    
+
     // Here you would typically send the data to your API
     await new Promise((resolve) => setTimeout(resolve, 1000));
-    
+
     console.log("Contact form submitted:", data);
     setIsSubmitting(false);
     setIsSubmitted(true);
-    
-    // Reset form after 3 seconds
+
     setTimeout(() => {
       setIsSubmitted(false);
       form.reset();
@@ -135,7 +134,7 @@ export function ContactForm() {
               <FormItem>
                 <FormLabel>Phone Number</FormLabel>
                 <FormControl>
-                  <Input type="tel" placeholder="+234 800 000 0000" {...field} />
+                  <Input type="tel" placeholder="+234 8161122328" {...field} />
                 </FormControl>
                 <FormMessage />
               </FormItem>

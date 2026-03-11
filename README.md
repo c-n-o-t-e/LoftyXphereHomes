@@ -62,7 +62,7 @@ A production-ready website for LoftyXphereHomes, a premium shortlet apartment re
 
 ### Prerequisites
 
-- Node.js 18+ 
+- Node.js 18+
 - npm or yarn
 
 ### Installation
@@ -70,31 +70,41 @@ A production-ready website for LoftyXphereHomes, a premium shortlet apartment re
 1. **Clone the repository** (or navigate to the project directory)
 
 2. **Install dependencies:**
-   ```bash
-   npm install
-   ```
+
+    ```bash
+    npm install
+    ```
 
 3. **Set up environment variables:**
-   ```bash
-   cp .env.example .env.local
-   ```
-   
-   Edit `.env.local` and add your configuration:
-   - `NEXT_PUBLIC_SITE_URL`: Your website URL
-   - `NEXT_PUBLIC_DEFAULT_BOOKING_URL`: Default booking platform URL
-   - Apartment-specific booking URLs (optional)
+
+    ```bash
+    cp .env.example .env.local
+    ```
+
+    Edit `.env.local` and add your configuration:
+    - `NEXT_PUBLIC_SITE_URL`: Your website URL
+    - `NEXT_PUBLIC_DEFAULT_BOOKING_URL`: Default booking platform URL
+    - Apartment-specific booking URLs (optional)
 
 4. **Add apartment images:**
-   - Place apartment images in `public/apartments/`
-   - Follow naming convention: `{city}-{id}-{number}.jpg`
-   - Example: `abuja-01-1.jpg`, `lagos-01-1.jpg`
+    - Place apartment images in `public/apartments/`
+    - Follow naming convention: `{city}-{id}-{number}.jpg`
+    - Example: `abuja-01-1.jpg`, `lagos-01-1.jpg`
 
-5. **Run the development server:**
-   ```bash
-   npm run dev
-   ```
+5. **Booking flow (Supabase + Prisma + Paystack) – optional:**
+    - Create a [Supabase](https://supabase.com) project and copy the **Connection string (URI)** from Project Settings → Database. Use the **Transaction** pooler (port 6543) for Prisma.
+    - In `.env`, set `DATABASE_URL` to that URI and keep `PAYSTACK_SECRET_KEY` for payments.
+    - Run Prisma: `npx prisma generate` then `npx prisma db push` (or `npx prisma migrate dev`) to create the `Booking` table.
+    - When a user completes Paystack payment, they are redirected to `/booking/success?reference=...`. The success page verifies the transaction with Paystack and upserts a booking (booker email, apartment, dates, amount) into Supabase via Prisma.
+    - For reliability, set Paystack **Webhook URL** (Settings → Webhooks) to `https://your-domain.com/api/paystack/webhook` and subscribe to **charge.success** so bookings are saved even if the user closes the browser before the success page loads.
 
-6. **Open your browser:**
+6. **Run the development server:**
+
+    ```bash
+    npm run dev
+    ```
+
+7. **Open your browser:**
    Navigate to [http://localhost:3000](http://localhost:3000)
 
 ## 📝 Available Scripts
@@ -124,6 +134,7 @@ The production build will be in the `.next` directory.
 ### Other Platforms
 
 The app can be deployed to any platform that supports Next.js:
+
 - Netlify
 - AWS Amplify
 - Railway
@@ -161,6 +172,7 @@ Edit `app/globals.css` to customize the color scheme and styling.
 ### Fonts
 
 Fonts are configured in `app/layout.tsx`. Currently using:
+
 - **Inter** (primary)
 - **Playfair Display** (accent/luxury)
 
@@ -224,7 +236,7 @@ This project is proprietary and confidential.
 
 ## 🤝 Support
 
-For support, email info@loftyxpherehomes.com or call +234 800 000 0000.
+For support, email hello@loftyxpherehomes.com or call +234 8161122328.
 
 ---
 

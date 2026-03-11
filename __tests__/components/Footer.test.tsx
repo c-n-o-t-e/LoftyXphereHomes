@@ -34,8 +34,8 @@ describe('Footer', () => {
 
   it('renders contact information', () => {
     render(<Footer />)
-    expect(screen.getByText('+234 800 000 0000')).toBeInTheDocument()
-    expect(screen.getByText('info@loftyxpherehomes.com')).toBeInTheDocument()
+    expect(screen.getByText('+234 8161122328')).toBeInTheDocument()
+    expect(screen.getByText('hello@loftyxpherehomes.com')).toBeInTheDocument()
     expect(screen.getByText('Lagos & Abuja, Nigeria')).toBeInTheDocument()
   })
 

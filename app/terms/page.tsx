@@ -67,7 +67,7 @@ export default function TermsPage() {
             <h2 className="text-2xl font-bold text-black mb-4">6. Contact Information</h2>
             <p className="text-black/80">
               For any questions regarding these terms, please contact us at
-              info@loftyxpherehomes.com or +234 800 000 0000.
+              hello@loftyxpherehomes.com or +234 8161122328.
             </p>
           </section>
         </div>

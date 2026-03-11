@@ -25,8 +25,8 @@ describe('Contact Page', () => {
 
   it('displays contact details', () => {
     render(<ContactPage />)
-    expect(screen.getByText('+234 800 000 0000')).toBeInTheDocument()
-    expect(screen.getByText('info@loftyxpherehomes.com')).toBeInTheDocument()
+    expect(screen.getByText('+234 8161122328')).toBeInTheDocument()
+    expect(screen.getByText('hello@loftyxpherehomes.com')).toBeInTheDocument()
     // Address appears multiple times (contact card and map)
     expect(screen.getAllByText(/430 Magnus Abe Street/i).length).toBeGreaterThan(0)
   })

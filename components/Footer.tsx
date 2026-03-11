@@ -109,13 +109,13 @@ export default function Footer() {
               <li className="flex items-start space-x-3">
                 <Phone className="h-5 w-5 mt-0.5 shrink-0 text-white/80" />
                 <a href="tel:+2348000000000" className="hover:text-[#FA5C5C] transition-colors text-sm text-white/80">
-                  +234 800 000 0000
+                  +234 8161122328
                 </a>
               </li>
               <li className="flex items-start space-x-3">
                 <Mail className="h-5 w-5 mt-0.5 shrink-0 text-white/80" />
-                <a href="mailto:info@loftyxpherehomes.com" className="hover:text-[#FA5C5C] transition-colors text-sm text-white/80">
-                  info@loftyxpherehomes.com
+                <a href="mailto:hello@loftyxpherehomes.com" className="hover:text-[#FA5C5C] transition-colors text-sm text-white/80">
+                  hello@loftyxpherehomes.com
                 </a>
               </li>
               <li className="flex items-start space-x-3">

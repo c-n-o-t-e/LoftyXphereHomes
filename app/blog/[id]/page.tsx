@@ -1,8 +1,9 @@
 import { Metadata } from "next";
 import Image from "next/image";
+import Link from "next/link";
 import { notFound } from "next/navigation";
 import { getBlogPostById } from "@/lib/data/blog";
-import { Calendar, Clock, User } from "lucide-react";
+import { ArrowLeft, Calendar, Clock, User } from "lucide-react";
 import { SITE_NAME } from "@/lib/constants";
 
 interface PageProps {
@@ -108,6 +109,15 @@ export default async function BlogPostPage({ params }: PageProps) {
               ))}
             </div>
           </div>
+
+          {/* Back to Blog */}
+          <Link
+            href="/blog"
+            className="mt-10 inline-flex items-center gap-2 text-[#FA5C5C] hover:text-[#E84A4A] font-medium transition-colors"
+          >
+            <ArrowLeft className="h-4 w-4" />
+            Back to Blog
+          </Link>
         </article>
       </div>
     </div>

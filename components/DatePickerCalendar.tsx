@@ -1,0 +1,197 @@
+"use client";
+
+import { useState, useMemo } from "react";
+import { ChevronLeft, ChevronRight } from "lucide-react";
+
+const DAYS_HEADER = ["M", "T", "W", "T", "F", "S", "S"];
+const MONTHS = [
+  "January", "February", "March", "April", "May", "June",
+  "July", "August", "September", "October", "November", "December",
+];
+
+function toISO(date: Date): string {
+  const y = date.getFullYear();
+  const m = String(date.getMonth() + 1).padStart(2, "0");
+  const d = String(date.getDate()).padStart(2, "0");
+  return `${y}-${m}-${d}`;
+}
+
+function parseISO(str: string): Date {
+  const [y, m, d] = str.split("-").map(Number);
+  return new Date(y, m - 1, d);
+}
+
+/** Monday = 0, Sunday = 6 */
+function getDayOfWeek(date: Date): number {
+  const d = date.getDay();
+  return d === 0 ? 6 : d - 1;
+}
+
+export interface DatePickerCalendarProps {
+  open: boolean;
+  onClose: () => void;
+  value: string; // YYYY-MM-DD
+  minDate: string; // YYYY-MM-DD
+  onSelect: (date: string) => void;
+  onClear: () => void;
+  /** Render inside a parent with position: relative. 'top' = above trigger, 'bottom' = below */
+  placement?: "top" | "bottom";
+  className?: string;
+}
+
+export function DatePickerCalendar({
+  open,
+  onClose,
+  value,
+  minDate,
+  onSelect,
+  onClear,
+  placement = "bottom",
+  className = "",
+}: DatePickerCalendarProps) {
+  const initialMonth = value ? parseISO(value) : minDate ? parseISO(minDate) : new Date();
+  const [viewDate, setViewDate] = useState(initialMonth);
+
+  const minDateObj = minDate ? parseISO(minDate) : null;
+
+  const { weeks, month, year } = useMemo(() => {
+    const y = viewDate.getFullYear();
+    const m = viewDate.getMonth();
+    const first = new Date(y, m, 1);
+    const last = new Date(y, m + 1, 0);
+    const firstWeekday = getDayOfWeek(first);
+    const daysInMonth = last.getDate();
+    const cells: { date: Date; iso: string; currentMonth: boolean; disabled: boolean }[] = [];
+
+    // Leading empty cells
+    for (let i = 0; i < firstWeekday; i++) {
+      const d = new Date(first);
+      d.setDate(d.getDate() - (firstWeekday - i));
+      const iso = toISO(d);
+      const disabled = minDateObj ? iso < minDate : false;
+      cells.push({ date: d, iso, currentMonth: false, disabled });
+    }
+    // Month days
+    for (let day = 1; day <= daysInMonth; day++) {
+      const d = new Date(y, m, day);
+      const iso = toISO(d);
+      const disabled = minDateObj ? iso < minDate : false;
+      cells.push({ date: d, iso, currentMonth: true, disabled });
+    }
+    // Trailing cells to complete last row
+    const total = cells.length;
+    const remainder = total % 7;
+    if (remainder !== 0) {
+      const need = 7 - remainder;
+      const lastDay = cells[cells.length - 1]?.date ?? new Date(y, m, daysInMonth);
+      for (let i = 1; i <= need; i++) {
+        const d = new Date(lastDay);
+        d.setDate(d.getDate() + i);
+        const iso = toISO(d);
+        const disabled = minDateObj ? iso < minDate : false;
+        cells.push({ date: d, iso, currentMonth: false, disabled });
+      }
+    }
+
+    return {
+      weeks: cells,
+      month: m,
+      year: y,
+    };
+  }, [viewDate, minDate]);
+
+  const goPrev = () => {
+    setViewDate((d) => new Date(d.getFullYear(), d.getMonth() - 1));
+  };
+
+  const goNext = () => {
+    setViewDate((d) => new Date(d.getFullYear(), d.getMonth() + 1));
+  };
+
+  const handleSelect = (iso: string) => {
+    onSelect(iso);
+    onClose();
+  };
+
+  const handleClear = () => {
+    onClear();
+    onClose();
+  };
+
+  if (!open) return null;
+
+  return (
+    <>
+      {/* Backdrop - click to close */}
+      <div
+        className="fixed inset-0 z-40"
+        aria-hidden
+        onClick={onClose}
+      />
+      <div
+        className={`absolute left-0 z-50 w-[min(320px,90vw)] rounded-xl border border-black/10 bg-white p-4 shadow-xl ${
+          placement === "top" ? "bottom-full mb-1" : "top-full mt-1"
+        } ${className}`}
+      >
+        <div className="mb-3 flex items-center justify-between">
+          <button
+            type="button"
+            onClick={goPrev}
+            className="rounded p-1.5 text-black/60 hover:bg-black/5 hover:text-black"
+            aria-label="Previous month"
+          >
+            <ChevronLeft className="h-5 w-5" />
+          </button>
+          <span className="text-sm font-bold text-black">
+            {MONTHS[month]} {year}
+          </span>
+          <button
+            type="button"
+            onClick={goNext}
+            className="rounded p-1.5 text-black/60 hover:bg-black/5 hover:text-black"
+            aria-label="Next month"
+          >
+            <ChevronRight className="h-5 w-5" />
+          </button>
+        </div>
+
+        <div className="grid grid-cols-7 gap-0.5 text-center">
+          {DAYS_HEADER.map((day, index) => (
+            <div
+              key={`day-${index}`}
+              className="py-1 text-xs font-bold text-black"
+            >
+              {day}
+            </div>
+          ))}
+          {weeks.map(({ date, iso, currentMonth, disabled }) => (
+            <button
+              key={iso}
+              type="button"
+              disabled={disabled}
+              onClick={() => !disabled && handleSelect(iso)}
+              className={`
+                min-h-[36px] rounded-md text-sm transition-colors
+                ${disabled ? "cursor-not-allowed text-black/30" : "hover:bg-black/10"}
+                ${currentMonth ? "text-black" : "text-black/40"}
+                ${value === iso ? "bg-[#FA5C5C] text-white hover:bg-[#E84A4A]" : ""}
+              `}
+            >
+              {date.getDate()}
+            </button>
+          ))}
+        </div>
+
+        <div className="mt-3 flex justify-center border-t border-black/10 pt-3">
+          <button
+            type="button"
+            onClick={handleClear}
+            className="text-sm font-medium text-[#2563eb] hover:underline"
+          >
+            Clear
+          </button>
+        </div>
+      </div>
+    </>
+  );
+}

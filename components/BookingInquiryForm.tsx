@@ -64,13 +64,9 @@ export function BookingInquiryForm({ defaultApartmentId }: BookingInquiryFormPro
 
   const onSubmit = async (info: BookingInquiryFormData) => {
     setIsSubmitting(true);
-    
-    // Here you would typically send the data to your API
-    // For now, we'll simulate an API call
-    await new Promise((resolve) => setTimeout(resolve, 1000));
 
-    const { data, error } = await supabase.from("guests").insert({
-      name: info.fullName,  
+    const { error } = await supabase.from("guests").insert({
+      name: info.fullName,
       email: info.email,
       phone: info.phone,
       check_in: info.checkInDate,
@@ -85,8 +81,7 @@ export function BookingInquiryForm({ defaultApartmentId }: BookingInquiryFormPro
 
     setIsSubmitting(false);
     setIsSubmitted(true);
-    
-    // Reset form after 3 seconds
+
     setTimeout(() => {
       setIsSubmitted(false);
       form.reset();
@@ -160,7 +155,7 @@ export function BookingInquiryForm({ defaultApartmentId }: BookingInquiryFormPro
               <FormItem>
                 <FormLabel>Phone Number</FormLabel>
                 <FormControl>
-                  <Input type="tel" placeholder="+234 800 000 0000" {...field} />
+                  <Input type="tel" placeholder="+234 8161122328" {...field} />
                 </FormControl>
                 <FormMessage />
               </FormItem>

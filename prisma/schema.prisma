@@ -1,14 +1,44 @@
-// This is your Prisma schema file,
-// learn more about it in the docs: https://pris.ly/d/prisma-schema
-
-// Looking for ways to speed up your queries, or scale easily with your serverless or edge functions?
-// Try Prisma Accelerate: https://pris.ly/cli/accelerate-init
+// Prisma schema for LoftyXphereHomes
+// Database: Supabase (PostgreSQL). Set DATABASE_URL in .env to your Supabase connection string.
 
 generator client {
   provider = "prisma-client"
-  output   = "../lib/generated/prisma"
+  output = "../lib/generated/prisma"
 }
 
 datasource db {
-  provider = "mongodb"
+  provider = "postgresql"
+}
+
+// --- Booking (created when Paystack payment succeeds) ---
+
+model Booking {
+  id           String   @id @default(cuid())
+  reference    String   @unique // Paystack transaction reference (e.g. lxh_lofty-wuye-01_1234567890)
+  apartmentId  String   // e.g. lofty-wuye-01
+  checkIn      DateTime @db.Date
+  checkOut     DateTime @db.Date
+  nights       Int      // number of nights
+  amountPaid    Int      // total paid in NGN (not kobo)
+  currency     String   @default("NGN")
+  status       BookingStatus @default(PENDING)
+
+  // Booker details (from Paystack / form)
+  bookerEmail  String
+  bookerName   String?
+  bookerPhone  String?
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index([reference])
+  @@index([apartmentId])
+  @@index([bookerEmail])
+  @@index([checkIn, checkOut])
+}
+
+enum BookingStatus {
+  PENDING   // payment initiated, not yet confirmed
+  PAID      // Paystack charge successful
+  CANCELLED
 }

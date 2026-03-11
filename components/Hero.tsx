@@ -1,11 +1,9 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import Link from "next/link";
 import Image from "next/image";
 import { motion, AnimatePresence } from "framer-motion";
-import { Button } from "@/components/ui/button";
-import { ArrowRight, ChevronLeft, ChevronRight } from "lucide-react";
+import { ChevronLeft, ChevronRight } from "lucide-react";
 import { getFeaturedApartments } from "@/lib/data/apartments";
 import HeroSearchBar from "./HeroSearchBar";
 
@@ -54,7 +52,7 @@ export default function Hero() {
   };
 
   return (
-    <section className="relative min-h-screen flex items-center justify-center overflow-hidden">
+    <section className="relative min-h-screen w-full flex items-center justify-center overflow-hidden">
       {/* Image Slideshow Background */}
       <div className="absolute inset-0 z-0">
         <AnimatePresence mode="wait">
@@ -97,70 +95,63 @@ export default function Hero() {
             transition={{ duration: 0.8, delay: 0.3 }}
             className="w-full"
           >
-            <h1 className="text-3xl sm:text-4xl md:text-5xl lg:text-6xl xl:text-7xl font-bold text-white mb-6 sm:mb-8 md:mb-10 leading-tight drop-shadow-2xl px-2 sm:px-4">
-              Premium Shortlet
+            <p className="text-[10px] sm:text-xs md:text-sm uppercase tracking-[0.2em] sm:tracking-[0.3em] text-white/60 mb-2 sm:mb-4 font-light">
+              LoftyXphereHomes
+            </p>
+            <h1 className="text-3xl sm:text-4xl md:text-5xl lg:text-6xl xl:text-7xl font-bold text-white mb-2 sm:mb-4 leading-[1.1] drop-shadow-2xl">
+              Live Lofty.
               <br />
-              <span className="bg-gradient-to-r from-white via-gray-100 to-white bg-clip-text text-transparent">
-                Apartments
+              <span className="bg-gradient-to-r from-white via-gray-200 to-white bg-clip-text text-transparent">
+                Stay Different.
               </span>
             </h1>
+            <p className="text-sm sm:text-base md:text-lg text-white/70 font-light mb-6 sm:mb-8 max-w-md mx-auto px-4">
+              Where luxury meets comfort in the heart of Abuja
+            </p>
 
             {/* Search Bar */}
             <motion.div
               initial={{ opacity: 0, y: 20 }}
               animate={{ opacity: 1, y: 0 }}
               transition={{ duration: 0.8, delay: 0.5 }}
-              className="mb-10"
             >
               <HeroSearchBar />
             </motion.div>
-
-            <div className="flex flex-col sm:flex-row gap-3 sm:gap-4 justify-center items-stretch sm:items-center mt-6 sm:mt-8 px-4 w-full sm:w-auto max-w-md sm:max-w-none mx-auto">
-              <Button asChild size="lg" className="rounded-full px-6 sm:px-8 py-5 sm:py-6 text-base sm:text-lg bg-[#FA5C5C] text-white hover:bg-[#E84A4A] shadow-xl w-full sm:flex-1 sm:max-w-[240px] min-h-[48px] font-semibold">
-                <Link href="/booking" className="flex items-center justify-center">
-                  Book Your Stay
-                  <ArrowRight className="ml-2 h-5 w-5" />
-                </Link>
-              </Button>
-              <Button asChild variant="outline" size="lg" className="rounded-full px-6 sm:px-8 py-5 sm:py-6 text-base sm:text-lg border-2 border-white text-white hover:bg-white hover:text-black bg-black/30 backdrop-blur-md shadow-xl w-full sm:flex-1 sm:max-w-[240px] min-h-[48px] font-semibold">
-                <Link href="/apartments" className="flex items-center justify-center">Explore Apartments</Link>
-              </Button>
-            </div>
           </motion.div>
         </div>
       </div>
 
-      {/* Navigation Arrows - Only show if more than one image */}
+      {/* Navigation Arrows - Hidden on mobile, visible on tablet+ */}
       {images.length > 1 && (
         <>
           <button
             onClick={goToPrevious}
-            className="absolute left-2 sm:left-4 md:left-8 top-1/2 -translate-y-1/2 z-20 p-3 sm:p-4 rounded-full bg-white/10 hover:bg-white/20 backdrop-blur-md transition-all duration-300 group min-w-[44px] min-h-[44px] flex items-center justify-center"
+            className="hidden sm:flex absolute left-2 sm:left-4 md:left-8 top-1/2 -translate-y-1/2 z-20 p-2 sm:p-2.5 rounded-full bg-black/20 hover:bg-black/40 backdrop-blur-sm transition-all duration-300 group border border-white/10 items-center justify-center"
             aria-label="Previous image"
           >
-            <ChevronLeft className="h-5 w-5 sm:h-6 sm:w-6 text-white group-hover:scale-110 transition-transform" />
+            <ChevronLeft className="h-4 w-4 sm:h-5 sm:w-5 text-white/70 group-hover:text-white transition-colors" />
           </button>
           <button
             onClick={goToNext}
-            className="absolute right-2 sm:right-4 md:right-8 top-1/2 -translate-y-1/2 z-20 p-3 sm:p-4 rounded-full bg-white/10 hover:bg-white/20 backdrop-blur-md transition-all duration-300 group min-w-[44px] min-h-[44px] flex items-center justify-center"
+            className="hidden sm:flex absolute right-2 sm:right-4 md:right-8 top-1/2 -translate-y-1/2 z-20 p-2 sm:p-2.5 rounded-full bg-black/20 hover:bg-black/40 backdrop-blur-sm transition-all duration-300 group border border-white/10 items-center justify-center"
             aria-label="Next image"
           >
-            <ChevronRight className="h-5 w-5 sm:h-6 sm:w-6 text-white group-hover:scale-110 transition-transform" />
+            <ChevronRight className="h-4 w-4 sm:h-5 sm:w-5 text-white/70 group-hover:text-white transition-colors" />
           </button>
         </>
       )}
 
       {/* Slide Indicators */}
       {images.length > 1 && (
-        <div className="absolute bottom-20 sm:bottom-24 left-1/2 -translate-x-1/2 z-20 flex gap-2">
+        <div className="absolute bottom-14 sm:bottom-20 left-1/2 -translate-x-1/2 z-20 flex gap-1.5 sm:gap-2">
           {images.map((_, index) => (
             <button
               key={index}
               onClick={() => goToSlide(index)}
-              className={`transition-all duration-300 rounded-full min-w-[32px] min-h-[8px] ${
+              className={`transition-all duration-500 rounded-full h-0.5 sm:h-1 ${
                 index === currentIndex
-                  ? "w-12 h-2 bg-white"
-                  : "w-2 h-2 bg-white/50 hover:bg-white/75"
+                  ? "w-6 sm:w-8 bg-white"
+                  : "w-1.5 sm:w-2 bg-white/40 hover:bg-white/60"
               }`}
               aria-label={`Go to slide ${index + 1}`}
             />
@@ -168,24 +159,20 @@ export default function Hero() {
         </div>
       )}
 
-      {/* Scroll Indicator */}
+      {/* Scroll Indicator - Hidden on mobile for cleaner look */}
       <motion.div
         initial={{ opacity: 0 }}
         animate={{ opacity: 1 }}
-        transition={{ delay: 1, duration: 1 }}
-        className="absolute bottom-8 left-1/2 transform -translate-x-1/2 z-20"
+        transition={{ delay: 1.5, duration: 1 }}
+        className="hidden sm:block absolute bottom-6 left-1/2 transform -translate-x-1/2 z-20"
       >
-        <motion.div
-          animate={{ y: [0, 10, 0] }}
-          transition={{ repeat: Infinity, duration: 2 }}
-          className="w-6 h-10 border-2 border-white/80 rounded-full flex justify-center backdrop-blur-sm"
+        <motion.p
+          animate={{ y: [0, 4, 0] }}
+          transition={{ repeat: Infinity, duration: 2, ease: "easeInOut" }}
+          className="text-[10px] sm:text-xs text-white/50 uppercase tracking-widest font-light"
         >
-          <motion.div
-            animate={{ y: [0, 12, 0] }}
-            transition={{ repeat: Infinity, duration: 2 }}
-            className="w-1 h-3 bg-white/80 rounded-full mt-2"
-          />
-        </motion.div>
+          Scroll to explore
+        </motion.p>
       </motion.div>
     </section>
   );

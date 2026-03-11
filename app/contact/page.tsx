@@ -27,7 +27,7 @@ export default function ContactPage() {
               <Phone className="h-6 w-6 sm:h-7 sm:w-7" />
             </div>
             <h3 className="font-semibold text-black mb-2 text-base sm:text-lg">Phone</h3>
-            <p className="text-black/70 text-sm sm:text-base break-all">+234 800 000 0000</p>
+            <p className="text-black/70 text-sm sm:text-base break-all">+234 8161122328</p>
           </div>
 
           <div className="bg-white p-6 sm:p-8 rounded-2xl shadow-lg text-center border border-black/10">
@@ -35,7 +35,7 @@ export default function ContactPage() {
               <Mail className="h-6 w-6 sm:h-7 sm:w-7" />
             </div>
             <h3 className="font-semibold text-black mb-2 text-base sm:text-lg">Email</h3>
-            <p className="text-black/70 text-sm sm:text-base break-all">info@loftyxpherehomes.com</p>
+            <p className="text-black/70 text-sm sm:text-base break-all">hello@loftyxpherehomes.com</p>
           </div>
 
           <div className="bg-white p-6 sm:p-8 rounded-2xl shadow-lg text-center border border-black/10 sm:col-span-2 lg:col-span-1">

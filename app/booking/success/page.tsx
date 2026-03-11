@@ -16,7 +16,7 @@ type BookingResult = {
   checkOut: Date;
   nights: number;
   amountPaid: number;
-  bookerEmail: string;
+  bookerName: string;
 };
 
 export default async function BookingSuccessPage({
@@ -42,7 +42,7 @@ export default async function BookingSuccessPage({
           checkOut: saved.checkOut,
           nights: saved.nights,
           amountPaid: saved.amountPaid,
-          bookerEmail: saved.bookerEmail,
+          bookerName: saved.bookerName
         };
       } catch {
         verifyError = "Booking could not be saved (database not configured).";
@@ -78,7 +78,7 @@ export default async function BookingSuccessPage({
             <p><strong>Check-out:</strong> {booking.checkOut.toISOString().split("T")[0]}</p>
             <p><strong>Nights:</strong> {booking.nights}</p>
             <p><strong>Amount paid:</strong> {formatPrice(booking.amountPaid)}</p>
-            <p><strong>Booker:</strong> {booking.bookerEmail}</p>
+            <p><strong>Booker:</strong> {booking.bookerName}</p>
           </div>
         )}
         {verifyError && (

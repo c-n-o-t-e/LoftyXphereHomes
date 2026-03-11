@@ -14,6 +14,8 @@ export async function POST(request: NextRequest) {
 
   let body: {
     email: string;
+    name?: string;
+    phone?: string;
     amount: number; // total in NGN (will convert to kobo)
     apartmentId: string;
     checkIn: string;
@@ -29,7 +31,7 @@ export async function POST(request: NextRequest) {
     );
   }
 
-  const { email, amount, apartmentId, checkIn, checkOut } = body;
+  const { email, name, phone, amount, apartmentId, checkIn, checkOut } = body;
   if (!email || typeof amount !== "number" || amount < 100 || !apartmentId || !checkIn || !checkOut) {
     return NextResponse.json(
       { error: "Missing or invalid email, amount, apartmentId, checkIn, or checkOut" },
@@ -96,6 +98,8 @@ export async function POST(request: NextRequest) {
         apartment_id: apartmentId,
         check_in: checkIn,
         check_out: checkOut,
+        booker_name: name?.trim() || undefined,
+        booker_phone: phone?.trim() || undefined,
       },
     }),
   });

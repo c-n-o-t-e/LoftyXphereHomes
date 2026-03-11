@@ -67,8 +67,9 @@ export function YourReservationCard({
 
   const [checkIn, setCheckIn] = useState("");
   const [checkOut, setCheckOut] = useState("");
-  const [email, setEmail] = useState("");
   const [name, setName] = useState("");
+  const [email, setEmail] = useState("");
+  const [phone, setPhone] = useState("");
   const [payError, setPayError] = useState<string | null>(null);
   const [isRedirecting, setIsRedirecting] = useState(false);
 
@@ -179,6 +180,11 @@ export function YourReservationCard({
       setPayError("Please select check-in and check-out dates.");
       return;
     }
+    const trimmedName = name.trim();
+    if (!trimmedName) {
+      setPayError("Please enter your name.");
+      return;
+    }
     const trimmedEmail = email.trim();
     if (!trimmedEmail) {
       setPayError("Please enter your email address.");
@@ -189,6 +195,11 @@ export function YourReservationCard({
       setPayError("Please enter a valid email address.");
       return;
     }
+    const trimmedPhone = phone.trim();
+    if (!trimmedPhone) {
+      setPayError("Please enter your phone number.");
+      return;
+    }
     setIsRedirecting(true);
     try {
       const res = await fetch("/api/paystack/initialize", {
@@ -196,6 +207,8 @@ export function YourReservationCard({
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
           email: trimmedEmail,
+          name: trimmedName,
+          phone: trimmedPhone || undefined,
           amount: calculation.total,
           apartmentId,
           checkIn,
@@ -376,37 +389,58 @@ export function YourReservationCard({
       )}
 
       {!bookingUrl && calculation && (
-        <div className="mb-4">
-          <Label htmlFor="reservation-email" className="text-xs uppercase tracking-wide text-black/80">
-            Name for reservation
-          </Label>
-          <Input
-            id="reservation-name"
-            type="text"
-            placeholder="John Doe"
-            value={name}
-            onChange={(e) => {
-              setName(e.target.value);
-              // setPayError(null); 
-            }}
-            className="mt-1 h-11 rounded-lg border-black/20"
-            disabled={isRedirecting}
-          />
-          <Label htmlFor="reservation-email" className="text-xs uppercase tracking-wide text-black/80">
-            Email for payment receipt
-          </Label>
-          <Input
-            id="reservation-email"
-            type="email"
-            placeholder="you@example.com"
-            value={email}
-            onChange={(e) => {
-              setEmail(e.target.value);
-              setPayError(null);
-            }}
-            className="mt-1 h-11 rounded-lg border-black/20"
-            disabled={isRedirecting}
-          />
+        <div className="space-y-3 mb-4">
+          <div>
+            <Label htmlFor="reservation-name" className="text-xs uppercase tracking-wide text-black/80">
+              Full Name
+            </Label>
+            <Input
+              id="reservation-name"
+              type="text"
+              placeholder="John Doe"
+              value={name}
+              onChange={(e) => {
+                setName(e.target.value);
+                setPayError(null);
+              }}
+              className="mt-1 h-11 rounded-lg border-black/20"
+              disabled={isRedirecting}
+            />
+          </div>
+          <div>
+            <Label htmlFor="reservation-email" className="text-xs uppercase tracking-wide text-black/80">
+              Email Address
+            </Label>
+            <Input
+              id="reservation-email"
+              type="email"
+              placeholder="you@example.com"
+              value={email}
+              onChange={(e) => {
+                setEmail(e.target.value);
+                setPayError(null);
+              }}
+              className="mt-1 h-11 rounded-lg border-black/20"
+              disabled={isRedirecting}
+            />
+          </div>
+          <div>
+            <Label htmlFor="reservation-phone" className="text-xs uppercase tracking-wide text-black/80">
+              Phone Number
+            </Label>
+            <Input
+              id="reservation-phone"
+              type="tel"
+              placeholder="+234 800 000 0000"
+              value={phone}
+              onChange={(e) => {
+                setPhone(e.target.value);
+                setPayError(null);
+              }}
+              className="mt-1 h-11 rounded-lg border-black/20"
+              disabled={isRedirecting}
+            />
+          </div>
         </div>
       )}
 

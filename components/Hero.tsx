@@ -52,8 +52,8 @@ export default function Hero() {
         <div className="absolute inset-0 bg-gradient-to-r from-black/20 via-transparent to-black/20" />
       </div>
 
-      {/* Content */}
-      <div className="container mx-auto px-4 sm:px-6 lg:px-8 relative z-10">
+      {/* Content - positioned slightly lower on mobile for better visual balance */}
+      <div className="container mx-auto px-4 sm:px-6 lg:px-8 relative z-10 mt-[8vh] sm:mt-0">
         <div className="max-w-4xl mx-auto text-center">
           <motion.div
             initial={{ opacity: 0, y: 30 }}

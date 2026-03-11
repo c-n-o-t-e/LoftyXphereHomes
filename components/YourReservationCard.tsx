@@ -1,11 +1,12 @@
 "use client";
 
-import { useState, useMemo } from "react";
+import { useState, useMemo, useEffect, useCallback } from "react";
 import { Calendar, Users, Bed, Bath, Loader2, Info } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { getStayDiscountAmount, PAYSTACK_FEE } from "@/lib/constants";
+import { DatePickerCalendar } from "@/components/DatePickerCalendar";
 
 function formatPrice(price: number) {
   return new Intl.NumberFormat("en-NG", {
@@ -25,6 +26,21 @@ function formatDateForInput(d: Date) {
 function parseLocalDate(dateStr: string): Date {
   const [y, m, d] = dateStr.split("-").map(Number);
   return new Date(y, m - 1, d);
+}
+
+function formatDisplayDate(dateStr: string): string {
+  if (!dateStr) return "";
+  const date = parseLocalDate(dateStr);
+  return date.toLocaleDateString("en-US", {
+    month: "short",
+    day: "numeric",
+    year: "numeric",
+  });
+}
+
+interface BookingRange {
+  checkIn: string;
+  checkOut: string;
 }
 
 interface YourReservationCardProps {
@@ -49,12 +65,37 @@ export function YourReservationCard({
     return formatDateForInput(t);
   }, []);
 
-  const [checkIn, setCheckIn] = useState(today);
+  const [checkIn, setCheckIn] = useState("");
   const [checkOut, setCheckOut] = useState("");
   const [email, setEmail] = useState("");
   const [name, setName] = useState("");
   const [payError, setPayError] = useState<string | null>(null);
   const [isRedirecting, setIsRedirecting] = useState(false);
+
+  // Calendar popup state
+  const [openCalendar, setOpenCalendar] = useState<"checkIn" | "checkOut" | null>(null);
+
+  // Availability data from API
+  const [blockedDates, setBlockedDates] = useState<string[]>([]);
+  const [bookingRanges, setBookingRanges] = useState<BookingRange[]>([]);
+
+  // Fetch availability data for this apartment
+  const fetchAvailability = useCallback(async () => {
+    try {
+      const res = await fetch(`/api/availability?apartmentId=${encodeURIComponent(apartmentId)}`);
+      if (res.ok) {
+        const data = await res.json();
+        setBlockedDates(data.blockedDates || []);
+        setBookingRanges(data.bookingRanges || []);
+      }
+    } catch (error) {
+      console.error("Failed to fetch availability:", error);
+    }
+  }, [apartmentId]);
+
+  useEffect(() => {
+    fetchAvailability();
+  }, [fetchAvailability]);
 
   const calculation = useMemo(() => {
     if (!checkOut) return null;
@@ -82,6 +123,55 @@ export function YourReservationCard({
         return formatDateForInput(d);
       })()
     : today;
+
+  /**
+   * Compute disabled dates for the checkout calendar.
+   * 
+   * Rules (Airbnb-style):
+   * 1. If user selects check-in on 11th and there's a booking starting on 14th,
+   *    user can checkout on 12th, 13th, or 14th (checkout day = new guest check-in day)
+   *    but NOT on 15th or later (would overlap with existing booking)
+   * 
+   * 2. Find the first booking that starts AFTER or ON the selected check-in date
+   * 3. The maximum checkout date is that booking's check-in date
+   * 4. All dates after that are disabled for checkout
+   */
+  const checkoutDisabledDates = useMemo(() => {
+    if (!checkIn || bookingRanges.length === 0) return [];
+
+    const checkInDate = parseLocalDate(checkIn);
+    const disabled: string[] = [];
+
+    // Find the first booking that starts after our check-in
+    // (sorted by checkIn from the API)
+    let maxCheckoutDate: Date | null = null;
+    for (const range of bookingRanges) {
+      const rangeCheckIn = parseLocalDate(range.checkIn);
+      // If this booking starts after or on our check-in date
+      if (rangeCheckIn > checkInDate) {
+        // We can checkout up to and including this date (guest leaves morning, new guest arrives)
+        // But we cannot checkout AFTER this date
+        maxCheckoutDate = rangeCheckIn;
+        break;
+      }
+    }
+
+    // If there's a booking after our check-in, disable all dates after that booking's check-in
+    if (maxCheckoutDate) {
+      // Generate disabled dates starting from day after maxCheckoutDate
+      const current = new Date(maxCheckoutDate);
+      current.setDate(current.getDate() + 1);
+      // Generate for next 2 years
+      const twoYearsLater = new Date();
+      twoYearsLater.setFullYear(twoYearsLater.getFullYear() + 2);
+      while (current <= twoYearsLater) {
+        disabled.push(formatDateForInput(current));
+        current.setDate(current.getDate() + 1);
+      }
+    }
+
+    return disabled;
+  }, [checkIn, bookingRanges]);
 
   const handlePaystackBook = async () => {
     setPayError(null);
@@ -116,6 +206,12 @@ export function YourReservationCard({
       if (!res.ok) {
         setPayError(data.error || "Unable to start payment. Please try again.");
         setIsRedirecting(false);
+        // If conflict (dates already booked), refresh availability and clear dates
+        if (res.status === 409) {
+          fetchAvailability();
+          setCheckIn("");
+          setCheckOut("");
+        }
         return;
       }
       if (data.authorization_url) {
@@ -162,43 +258,76 @@ export function YourReservationCard({
       </div>
 
       <div className="space-y-4 mb-4">
+        {/* Check-in Date Picker */}
         <div>
-          <Label htmlFor="check-in" className="text-xs uppercase tracking-wide text-black/80">
+          <Label className="text-xs uppercase tracking-wide text-black/80">
             Check-in
           </Label>
           <div className="relative mt-1">
-            <Input
-              id="check-in"
-              type="date"
+            <button
+              type="button"
+              onClick={() => setOpenCalendar(openCalendar === "checkIn" ? null : "checkIn")}
+              className="w-full h-11 px-3 flex items-center justify-between rounded-lg border border-black/20 bg-white text-left text-sm hover:border-black/40 transition-colors"
+            >
+              <span className={checkIn ? "text-black" : "text-black/50"}>
+                {checkIn ? formatDisplayDate(checkIn) : "Select check-in date"}
+              </span>
+              <Calendar className="h-4 w-4 text-black/40" />
+            </button>
+            <DatePickerCalendar
+              open={openCalendar === "checkIn"}
+              onClose={() => setOpenCalendar(null)}
               value={checkIn}
-              min={today}
-              onChange={(e) => {
-                setCheckIn(e.target.value);
-                if (checkOut && e.target.value >= checkOut) setCheckOut("");
+              minDate={today}
+              disabledDates={blockedDates}
+              onSelect={(date) => {
+                setCheckIn(date);
+                // Clear checkout if it's now invalid
+                if (checkOut && date >= checkOut) setCheckOut("");
+                // Auto-open checkout calendar
+                setTimeout(() => setOpenCalendar("checkOut"), 150);
               }}
-              className="pr-10 h-11 rounded-lg border-black/20"
+              onClear={() => {
+                setCheckIn("");
+                setCheckOut("");
+              }}
+              placement="bottom"
             />
-            <Calendar className="absolute right-3 top-1/2 -translate-y-1/2 h-4 w-4 text-black/40 pointer-events-none" />
           </div>
         </div>
+
+        {/* Check-out Date Picker */}
         <div>
-          <Label htmlFor="check-out" className="text-xs uppercase tracking-wide text-black/80">
+          <Label className="text-xs uppercase tracking-wide text-black/80">
             Check-out
           </Label>
           <div className="relative mt-1">
-            <Input
-              id="check-out"
-              type="date"
-              value={checkOut}
-              min={minCheckOut}
-              onChange={(e) => {
-                const value = e.target.value;
-                if (value && value <= checkIn) return;
-                setCheckOut(value);
+            <button
+              type="button"
+              onClick={() => {
+                if (!checkIn) {
+                  setPayError("Please select a check-in date first.");
+                  return;
+                }
+                setOpenCalendar(openCalendar === "checkOut" ? null : "checkOut");
               }}
-              className="pr-10 h-11 rounded-lg border-black/20"
+              className="w-full h-11 px-3 flex items-center justify-between rounded-lg border border-black/20 bg-white text-left text-sm hover:border-black/40 transition-colors"
+            >
+              <span className={checkOut ? "text-black" : "text-black/50"}>
+                {checkOut ? formatDisplayDate(checkOut) : "Select check-out date"}
+              </span>
+              <Calendar className="h-4 w-4 text-black/40" />
+            </button>
+            <DatePickerCalendar
+              open={openCalendar === "checkOut"}
+              onClose={() => setOpenCalendar(null)}
+              value={checkOut}
+              minDate={minCheckOut}
+              disabledDates={checkoutDisabledDates}
+              onSelect={(date) => setCheckOut(date)}
+              onClear={() => setCheckOut("")}
+              placement="bottom"
             />
-            <Calendar className="absolute right-3 top-1/2 -translate-y-1/2 h-4 w-4 text-black/40 pointer-events-none" />
           </div>
         </div>
       </div>
@@ -217,7 +346,7 @@ export function YourReservationCard({
               <span className="flex items-center gap-1.5">
                 Stay discount
                 <span className="relative group">
-                  <Info className="h-4 w-4 text-black/40 cursor-help shrink-0" aria-label="Discount breakdown" title="Stay longer, save more: discount applied to your nightly rate." />
+                  <Info className="h-4 w-4 text-black/40 cursor-help shrink-0" aria-label="Discount breakdown" />
                   <span className="absolute left-0 bottom-full mb-1 hidden group-hover:block z-10 w-64 p-3 text-left text-xs font-normal text-white bg-gray-900 rounded-lg shadow-lg">
                     <p className="text-white/95 font-semibold">Length-of-stay discount</p>
                     <p className="mt-1.5 text-white/80 leading-relaxed">

@@ -1,4 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
+import { prisma } from "@/lib/db";
 
 const PAYSTACK_BASE = "https://api.paystack.co";
 
@@ -34,6 +35,45 @@ export async function POST(request: NextRequest) {
       { error: "Missing or invalid email, amount, apartmentId, checkIn, or checkOut" },
       { status: 400 }
     );
+  }
+
+  // --- SERVER-SIDE DOUBLE-BOOKING PREVENTION ---
+  // Check if any existing PAID or PENDING booking overlaps with the requested dates.
+  // Overlap condition: existing.checkIn < requested.checkOut AND existing.checkOut > requested.checkIn
+  try {
+    const requestedCheckIn = new Date(checkIn);
+    const requestedCheckOut = new Date(checkOut);
+
+    const conflictingBooking = await prisma.booking.findFirst({
+      where: {
+        apartmentId,
+        status: { in: ["PAID", "PENDING"] },
+        // Date ranges overlap if: existingCheckIn < requestedCheckOut AND existingCheckOut > requestedCheckIn
+        checkIn: { lt: requestedCheckOut },
+        checkOut: { gt: requestedCheckIn },
+      },
+      select: { id: true, checkIn: true, checkOut: true },
+    });
+
+    if (conflictingBooking) {
+      const conflictStart = new Date(conflictingBooking.checkIn).toLocaleDateString("en-US", {
+        month: "short",
+        day: "numeric",
+      });
+      const conflictEnd = new Date(conflictingBooking.checkOut).toLocaleDateString("en-US", {
+        month: "short",
+        day: "numeric",
+      });
+      return NextResponse.json(
+        {
+          error: `This apartment is already booked from ${conflictStart} to ${conflictEnd}. Please select different dates.`,
+        },
+        { status: 409 }
+      );
+    }
+  } catch (dbError) {
+    console.error("Database error checking availability:", dbError);
+    // Log but continue - Paystack webhook will do final validation
   }
 
   const amountInKobo = Math.round(amount * 100);

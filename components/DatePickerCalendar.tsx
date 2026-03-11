@@ -37,6 +37,8 @@ export interface DatePickerCalendarProps {
   /** Render inside a parent with position: relative. 'top' = above trigger, 'bottom' = below */
   placement?: "top" | "bottom";
   className?: string;
+  /** Array of dates (YYYY-MM-DD) that should be disabled/not selectable */
+  disabledDates?: string[];
 }
 
 export function DatePickerCalendar({
@@ -48,11 +50,15 @@ export function DatePickerCalendar({
   onClear,
   placement = "bottom",
   className = "",
+  disabledDates = [],
 }: DatePickerCalendarProps) {
   const initialMonth = value ? parseISO(value) : minDate ? parseISO(minDate) : new Date();
   const [viewDate, setViewDate] = useState(initialMonth);
 
   const minDateObj = minDate ? parseISO(minDate) : null;
+
+  // Create a Set for O(1) lookup of disabled dates
+  const disabledSet = useMemo(() => new Set(disabledDates), [disabledDates]);
 
   const { weeks, month, year } = useMemo(() => {
     const y = viewDate.getFullYear();
@@ -63,20 +69,25 @@ export function DatePickerCalendar({
     const daysInMonth = last.getDate();
     const cells: { date: Date; iso: string; currentMonth: boolean; disabled: boolean }[] = [];
 
+    // Helper to check if a date should be disabled
+    const isDisabled = (iso: string): boolean => {
+      const beforeMin = minDateObj ? iso < minDate : false;
+      const isBlocked = disabledSet.has(iso);
+      return beforeMin || isBlocked;
+    };
+
     // Leading empty cells
     for (let i = 0; i < firstWeekday; i++) {
       const d = new Date(first);
       d.setDate(d.getDate() - (firstWeekday - i));
       const iso = toISO(d);
-      const disabled = minDateObj ? iso < minDate : false;
-      cells.push({ date: d, iso, currentMonth: false, disabled });
+      cells.push({ date: d, iso, currentMonth: false, disabled: isDisabled(iso) });
     }
     // Month days
     for (let day = 1; day <= daysInMonth; day++) {
       const d = new Date(y, m, day);
       const iso = toISO(d);
-      const disabled = minDateObj ? iso < minDate : false;
-      cells.push({ date: d, iso, currentMonth: true, disabled });
+      cells.push({ date: d, iso, currentMonth: true, disabled: isDisabled(iso) });
     }
     // Trailing cells to complete last row
     const total = cells.length;
@@ -88,8 +99,7 @@ export function DatePickerCalendar({
         const d = new Date(lastDay);
         d.setDate(d.getDate() + i);
         const iso = toISO(d);
-        const disabled = minDateObj ? iso < minDate : false;
-        cells.push({ date: d, iso, currentMonth: false, disabled });
+        cells.push({ date: d, iso, currentMonth: false, disabled: isDisabled(iso) });
       }
     }
 
@@ -98,7 +108,7 @@ export function DatePickerCalendar({
       month: m,
       year: y,
     };
-  }, [viewDate, minDate]);
+  }, [viewDate, minDate, disabledSet]);
 
   const goPrev = () => {
     setViewDate((d) => new Date(d.getFullYear(), d.getMonth() - 1));

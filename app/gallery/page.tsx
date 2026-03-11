@@ -1,21 +1,13 @@
 "use client";
 
-import { Metadata } from "next";
-import { useState } from "react";
+import { useState, useEffect, useCallback } from "react";
 import Image from "next/image";
 import { motion, AnimatePresence } from "framer-motion";
-import { X } from "lucide-react";
+import { X, ChevronLeft, ChevronRight } from "lucide-react";
 import { apartments } from "@/lib/data/apartments";
-import {
-  Dialog,
-  DialogContent,
-  DialogTitle,
-  DialogDescription,
-} from "@/components/ui/dialog";
 
 export default function GalleryPage() {
-  const [selectedImage, setSelectedImage] = useState<string | null>(null);
-  const [selectedApartment, setSelectedApartment] = useState<string | null>(null);
+  const [selectedIndex, setSelectedIndex] = useState<number | null>(null);
 
   // Collect all images from all apartments
   const allImages = apartments.flatMap((apt) =>
@@ -26,10 +18,37 @@ export default function GalleryPage() {
     }))
   );
 
-  const handleImageClick = (image: string, apartmentId: string) => {
-    setSelectedImage(image);
-    setSelectedApartment(apartmentId);
+  const handleImageClick = (index: number) => {
+    setSelectedIndex(index);
   };
+
+  const handleClose = () => {
+    setSelectedIndex(null);
+  };
+
+  const handlePrevious = useCallback(() => {
+    if (selectedIndex === null) return;
+    setSelectedIndex((selectedIndex - 1 + allImages.length) % allImages.length);
+  }, [selectedIndex, allImages.length]);
+
+  const handleNext = useCallback(() => {
+    if (selectedIndex === null) return;
+    setSelectedIndex((selectedIndex + 1) % allImages.length);
+  }, [selectedIndex, allImages.length]);
+
+  // Keyboard navigation
+  useEffect(() => {
+    const handleKeyDown = (e: KeyboardEvent) => {
+      if (selectedIndex === null) return;
+      if (e.key === "ArrowLeft") handlePrevious();
+      if (e.key === "ArrowRight") handleNext();
+      if (e.key === "Escape") handleClose();
+    };
+    window.addEventListener("keydown", handleKeyDown);
+    return () => window.removeEventListener("keydown", handleKeyDown);
+  }, [selectedIndex, handlePrevious, handleNext]);
+
+  const currentImage = selectedIndex !== null ? allImages[selectedIndex] : null;
 
   return (
     <>
@@ -54,7 +73,7 @@ export default function GalleryPage() {
                 viewport={{ once: true }}
                 transition={{ duration: 0.5, delay: index * 0.05 }}
                 className="break-inside-avoid mb-4 cursor-pointer group"
-                onClick={() => handleImageClick(item.src, item.apartmentId)}
+                onClick={() => handleImageClick(index)}
               >
                 <div className="relative overflow-hidden rounded-2xl">
                   <div className="relative aspect-[4/3]">
@@ -79,40 +98,83 @@ export default function GalleryPage() {
         </div>
       </div>
 
-      {/* Lightbox Modal */}
-      <Dialog open={!!selectedImage} onOpenChange={() => setSelectedImage(null)}>
-        <DialogContent className="max-w-6xl w-full p-0 bg-transparent border-0" showCloseButton={false}>
-          <DialogTitle className="sr-only">
-            {selectedImage && selectedApartment
-              ? `Gallery image from ${apartments.find((apt) => apt.id === selectedApartment)?.name || "apartment"}`
-              : "Gallery image"}
-          </DialogTitle>
-          <DialogDescription className="sr-only">
-            Viewing a gallery image in full size. Use the close button to return to the gallery.
-          </DialogDescription>
-          {selectedImage && (
-            <div className="relative w-full h-[80vh]">
+      {/* Fullscreen Lightbox Modal */}
+      <AnimatePresence>
+        {selectedIndex !== null && currentImage && (
+          <motion.div
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            transition={{ duration: 0.2 }}
+            className="fixed inset-0 z-50 bg-black/95 flex items-center justify-center"
+            onClick={handleClose}
+          >
+            {/* Close Button */}
+            <button
+              onClick={handleClose}
+              className="absolute top-4 right-4 z-10 bg-white/10 backdrop-blur-sm p-3 rounded-full hover:bg-white/20 transition-colors"
+              aria-label="Close"
+            >
+              <X className="h-6 w-6 text-white" />
+            </button>
+
+            {/* Previous Button */}
+            <button
+              onClick={(e) => {
+                e.stopPropagation();
+                handlePrevious();
+              }}
+              className="absolute left-4 top-1/2 -translate-y-1/2 z-10 bg-white/10 backdrop-blur-sm p-3 rounded-full hover:bg-white/20 transition-colors"
+              aria-label="Previous image"
+            >
+              <ChevronLeft className="h-8 w-8 text-white" />
+            </button>
+
+            {/* Next Button */}
+            <button
+              onClick={(e) => {
+                e.stopPropagation();
+                handleNext();
+              }}
+              className="absolute right-4 top-1/2 -translate-y-1/2 z-10 bg-white/10 backdrop-blur-sm p-3 rounded-full hover:bg-white/20 transition-colors"
+              aria-label="Next image"
+            >
+              <ChevronRight className="h-8 w-8 text-white" />
+            </button>
+
+            {/* Image Container */}
+            <motion.div
+              key={selectedIndex}
+              initial={{ opacity: 0, scale: 0.95 }}
+              animate={{ opacity: 1, scale: 1 }}
+              exit={{ opacity: 0, scale: 0.95 }}
+              transition={{ duration: 0.2 }}
+              className="relative w-[95vw] h-[90vh] max-w-[1800px]"
+              onClick={(e) => e.stopPropagation()}
+            >
               <Image
-                src={selectedImage}
-                alt={
-                  selectedApartment
-                    ? `Gallery image from ${apartments.find((apt) => apt.id === selectedApartment)?.name || "apartment"}`
-                    : "Gallery image"
-                }
+                src={currentImage.src}
+                alt={`${currentImage.apartment} - Gallery image`}
                 fill
-                className="object-contain rounded-lg"
+                className="object-contain"
+                sizes="95vw"
+                priority
               />
-              <button
-                onClick={() => setSelectedImage(null)}
-                className="absolute top-4 right-4 bg-white/90 backdrop-blur-sm p-2 rounded-full hover:bg-white transition-colors"
-                aria-label="Close"
-              >
-                <X className="h-6 w-6" />
-              </button>
+            </motion.div>
+
+            {/* Image Info & Counter */}
+            <div 
+              className="absolute bottom-4 left-1/2 -translate-x-1/2 text-center"
+              onClick={(e) => e.stopPropagation()}
+            >
+              <p className="text-white/90 font-medium mb-1">{currentImage.apartment}</p>
+              <p className="text-white/60 text-sm">
+                {selectedIndex + 1} / {allImages.length}
+              </p>
             </div>
-          )}
-        </DialogContent>
-      </Dialog>
+          </motion.div>
+        )}
+      </AnimatePresence>
     </>
   );
 }

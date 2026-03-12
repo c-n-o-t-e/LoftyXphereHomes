@@ -3,11 +3,13 @@
 import Link from "next/link";
 import Image from "next/image";
 import { useState, useEffect } from "react";
-import { Menu, X } from "lucide-react";
+import { Menu, X, User, LogOut } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { motion, AnimatePresence } from "framer-motion";
+import { useAuth } from "@/components/AuthProvider";
 
 export default function Navbar() {
+  const { user, isLoading: authLoading, signOut } = useAuth();
   const [isScrolled, setIsScrolled] = useState(false);
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
 
@@ -64,6 +66,33 @@ export default function Navbar() {
                 {link.label}
               </Link>
             ))}
+            {!authLoading && (
+              user ? (
+                <div className="flex items-center space-x-4">
+                  <Link
+                    href="/my-bookings"
+                    className="text-black hover:text-[#FA5C5C] font-medium transition-colors text-sm flex items-center gap-1.5"
+                  >
+                    <User className="h-4 w-4" />
+                    My Bookings
+                  </Link>
+                  <button
+                    onClick={signOut}
+                    className="text-gray-500 hover:text-[#FA5C5C] transition-colors"
+                    title="Sign out"
+                  >
+                    <LogOut className="h-4 w-4" />
+                  </button>
+                </div>
+              ) : (
+                <Link
+                  href="/login"
+                  className="text-black hover:text-[#FA5C5C] font-medium transition-colors text-sm"
+                >
+                  Login
+                </Link>
+              )
+            )}
             <Button asChild className="rounded-full bg-[#FA5C5C] hover:bg-[#E84A4A] text-white">
               <Link href="/booking">Book Now</Link>
             </Button>
@@ -104,6 +133,38 @@ export default function Navbar() {
                   {link.label}
                 </Link>
               ))}
+              {!authLoading && (
+                user ? (
+                  <>
+                    <Link
+                      href="/my-bookings"
+                      className="text-black hover:text-[#FA5C5C] font-medium py-3 px-2 text-base transition-colors min-h-[44px] flex items-center gap-2"
+                      onClick={() => setIsMobileMenuOpen(false)}
+                    >
+                      <User className="h-5 w-5" />
+                      My Bookings
+                    </Link>
+                    <button
+                      onClick={() => {
+                        signOut();
+                        setIsMobileMenuOpen(false);
+                      }}
+                      className="w-full text-left text-gray-500 hover:text-[#FA5C5C] font-medium py-3 px-2 text-base transition-colors min-h-[44px] flex items-center gap-2"
+                    >
+                      <LogOut className="h-5 w-5" />
+                      Sign Out
+                    </button>
+                  </>
+                ) : (
+                  <Link
+                    href="/login"
+                    className="text-black hover:text-[#FA5C5C] font-medium py-3 px-2 text-base transition-colors min-h-[44px] flex items-center"
+                    onClick={() => setIsMobileMenuOpen(false)}
+                  >
+                    Login
+                  </Link>
+                )
+              )}
               <div className="pt-2">
                 <Button asChild className="w-full rounded-full py-4 text-base font-semibold bg-[#FA5C5C] hover:bg-[#E84A4A] text-white min-h-[48px]">
                   <Link href="/booking" onClick={() => setIsMobileMenuOpen(false)}>

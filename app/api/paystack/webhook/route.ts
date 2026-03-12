@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { verifyTransaction, verifyWebhookSignature } from "@/lib/paystack";
 import { upsertBookingFromPaystack } from "@/lib/booking";
+import { inviteUserByEmail } from "@/lib/supabase/server";
 
 /**
  * POST /api/paystack/webhook
@@ -58,7 +59,17 @@ export async function POST(request: NextRequest) {
     }
 
     try {
-        await upsertBookingFromPaystack(result.data);
+        const booking = await upsertBookingFromPaystack(result.data);
+        
+        // Send magic link to create/login user account
+        // This runs async and doesn't block the webhook response
+        if (booking.bookerEmail && booking.status === "PAID") {
+            inviteUserByEmail(booking.bookerEmail).catch((err) => {
+                console.error("Failed to send magic link:", err);
+                // Don't fail the webhook if email fails
+            });
+        }
+        
         return NextResponse.json({ received: true });
     } catch (err) {
         console.error("Webhook booking upsert error:", err);

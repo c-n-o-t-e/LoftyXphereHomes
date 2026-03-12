@@ -2,7 +2,7 @@
  * Prisma client singleton for use with Supabase (PostgreSQL).
  * Run `npx prisma generate` after schema changes.
  */
-import { PrismaClient } from "@/app/generated/prisma/client";
+import { PrismaClient } from "@/lib/generated/prisma/client";
 import { PrismaPg } from "@prisma/adapter-pg";
 
 const adapter = new PrismaPg({

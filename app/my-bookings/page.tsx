@@ -157,7 +157,7 @@ export default function MyBookingsPage() {
           <div>
             <h1 className="text-3xl font-bold text-gray-900">My Bookings</h1>
             <p className="text-gray-600 mt-1">
-              Welcome back, {user?.email}
+              Welcome back, {bookings.find(b => b.bookerName)?.bookerName || user?.email}
             </p>
           </div>
           <Button asChild variant="outline">

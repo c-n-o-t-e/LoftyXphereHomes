@@ -34,16 +34,7 @@ export default async function BookingSuccessPage({
     if (result?.status && result.data?.status === "success") {
       try {
         const { upsertBookingFromPaystack } = await import("@/lib/booking");
-        const saved = await upsertBookingFromPaystack(result.data);
-        booking = {
-          id: saved.id,
-          apartmentId: saved.apartmentId,
-          checkIn: saved.checkIn,
-          checkOut: saved.checkOut,
-          nights: saved.nights,
-          amountPaid: saved.amountPaid,
-          bookerName: saved.bookerName
-        };
+        await upsertBookingFromPaystack(result.data);
       } catch {
         verifyError = "Booking could not be saved (database not configured).";
       }
@@ -53,10 +44,7 @@ export default async function BookingSuccessPage({
       verifyError = result?.message ?? "Could not verify payment.";
     }
   }
-
-  const formatPrice = (kobo: number) =>
-    new Intl.NumberFormat("en-NG", { style: "currency", currency: "NGN", maximumFractionDigits: 0 }).format(kobo);
-
+  
   return (
     <div className="pt-24 pb-16 min-h-screen bg-white flex items-center justify-center px-4">
       <div className="max-w-md w-full text-center">
@@ -64,29 +52,28 @@ export default async function BookingSuccessPage({
           <CheckCircle className="h-10 w-10 text-green-600" />
         </div>
         <h1 className="text-2xl font-bold text-black mb-2">Payment Successful</h1>
-        <p className="text-black/70 mb-6">
-          Thank you for your booking. You will receive a confirmation email shortly with your
-          reservation details.
+        <p className="text-black/70 mb-4">
+          Thank you for your booking. Your stay is confirmed.
         </p>
-        {reference && (
-          <p className="text-sm text-black/50 mb-2">Reference: {reference}</p>
-        )}
-        {booking && (
-          <div className="mt-4 p-4 rounded-xl bg-black/5 border border-black/10 text-left text-sm text-black/80 space-y-2">
-            <p><strong>Apartment:</strong> {booking.apartmentId}</p>
-            <p><strong>Check-in:</strong> {booking.checkIn.toISOString().split("T")[0]}</p>
-            <p><strong>Check-out:</strong> {booking.checkOut.toISOString().split("T")[0]}</p>
-            <p><strong>Nights:</strong> {booking.nights}</p>
-            <p><strong>Amount paid:</strong> {formatPrice(booking.amountPaid)}</p>
-            <p><strong>Booker:</strong> {booking.bookerName}</p>
-          </div>
-        )}
+        <p className="text-black/60 mb-6">
+          Log in with the email you used for this reservation to view your booking details.
+        </p>
         {verifyError && (
           <p className="mt-4 text-sm text-amber-700">{verifyError}</p>
         )}
-        <div className="mt-8">
-          <Button asChild className="rounded-full bg-[#FA5C5C] hover:bg-[#E84A4A] text-white" size="lg">
-            <Link href="/apartments">Browse More Apartments</Link>
+        <div className="mt-8 flex flex-col sm:flex-row items-center justify-center gap-3">
+          <Button
+            asChild
+            className="rounded-full bg-white text-[#FA5C5C] border border-[#FA5C5C] hover:bg-[#FA5C5C] hover:text-white hover:border-white h-12 px-6"
+          >
+            <Link href="/login?redirect=/my-bookings">Access My Dashboard</Link>
+          </Button>
+          <Button
+            asChild
+            className="rounded-full bg-[#FA5C5C] text-white border border-white hover:bg-white hover:text-[#FA5C5C] hover:border-[#FA5C5C] h-12 px-6"
+            size="lg"
+          >
+            <Link href="/apartments">Browse more apartments</Link>
           </Button>
         </div>
       </div>

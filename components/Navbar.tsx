@@ -3,23 +3,39 @@
 import Link from "next/link";
 import Image from "next/image";
 import { useState, useEffect } from "react";
+import { usePathname } from "next/navigation";
 import { Menu, X, User, LogOut } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { motion, AnimatePresence } from "framer-motion";
 import { useAuth } from "@/components/AuthProvider";
+import HeroSearchBar from "./HeroSearchBar";
 
 export default function Navbar() {
   const { user, isLoading: authLoading, signOut } = useAuth();
+  const pathname = usePathname();
+  const isHome = pathname === "/";
+
   const [isScrolled, setIsScrolled] = useState(false);
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
+  const [showSearchBarNav, setShowSearchBarNav] = useState(false);
 
   useEffect(() => {
     const handleScroll = () => {
-      setIsScrolled(window.scrollY > 20);
+      const scrollY = window.scrollY;
+      setIsScrolled(scrollY > 20);
+
+      if (isHome) {
+        const heroThreshold = window.innerHeight * 0.7;
+        setShowSearchBarNav(scrollY > heroThreshold);
+      } else {
+        setShowSearchBarNav(false);
+      }
     };
+
+    handleScroll();
     window.addEventListener("scroll", handleScroll);
     return () => window.removeEventListener("scroll", handleScroll);
-  }, []);
+  }, [isHome]);
 
   const navLinks = [
     { href: "/", label: "Home" },
@@ -30,17 +46,28 @@ export default function Navbar() {
     { href: "/contact", label: "Contact" },
   ];
 
+  const isSearchMode = isHome && showSearchBarNav;
+
+  const navBgClasses = isSearchMode
+    ? "bg-white shadow-sm"
+    : isHome
+      ? "bg-transparent hover:bg-white/80 hover:backdrop-blur-md"
+      : isScrolled
+        ? "bg-white/70 backdrop-blur-md shadow-sm"
+        : "bg-white/60 backdrop-blur-sm";
+
   return (
     <motion.nav
       initial={{ y: -100 }}
       animate={{ y: 0 }}
-      className={`fixed top-0 left-0 right-0 z-50 transition-all duration-300 overflow-visible ${
-        isScrolled
-          ? "bg-white/70 backdrop-blur-md shadow-sm"
-          : "bg-white/60 backdrop-blur-sm"
-      }`}
+      className={`fixed top-0 left-0 right-0 z-50 transition-all duration-300 overflow-visible ${navBgClasses}`}
     >
       <div className="container mx-auto px-4 sm:px-6 lg:px-8">
+        {isSearchMode ? (
+          <div className="py-2">
+            <HeroSearchBar variant="nav" />
+          </div>
+        ) : (
         <div className="flex items-center justify-between h-20 overflow-visible">
           <Link href="/" className="flex items-center group -my-2 sm:-my-3 md:-my-4 lg:-my-5">
             <Image
@@ -111,71 +138,74 @@ export default function Navbar() {
             )}
           </button>
         </div>
+        )}
       </div>
 
-      {/* Mobile Menu */}
-      <AnimatePresence>
-        {isMobileMenuOpen && (
-          <motion.div
-            initial={{ opacity: 0, height: 0 }}
-            animate={{ opacity: 1, height: "auto" }}
-            exit={{ opacity: 0, height: 0 }}
-            className="md:hidden bg-white border-t"
-          >
-            <div className="container mx-auto px-4 py-6 space-y-2">
-              {navLinks.map((link) => (
-                <Link
-                  key={link.href}
-                  href={link.href}
-                  className="block text-black hover:text-[#FA5C5C] font-medium py-3 px-2 text-base transition-colors min-h-[44px] flex items-center"
-                  onClick={() => setIsMobileMenuOpen(false)}
-                >
-                  {link.label}
-                </Link>
-              ))}
-              {!authLoading && (
-                user ? (
-                  <>
-                    <Link
-                      href="/my-bookings"
-                      className="text-black hover:text-[#FA5C5C] font-medium py-3 px-2 text-base transition-colors min-h-[44px] flex items-center gap-2"
-                      onClick={() => setIsMobileMenuOpen(false)}
-                    >
-                      <User className="h-5 w-5" />
-                      My Bookings
-                    </Link>
-                    <button
-                      onClick={() => {
-                        signOut();
-                        setIsMobileMenuOpen(false);
-                      }}
-                      className="w-full text-left text-gray-500 hover:text-[#FA5C5C] font-medium py-3 px-2 text-base transition-colors min-h-[44px] flex items-center gap-2"
-                    >
-                      <LogOut className="h-5 w-5" />
-                      Sign Out
-                    </button>
-                  </>
-                ) : (
+      {/* Mobile Menu (only show when regular nav is visible) */}
+      {!isSearchMode && (
+        <AnimatePresence>
+          {isMobileMenuOpen && (
+            <motion.div
+              initial={{ opacity: 0, height: 0 }}
+              animate={{ opacity: 1, height: "auto" }}
+              exit={{ opacity: 0, height: 0 }}
+              className="md:hidden bg-white border-t"
+            >
+              <div className="container mx-auto px-4 py-6 space-y-2">
+                {navLinks.map((link) => (
                   <Link
-                    href="/login"
-                    className="text-black hover:text-[#FA5C5C] font-medium py-3 px-2 text-base transition-colors min-h-[44px] flex items-center"
+                    key={link.href}
+                    href={link.href}
+                    className="block text-black hover:text-[#FA5C5C] font-medium py-3 px-2 text-base transition-colors min-h-[44px] flex items-center"
                     onClick={() => setIsMobileMenuOpen(false)}
                   >
-                    Login
+                    {link.label}
                   </Link>
-                )
-              )}
-              <div className="pt-2">
-                <Button asChild className="w-full rounded-full py-4 text-base font-semibold bg-[#FA5C5C] hover:bg-[#E84A4A] text-white min-h-[48px]">
-                  <Link href="/booking" onClick={() => setIsMobileMenuOpen(false)}>
-                    Book Now
-                  </Link>
-                </Button>
+                ))}
+                {!authLoading && (
+                  user ? (
+                    <>
+                      <Link
+                        href="/my-bookings"
+                        className="text-black hover:text-[#FA5C5C] font-medium py-3 px-2 text-base transition-colors min-h-[44px] flex items-center gap-2"
+                        onClick={() => setIsMobileMenuOpen(false)}
+                      >
+                        <User className="h-5 w-5" />
+                        My Bookings
+                      </Link>
+                      <button
+                        onClick={() => {
+                          signOut();
+                          setIsMobileMenuOpen(false);
+                        }}
+                        className="w-full text-left text-gray-500 hover:text-[#FA5C5C] font-medium py-3 px-2 text-base transition-colors min-h-[44px] flex items-center gap-2"
+                      >
+                        <LogOut className="h-5 w-5" />
+                        Sign Out
+                      </button>
+                    </>
+                  ) : (
+                    <Link
+                      href="/login"
+                      className="text-black hover:text-[#FA5C5C] font-medium py-3 px-2 text-base transition-colors min-h-[44px] flex items-center"
+                      onClick={() => setIsMobileMenuOpen(false)}
+                    >
+                      Login
+                    </Link>
+                  )
+                )}
+                <div className="pt-2">
+                  <Button asChild className="w-full rounded-full py-4 text-base font-semibold bg-[#FA5C5C] hover:bg-[#E84A4A] text-white min-h-[48px]">
+                    <Link href="/booking" onClick={() => setIsMobileMenuOpen(false)}>
+                      Book Now
+                    </Link>
+                  </Button>
+                </div>
               </div>
-            </div>
-          </motion.div>
-        )}
-      </AnimatePresence>
+            </motion.div>
+          )}
+        </AnimatePresence>
+      )}
     </motion.nav>
   );
 }

@@ -90,7 +90,9 @@ function GuestCounter({
   );
 }
 
-export default function HeroSearchBar() {
+type HeroSearchBarVariant = "hero" | "nav";
+
+export default function HeroSearchBar({ variant = "hero" }: { variant?: HeroSearchBarVariant }) {
   const router = useRouter();
   const [openCalendar, setOpenCalendar] = useState<"checkIn" | "checkOut" | null>(null);
   const [openGuestPicker, setOpenGuestPicker] = useState(false);
@@ -167,35 +169,37 @@ export default function HeroSearchBar() {
   };
 
   return (
-    <div className="w-full max-w-6xl mx-auto">
-      <div className="mb-6 sm:mb-8 text-center space-y-2 sm:space-y-3">
-        <p className="text-xs sm:text-sm md:text-base text-white/80 font-light tracking-wide">
-          Luxury Serviced Residences in Wuye, Abuja
-        </p>
-        {/* Mobile: 2x2 grid, Desktop: single row */}
-        <div className="flex flex-wrap items-center justify-center gap-x-3 gap-y-1.5 sm:gap-x-4 sm:gap-y-2 text-[10px] sm:text-xs md:text-sm text-white/60 max-w-xs sm:max-w-none mx-auto">
-          <span className="flex items-center gap-1">
-            <span className="w-1 h-1 sm:w-1.5 sm:h-1.5 bg-[#FA5C5C] rounded-full"></span>
-            10 Units
-          </span>
-          <span className="flex items-center gap-1">
-            <span className="w-1 h-1 sm:w-1.5 sm:h-1.5 bg-[#FA5C5C] rounded-full"></span>
-            Pool & Spa
-          </span>
-          <span className="flex items-center gap-1">
-            <span className="w-1 h-1 sm:w-1.5 sm:h-1.5 bg-[#FA5C5C] rounded-full"></span>
-            Gym
-          </span>
-          <span className="flex items-center gap-1">
-            <span className="w-1 h-1 sm:w-1.5 sm:h-1.5 bg-[#FA5C5C] rounded-full"></span>
-            Breakfast
-          </span>
-          <span className="flex items-center gap-1">
-            <span className="w-1 h-1 sm:w-1.5 sm:h-1.5 bg-green-500 rounded-full"></span>
-            24/7 Power
-          </span>
+    <div className={`w-full max-w-6xl mx-auto ${variant === "nav" ? "mt-0" : ""}`}>
+      {variant === "hero" && (
+        <div className="mb-6 sm:mb-8 text-center space-y-2 sm:space-y-3">
+          <p className="text-xs sm:text-sm md:text-base text-white/80 font-light tracking-wide">
+            Luxury Serviced Residences in Wuye, Abuja
+          </p>
+          {/* Mobile: 2x2 grid, Desktop: single row */}
+          <div className="flex flex-wrap items-center justify-center gap-x-3 gap-y-1.5 sm:gap-x-4 sm:gap-y-2 text-[10px] sm:text-xs md:text-sm text-white/60 max-w-xs sm:max-w-none mx-auto">
+            <span className="flex items-center gap-1">
+              <span className="w-1 h-1 sm:w-1.5 sm:h-1.5 bg-[#FA5C5C] rounded-full"></span>
+              10 Units
+            </span>
+            <span className="flex items-center gap-1">
+              <span className="w-1 h-1 sm:w-1.5 sm:h-1.5 bg-[#FA5C5C] rounded-full"></span>
+              Pool & Spa
+            </span>
+            <span className="flex items-center gap-1">
+              <span className="w-1 h-1 sm:w-1.5 sm:h-1.5 bg-[#FA5C5C] rounded-full"></span>
+              Gym
+            </span>
+            <span className="flex items-center gap-1">
+              <span className="w-1 h-1 sm:w-1.5 sm:h-1.5 bg-[#FA5C5C] rounded-full"></span>
+              Breakfast
+            </span>
+            <span className="flex items-center gap-1">
+              <span className="w-1 h-1 sm:w-1.5 sm:h-1.5 bg-green-500 rounded-full"></span>
+              24/7 Power
+            </span>
+          </div>
         </div>
-      </div>
+      )}
 
       <form
         onSubmit={handleSubmit(onSubmit)}
@@ -224,7 +228,7 @@ export default function HeroSearchBar() {
                 minDate={today}
                 onSelect={handleCheckInSelect}
                 onClear={() => setValue("checkIn", "")}
-                placement="top"
+                placement={variant === "nav" ? "bottom" : "top"}
               />
             )}
             {errors.checkIn && (
@@ -253,7 +257,7 @@ export default function HeroSearchBar() {
                 minDate={minCheckOut}
                 onSelect={handleCheckOutSelect}
                 onClear={() => setValue("checkOut", "")}
-                placement="top"
+                placement={variant === "nav" ? "bottom" : "top"}
               />
             )}
             {errors.checkOut && (

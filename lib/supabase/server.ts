@@ -6,19 +6,19 @@ import { createClient } from "@supabase/supabase-js";
  * NEVER expose this on the client side.
  */
 export function createServerSupabaseClient() {
-  const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL;
-  const supabaseServiceKey = process.env.SUPABASE_SERVICE_ROLE_KEY;
+    const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL;
+    const supabaseServiceKey = process.env.SUPABASE_SERVICE_ROLE_KEY;
 
-  if (!supabaseUrl || !supabaseServiceKey) {
-    throw new Error("Missing Supabase environment variables");
-  }
+    if (!supabaseUrl || !supabaseServiceKey) {
+        throw new Error("Missing Supabase environment variables");
+    }
 
-  return createClient(supabaseUrl, supabaseServiceKey, {
-    auth: {
-      autoRefreshToken: false,
-      persistSession: false,
-    },
-  });
+    return createClient(supabaseUrl, supabaseServiceKey, {
+        auth: {
+            autoRefreshToken: false,
+            persistSession: false,
+        },
+    });
 }
 
 /**
@@ -26,41 +26,41 @@ export function createServerSupabaseClient() {
  * This will create the user if they don't exist, or log them in if they do.
  */
 export async function sendMagicLink(email: string, redirectTo?: string) {
-  const supabase = createServerSupabaseClient();
-  
-  const baseUrl = process.env.NEXT_PUBLIC_SITE_URL || "http://localhost:3000";
-  const redirect = redirectTo || `${baseUrl}/my-bookings`;
+    const supabase = createServerSupabaseClient();
 
-  const { data, error } = await supabase.auth.admin.generateLink({
-    type: "magiclink",
-    email,
-    options: {
-      redirectTo: redirect,
-    },
-  });
+    const baseUrl = process.env.NEXT_PUBLIC_SITE_URL;
+    const redirect = redirectTo || `${baseUrl}/my-bookings`;
 
-  if (error) {
-    console.error("Error sending magic link:", error);
-    throw error;
-  }
+    const { data, error } = await supabase.auth.admin.generateLink({
+        type: "magiclink",
+        email,
+        options: {
+            redirectTo: redirect,
+        },
+    });
 
-  return data;
+    if (error) {
+        console.error("Error sending magic link:", error);
+        throw error;
+    }
+
+    return data;
 }
 
 /**
  * Get user by email from Supabase Auth.
  */
 export async function getUserByEmail(email: string) {
-  const supabase = createServerSupabaseClient();
-  
-  const { data, error } = await supabase.auth.admin.listUsers();
-  
-  if (error) {
-    console.error("Error listing users:", error);
-    return null;
-  }
+    const supabase = createServerSupabaseClient();
 
-  return data.users.find((user) => user.email === email) || null;
+    const { data, error } = await supabase.auth.admin.listUsers();
+
+    if (error) {
+        console.error("Error listing users:", error);
+        return null;
+    }
+
+    return data.users.find((user) => user.email === email) || null;
 }
 
 /**
@@ -68,24 +68,24 @@ export async function getUserByEmail(email: string) {
  * If user doesn't exist, invites them (sends magic link).
  */
 export async function inviteUserByEmail(email: string, redirectTo?: string) {
-  const supabase = createServerSupabaseClient();
-  
-  const baseUrl = process.env.NEXT_PUBLIC_SITE_URL || "http://localhost:3000";
-  const redirect = redirectTo || `${baseUrl}/my-bookings`;
+    const supabase = createServerSupabaseClient();
 
-  // Try to invite the user (creates account if doesn't exist)
-  const { data, error } = await supabase.auth.admin.inviteUserByEmail(email, {
-    redirectTo: redirect,
-  });
+    const baseUrl = process.env.NEXT_PUBLIC_SITE_URL;
+    const redirect = redirectTo || `${baseUrl}/my-bookings`;
 
-  if (error) {
-    // If user already exists, send magic link instead
-    if (error.message?.includes("already been registered")) {
-      return sendMagicLink(email, redirectTo);
+    // Try to invite the user (creates account if doesn't exist)
+    const { data, error } = await supabase.auth.admin.inviteUserByEmail(email, {
+        redirectTo: redirect,
+    });
+
+    if (error) {
+        // If user already exists, send magic link instead
+        if (error.message?.includes("already been registered")) {
+            return sendMagicLink(email, redirectTo);
+        }
+        console.error("Error inviting user:", error);
+        throw error;
     }
-    console.error("Error inviting user:", error);
-    throw error;
-  }
 
-  return data;
+    return data;
 }

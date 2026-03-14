@@ -36,6 +36,8 @@ export interface DatePickerCalendarProps {
   onClear: () => void;
   /** Render inside a parent with position: relative. 'top' = above trigger, 'bottom' = below */
   placement?: "top" | "bottom";
+  /** When true (e.g. in nav bar), on mobile position calendar below top of viewport (drop down) instead of centered */
+  dropDownOnMobile?: boolean;
   className?: string;
   /** Array of dates (YYYY-MM-DD) that should be disabled/not selectable */
   disabledDates?: string[];
@@ -49,6 +51,7 @@ export function DatePickerCalendar({
   onSelect,
   onClear,
   placement = "bottom",
+  dropDownOnMobile = false,
   className = "",
   disabledDates = [],
 }: DatePickerCalendarProps) {
@@ -139,9 +142,13 @@ export function DatePickerCalendar({
         onClick={onClose}
       />
       <div
-        className={`absolute left-0 z-50 w-[min(320px,90vw)] rounded-xl border border-black/10 bg-white p-4 shadow-xl ${
-          placement === "top" ? "bottom-full mb-1" : "top-full mt-1"
-        } ${className}`}
+        className={`z-50 rounded-xl border border-black/10 bg-white p-4 shadow-xl
+          max-w-[min(320px,calc(100vw-2rem))] max-h-[calc(100vh-2rem)] overflow-y-auto
+          fixed left-1/2 -translate-x-1/2 w-[min(320px,calc(100vw-2rem))]
+          ${dropDownOnMobile ? "top-24 max-h-[calc(100vh-7rem)]" : "top-1/2 -translate-y-1/2"}
+          md:absolute md:left-0 md:top-auto md:bottom-auto md:right-auto md:translate-x-0 md:translate-y-0 md:max-h-none md:overflow-visible md:w-[min(320px,90vw)]
+          ${placement === "top" ? "md:bottom-full md:mb-1" : "md:top-full md:mt-1"}
+          ${className}`}
       >
         <div className="mb-3 flex items-center justify-between">
           <button

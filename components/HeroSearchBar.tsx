@@ -229,6 +229,7 @@ export default function HeroSearchBar({ variant = "hero" }: { variant?: HeroSear
                 onSelect={handleCheckInSelect}
                 onClear={() => setValue("checkIn", "")}
                 placement={variant === "nav" ? "bottom" : "top"}
+                dropDownOnMobile={variant === "nav"}
               />
             )}
             {errors.checkIn && (
@@ -258,6 +259,7 @@ export default function HeroSearchBar({ variant = "hero" }: { variant?: HeroSear
                 onSelect={handleCheckOutSelect}
                 onClear={() => setValue("checkOut", "")}
                 placement={variant === "nav" ? "bottom" : "top"}
+                dropDownOnMobile={variant === "nav"}
               />
             )}
             {errors.checkOut && (
@@ -292,7 +294,13 @@ export default function HeroSearchBar({ variant = "hero" }: { variant?: HeroSear
             </button>
 
             {openGuestPicker && (
-              <div className="absolute bottom-full left-0 mb-1 w-80 max-w-[calc(100vw-2rem)] p-4 bg-white rounded-2xl shadow-xl border border-black/10 z-50 md:bottom-auto md:top-full md:mb-0 md:mt-1">
+              <div
+                className={
+                  variant === "nav"
+                    ? "absolute top-full left-0 mt-1 w-80 max-w-[calc(100vw-2rem)] p-4 bg-white rounded-2xl shadow-xl border border-black/10 z-50"
+                    : "absolute bottom-full left-0 mb-1 w-80 max-w-[calc(100vw-2rem)] p-4 bg-white rounded-2xl shadow-xl border border-black/10 z-50"
+                }
+              >
                 <GuestCounter
                   label="Adults"
                   sublabel="Age 13+"

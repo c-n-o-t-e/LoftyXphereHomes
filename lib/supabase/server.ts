@@ -28,7 +28,7 @@ export function createServerSupabaseClient() {
 export async function sendMagicLink(email: string, redirectTo?: string) {
     const supabase = createServerSupabaseClient();
 
-    const baseUrl = process.env.NEXT_PUBLIC_SITE_URL;
+    const baseUrl = process.env.NEXT_PUBLIC_SITE_URL || "http://localhost:3000";
     const redirect = redirectTo || `${baseUrl}/my-bookings`;
 
     const { data, error } = await supabase.auth.admin.generateLink({
@@ -70,7 +70,7 @@ export async function getUserByEmail(email: string) {
 export async function inviteUserByEmail(email: string, redirectTo?: string) {
     const supabase = createServerSupabaseClient();
 
-    const baseUrl = process.env.NEXT_PUBLIC_SITE_URL;
+    const baseUrl = process.env.NEXT_PUBLIC_SITE_URL || "http://localhost:3000";
     const redirect = redirectTo || `${baseUrl}/my-bookings`;
 
     // Try to invite the user (creates account if doesn't exist)

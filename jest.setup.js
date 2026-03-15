@@ -1,6 +1,21 @@
 // Learn more: https://github.com/testing-library/jest-dom
 import '@testing-library/jest-dom'
 
+// Polyfill fetch for Jest/jsdom (e.g. YourReservationCard fetches /api/availability)
+if (typeof globalThis.fetch === 'undefined') {
+  globalThis.fetch = jest.fn(() =>
+    Promise.resolve({
+      ok: true,
+      json: () => Promise.resolve({ blockedDates: [], bookingRanges: [] }),
+    })
+  )
+}
+
+// jsdom does not implement HTMLMediaElement.play(); mock it so components using video do not throw
+if (typeof HTMLMediaElement !== 'undefined') {
+  HTMLMediaElement.prototype.play = jest.fn().mockResolvedValue(undefined)
+}
+
 // Mock next/navigation
 jest.mock('next/navigation', () => ({
   useRouter() {
@@ -46,21 +61,29 @@ Object.defineProperty(HTMLElement.prototype, 'releasePointerCapture', {
   writable: true,
 })
 
-// Mock framer-motion
+// Mock framer-motion (include all motion.* tags used in components)
 jest.mock('framer-motion', () => {
-  const actual = jest.requireActual('framer-motion')
+  const React = require('react')
+  const createMotion = (Tag) => {
+    const C = ({ children, whileInView, initial, animate, transition, ...props }) =>
+      React.createElement(Tag, props, children)
+    return C
+  }
   return {
-    ...actual,
     motion: {
-      div: ({ children, whileInView, initial, animate, transition, ...props }) => <div {...props}>{children}</div>,
-      nav: ({ children, whileInView, initial, animate, transition, ...props }) => <nav {...props}>{children}</nav>,
-      section: ({ children, whileInView, initial, animate, transition, ...props }) => <section {...props}>{children}</section>,
+      div: createMotion('div'),
+      nav: createMotion('nav'),
+      section: createMotion('section'),
+      p: createMotion('p'),
+      span: createMotion('span'),
+      button: createMotion('button'),
+      a: createMotion('a'),
+      li: createMotion('li'),
+      h1: createMotion('h1'),
+      h2: createMotion('h2'),
     },
     AnimatePresence: ({ children }) => <>{children}</>,
-    useAnimation: () => ({
-      start: jest.fn(),
-      stop: jest.fn(),
-    }),
+    useAnimation: () => ({ start: jest.fn(), stop: jest.fn() }),
   }
 })
 

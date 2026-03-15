@@ -6,7 +6,7 @@ jest.mock('next/navigation', () => ({
     push: jest.fn(),
     replace: jest.fn(),
   }),
-  useSearchParams: jest.fn(() => new URLSearchParams('?apartment=lofty-abuja-01')),
+  useSearchParams: jest.fn(() => new URLSearchParams('?apartment=lofty-wuye-01')),
   usePathname: () => '/booking',
 }))
 
@@ -92,13 +92,13 @@ describe('Booking Page - Extended Coverage', () => {
     
     await waitFor(() => {
       expect(screen.getByText(/Selected Apartment:/i)).toBeInTheDocument()
-      expect(screen.getByText(/Lofty Abuja Suite/i)).toBeInTheDocument()
-    }, { timeout: 1000 })
+      expect(screen.getByText(/Lofty Wuye Premium/i)).toBeInTheDocument()
+    }, { timeout: 2000 })
   })
 
   it('handles booking click without apartment bookingUrl', async () => {
     jest.spyOn(require('next/navigation'), 'useSearchParams').mockReturnValue(
-      new URLSearchParams('?apartment=lofty-lagos-01')
+      new URLSearchParams('?apartment=lofty-wuye-04')
     )
     
     const windowOpenSpy = jest.spyOn(window, 'open').mockImplementation()

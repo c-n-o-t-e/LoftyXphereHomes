@@ -14,7 +14,7 @@ describe('About Page', () => {
 
   it('renders values section', () => {
     render(<AboutPage />)
-    expect(screen.getByText('Our Values')).toBeInTheDocument()
+    expect(screen.getByText('Our Core Values')).toBeInTheDocument()
   })
 
   it('renders all value items', () => {

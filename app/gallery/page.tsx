@@ -102,6 +102,9 @@ export default function GalleryPage() {
       <AnimatePresence>
         {selectedIndex !== null && currentImage && (
           <motion.div
+            role="dialog"
+            aria-modal="true"
+            aria-label="Image lightbox"
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
             exit={{ opacity: 0 }}

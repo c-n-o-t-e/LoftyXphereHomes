@@ -72,7 +72,7 @@ describe('ApartmentCard', () => {
 
   it('renders apartment image', () => {
     render(<ApartmentCard apartment={mockApartment} />)
-    const image = screen.getByAltText('Test Apartment')
+    const image = screen.getByAltText(/Test Apartment - Image 1/)
     expect(image).toBeInTheDocument()
     expect(image).toHaveAttribute('src', expect.stringContaining('unsplash.com'))
   })
@@ -80,9 +80,8 @@ describe('ApartmentCard', () => {
   it('uses fallback image when apartment has no images', () => {
     const apartmentNoImages = { ...mockApartment, images: [] }
     render(<ApartmentCard apartment={apartmentNoImages} index={0} />)
-    const image = screen.getByAltText('Test Apartment')
+    const image = screen.getByAltText(/Test Apartment - Image 1/)
     expect(image).toBeInTheDocument()
-    // Should use fallback image
     expect(image).toHaveAttribute('src', expect.stringContaining('unsplash.com'))
   })
 })

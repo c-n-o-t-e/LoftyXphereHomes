@@ -45,7 +45,8 @@ jest.mock('@/components/TestimonialSlider', () => {
 describe('Home Page', () => {
   it('renders the hero section', () => {
     render(<Home />)
-    expect(screen.getByText('Premium Shortlet')).toBeInTheDocument()
+    expect(screen.getByText('Live Lofty.')).toBeInTheDocument()
+    expect(screen.getByText('Stay Different.')).toBeInTheDocument()
   })
 
   it('renders featured apartments section', () => {
@@ -63,9 +64,9 @@ describe('Home Page', () => {
     expect(screen.getByText('Premium Amenities')).toBeInTheDocument()
   })
 
-  it('renders location highlight section', () => {
+  it('renders blog section', () => {
     render(<Home />)
-    expect(screen.getByText('Prime Locations')).toBeInTheDocument()
+    expect(screen.getByText('Latest from Our Blog')).toBeInTheDocument()
   })
 
   it('renders testimonials section', () => {

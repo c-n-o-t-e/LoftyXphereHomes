@@ -36,7 +36,7 @@ describe('Footer', () => {
     render(<Footer />)
     expect(screen.getByText('+234 8161122328')).toBeInTheDocument()
     expect(screen.getByText('hello@loftyxpherehomes.com')).toBeInTheDocument()
-    expect(screen.getByText('Lagos & Abuja, Nigeria')).toBeInTheDocument()
+    expect(screen.getByText(/430 Magnus Abe Street, Wuye, Abuja/i)).toBeInTheDocument()
   })
 
   it('renders social media links', () => {

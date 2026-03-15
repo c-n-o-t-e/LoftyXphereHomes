@@ -3,8 +3,8 @@ import { getApartmentById } from '@/lib/data/apartments'
 
 describe('Apartment Detail Page - generateMetadata', () => {
   it('returns metadata when apartment exists', async () => {
-    const apartment = getApartmentById('lofty-abuja-01')
-    const params = Promise.resolve({ id: 'lofty-abuja-01' })
+    const apartment = getApartmentById('lofty-wuye-01')
+    const params = Promise.resolve({ id: 'lofty-wuye-01' })
     const metadata = await generateMetadata({ params })
     
     expect(metadata).toBeDefined()

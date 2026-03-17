@@ -14,7 +14,7 @@ export default function Footer() {
           <div className="sm:col-span-2 lg:col-span-1">
             <Link href="/" className="flex items-center gap-2 sm:gap-3 group mb-4">
               <Image
-                src="/Lofty Xphere logo transparent white (1).png"
+                src="/lofty-logo-white.png"
                 alt="LoftyXphereHomes Logo"
                 width={400}
                 height={133}

@@ -233,7 +233,7 @@ export default function Navbar() {
         <div className="flex items-center justify-between h-20 overflow-visible">
           <Link href="/" className="flex items-center group -my-2 sm:-my-3 md:-my-4 lg:-my-5">
             <Image
-              src="/Lofty Xphere logo transparent black (1).png"
+              src="/lofty-logo-black.png"
               alt="LoftyXphereHomes Logo"
               width={600}
               height={200}

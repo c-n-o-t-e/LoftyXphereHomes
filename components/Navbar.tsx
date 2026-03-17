@@ -64,8 +64,170 @@ export default function Navbar() {
     >
       <div className="container mx-auto px-4 sm:px-6 lg:px-8">
         {isSearchMode ? (
-          <div className="py-2">
-            <HeroSearchBar variant="nav" />
+          <div className="py-2 relative">
+            <div className="flex items-center gap-3">
+              <div className="flex-1">
+                <HeroSearchBar variant="nav" />
+              </div>
+
+              {/* Hamburger menu (when search bar replaces nav) */}
+              <button
+                type="button"
+                className="inline-flex items-center justify-center h-9 w-9 sm:h-10 sm:w-10 md:h-11 md:w-11 rounded-full border border-black/10 bg-white hover:bg-black/5 transition-colors"
+                onClick={() => setIsMobileMenuOpen(!isMobileMenuOpen)}
+                aria-label="Toggle menu"
+              >
+                {isMobileMenuOpen ? (
+                  <X className="h-4 w-4 sm:h-5 sm:w-5 text-black" />
+                ) : (
+                  <Menu className="h-4 w-4 sm:h-5 sm:w-5 text-black" />
+                )}
+              </button>
+            </div>
+
+            {/* Desktop dropdown (reuses the same links as mobile menu) */}
+            <AnimatePresence>
+              {isMobileMenuOpen && (
+                <motion.div
+                  initial={{ opacity: 0, y: -8 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  exit={{ opacity: 0, y: -8 }}
+                  className="hidden md:block absolute right-0 top-full mt-2 w-64 rounded-2xl bg-white shadow-xl border border-black/10 overflow-hidden"
+                >
+                  <div className="py-2">
+                    {navLinks.map((link) => (
+                      <Link
+                        key={link.href}
+                        href={link.href}
+                        className="block text-black hover:text-[#FA5C5C] font-medium py-3 px-4 text-sm transition-colors"
+                        onClick={() => setIsMobileMenuOpen(false)}
+                      >
+                        {link.label}
+                      </Link>
+                    ))}
+
+                    <div className="border-t border-black/10 my-1" />
+
+                    {!authLoading && (
+                      user ? (
+                        <div className="py-1">
+                          <Link
+                            href="/my-bookings"
+                            className="flex items-center gap-2 text-black hover:text-[#FA5C5C] font-medium py-3 px-4 text-sm transition-colors"
+                            onClick={() => setIsMobileMenuOpen(false)}
+                          >
+                            <User className="h-4 w-4" />
+                            My Bookings
+                          </Link>
+                          <button
+                            type="button"
+                            onClick={() => {
+                              signOut();
+                              setIsMobileMenuOpen(false);
+                            }}
+                            className="w-full text-left text-gray-600 hover:text-[#FA5C5C] font-medium py-3 px-4 text-sm transition-colors flex items-center gap-2"
+                          >
+                            <LogOut className="h-4 w-4" />
+                            Sign Out
+                          </button>
+                        </div>
+                      ) : (
+                        <Link
+                          href="/login"
+                          className="block text-black hover:text-[#FA5C5C] font-medium py-3 px-4 text-sm transition-colors"
+                          onClick={() => setIsMobileMenuOpen(false)}
+                        >
+                          Login
+                        </Link>
+                      )
+                    )}
+
+                    <div className="p-3 pt-2">
+                      <Button
+                        asChild
+                        className="w-full rounded-full bg-[#FA5C5C] hover:bg-[#E84A4A] text-white"
+                      >
+                        <Link href="/booking" onClick={() => setIsMobileMenuOpen(false)}>
+                          Book Now
+                        </Link>
+                      </Button>
+                    </div>
+                  </div>
+                </motion.div>
+              )}
+            </AnimatePresence>
+
+            {/* Mobile dropdown (search mode) */}
+            <AnimatePresence>
+              {isMobileMenuOpen && (
+                <motion.div
+                  initial={{ opacity: 0, height: 0 }}
+                  animate={{ opacity: 1, height: "auto" }}
+                  exit={{ opacity: 0, height: 0 }}
+                  className="md:hidden mt-2 bg-white border border-black/10 rounded-2xl shadow-lg overflow-hidden"
+                >
+                  <div className="py-2">
+                    {navLinks.map((link) => (
+                      <Link
+                        key={link.href}
+                        href={link.href}
+                        className="flex items-center text-black hover:text-[#FA5C5C] font-medium py-3 px-4 text-base transition-colors min-h-[44px]"
+                        onClick={() => setIsMobileMenuOpen(false)}
+                      >
+                        {link.label}
+                      </Link>
+                    ))}
+
+                    <div className="border-t border-black/10 my-1" />
+
+                    {!authLoading && (
+                      user ? (
+                        <>
+                          <Link
+                            href="/my-bookings"
+                            className="flex items-center gap-2 text-black hover:text-[#FA5C5C] font-medium py-3 px-4 text-base transition-colors min-h-[44px]"
+                            onClick={() => setIsMobileMenuOpen(false)}
+                          >
+                            <User className="h-5 w-5" />
+                            My Bookings
+                          </Link>
+                          <button
+                            type="button"
+                            onClick={() => {
+                              signOut();
+                              setIsMobileMenuOpen(false);
+                            }}
+                            className="w-full text-left text-gray-600 hover:text-[#FA5C5C] font-medium py-3 px-4 text-base transition-colors min-h-[44px] flex items-center gap-2"
+                          >
+                            <LogOut className="h-5 w-5" />
+                            Sign Out
+                          </button>
+                        </>
+                      ) : (
+                        <Link
+                          href="/login"
+                          className="flex items-center text-black hover:text-[#FA5C5C] font-medium py-3 px-4 text-base transition-colors min-h-[44px]"
+                          onClick={() => setIsMobileMenuOpen(false)}
+                        >
+                          Login
+                        </Link>
+                      )
+                    )}
+
+                    <div className="p-3 pt-2">
+                      <Button
+                        asChild
+                        className="w-full rounded-full py-4 text-base font-semibold bg-[#FA5C5C] hover:bg-[#E84A4A] text-white min-h-[48px]"
+                      >
+                        <Link href="/booking" onClick={() => setIsMobileMenuOpen(false)}>
+                          Book Now
+                        </Link>
+                      </Button>
+                    </div>
+                  </div>
+                </motion.div>
+              )}
+            </AnimatePresence>
           </div>
         ) : (
         <div className="flex items-center justify-between h-20 overflow-visible">
@@ -156,7 +318,7 @@ export default function Navbar() {
                   <Link
                     key={link.href}
                     href={link.href}
-                    className="block text-black hover:text-[#FA5C5C] font-medium py-3 px-2 text-base transition-colors min-h-[44px] flex items-center"
+                    className="flex items-center text-black hover:text-[#FA5C5C] font-medium py-3 px-2 text-base transition-colors min-h-[44px]"
                     onClick={() => setIsMobileMenuOpen(false)}
                   >
                     {link.label}

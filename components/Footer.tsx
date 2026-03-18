@@ -63,11 +63,6 @@ export default function Footer() {
             <h4 className="text-white font-semibold mb-4">Quick Links</h4>
             <ul className="space-y-2">
               <li>
-                <Link href="/apartments" className="hover:text-[#FA5C5C] transition-colors text-sm text-white/80">
-                  All Apartments
-                </Link>
-              </li>
-              <li>
                 <Link href="/gallery" className="hover:text-[#FA5C5C] transition-colors text-sm text-white/80">
                   Gallery
                 </Link>
@@ -78,10 +73,11 @@ export default function Footer() {
                 </Link>
               </li>
               <li>
-                <Link href="/booking" className="hover:text-[#FA5C5C] transition-colors text-sm text-white/80">
-                  Book Now
+                <Link href="/apartments" className="hover:text-[#FA5C5C] transition-colors text-sm text-white/80">
+                  All Apartments
                 </Link>
               </li>
+              
             </ul>
           </div>
 
@@ -90,13 +86,13 @@ export default function Footer() {
             <h4 className="text-white font-semibold mb-4">Legal</h4>
             <ul className="space-y-2">
               <li>
-                <Link href="/terms" className="hover:text-[#FA5C5C] transition-colors text-sm text-white/80">
-                  Terms & Conditions
+                <Link href="/privacy" className="hover:text-[#FA5C5C] transition-colors text-sm text-white/80">
+                  Privacy Policy
                 </Link>
               </li>
               <li>
-                <Link href="/privacy" className="hover:text-[#FA5C5C] transition-colors text-sm text-white/80">
-                  Privacy Policy
+                <Link href="/terms" className="hover:text-[#FA5C5C] transition-colors text-sm text-white/80">
+                  Terms & Conditions
                 </Link>
               </li>
             </ul>

@@ -32,7 +32,7 @@ describe('Sitemap', () => {
 
   it('includes static pages', () => {
     const result = sitemap()
-    const staticPages = ['/apartments', '/blog', '/booking', '/contact', '/about', '/gallery', '/terms', '/privacy']
+    const staticPages = ['/apartments', '/blog', '/contact', '/about', '/gallery', '/terms', '/privacy']
     
     staticPages.forEach((path) => {
       const page = result.find((item) => item.url.includes(path) && !item.url.includes('/blog/') && !item.url.includes('/apartments/'))

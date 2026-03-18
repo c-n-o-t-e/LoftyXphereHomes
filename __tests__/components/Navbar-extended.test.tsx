@@ -33,17 +33,16 @@ describe('Navbar - Extended Coverage', () => {
     expect(screen.getByText('Blog')).toBeInTheDocument()
   })
 
-  it('closes mobile menu when Book Now is clicked', () => {
+  it('closes mobile menu when View Apartments is clicked', () => {
     render(<Navbar />)
     const menuButton = screen.getByLabelText('Toggle menu')
     
     // Open menu
     fireEvent.click(menuButton)
     
-    // Click Book Now in mobile menu
-    const bookNowLinks = screen.getAllByText('Book Now')
-    if (bookNowLinks.length > 1) {
-      fireEvent.click(bookNowLinks[1])
+    const ctaLinks = screen.getAllByText('View Apartments')
+    if (ctaLinks.length > 0) {
+      fireEvent.click(ctaLinks[0])
     }
   })
 

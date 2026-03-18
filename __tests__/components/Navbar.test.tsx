@@ -30,7 +30,6 @@ describe('Navbar', () => {
     expect(screen.getByText('Gallery')).toBeInTheDocument()
     expect(screen.getByText('About')).toBeInTheDocument()
     expect(screen.getByText('Contact')).toBeInTheDocument()
-    expect(screen.getByText('Book Now')).toBeInTheDocument()
   })
 
   it('toggles mobile menu when menu button is clicked', () => {
@@ -57,18 +56,15 @@ describe('Navbar', () => {
     fireEvent.click(homeLink)
   })
 
-  it('closes mobile menu when Book Now is clicked in mobile menu', () => {
+  it('closes mobile menu when View Apartments is clicked in mobile menu', () => {
     render(<Navbar />)
     const menuButton = screen.getByLabelText('Toggle menu')
     
     // Open menu
     fireEvent.click(menuButton)
     
-    // Find Book Now in mobile menu (should be second one)
-    const bookNowLinks = screen.getAllByText('Book Now')
-    if (bookNowLinks.length > 1) {
-      fireEvent.click(bookNowLinks[1])
-    }
+    const ctaLinks = screen.getAllByText('View Apartments')
+    if (ctaLinks.length > 0) fireEvent.click(ctaLinks[0])
   })
 
   it('has navigation role and nav element', () => {

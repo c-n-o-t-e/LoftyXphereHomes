@@ -202,7 +202,6 @@ See `.env.example` for all available environment variables.
 - `/` - Homepage with hero, featured apartments, trust signals, testimonials
 - `/apartments` - All apartment listings
 - `/apartments/[id]` - Individual apartment details
-- `/booking` - Booking page with redirect and inquiry form
 - `/about` - About us page
 - `/contact` - Contact form
 - `/gallery` - Image gallery with lightbox

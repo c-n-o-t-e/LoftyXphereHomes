@@ -323,12 +323,6 @@ export default function AboutPage() {
               >
                 View Apartments
               </a>
-              <a
-                href="/booking"
-                className="inline-flex items-center justify-center px-8 py-4 bg-black text-white rounded-full font-semibold hover:bg-black/80 transition-colors border-2 border-black"
-              >
-                Book Now
-              </a>
             </div>
           </motion.div>
         </div>

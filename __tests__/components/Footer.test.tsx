@@ -23,7 +23,7 @@ describe('Footer', () => {
     expect(screen.getByText('All Apartments')).toBeInTheDocument()
     expect(screen.getByText('Gallery')).toBeInTheDocument()
     expect(screen.getByText('About Us')).toBeInTheDocument()
-    expect(screen.getByText('Book Now')).toBeInTheDocument()
+    expect(screen.getByText('View Apartments')).toBeInTheDocument()
   })
 
   it('renders legal links', () => {

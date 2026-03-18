@@ -89,7 +89,7 @@ const staticPages: MetadataRoute.Sitemap = [
 - **Homepage** (`/`): `priority: 1` - Most important
 - **Apartments** (`/apartments`): `priority: 0.9` - Very important (main content)
 - **Blog** (`/blog`): `priority: 0.8` - Important
-- **Booking** (`/booking`): `priority: 0.8` - Important
+<!-- Booking page removed: `/booking` no longer included -->
 - **About/Contact** (`/about`, `/contact`): `priority: 0.7` - Moderate
 - **Gallery** (`/gallery`): `priority: 0.6` - Less important
 - **Terms/Privacy** (`/terms`, `/privacy`): `priority: 0.5` - Low priority

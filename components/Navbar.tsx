@@ -140,18 +140,7 @@ export default function Navbar() {
                           Login
                         </Link>
                       )
-                    )}
-
-                    <div className="p-3 pt-2">
-                      <Button
-                        asChild
-                        className="w-full rounded-full bg-[#FA5C5C] hover:bg-[#E84A4A] text-white"
-                      >
-                        <Link href="/booking" onClick={() => setIsMobileMenuOpen(false)}>
-                          Book Now
-                        </Link>
-                      </Button>
-                    </div>
+                    )}                                      
                   </div>
                 </motion.div>
               )}
@@ -214,16 +203,7 @@ export default function Navbar() {
                       )
                     )}
 
-                    <div className="p-3 pt-2">
-                      <Button
-                        asChild
-                        className="w-full rounded-full py-4 text-base font-semibold bg-[#FA5C5C] hover:bg-[#E84A4A] text-white min-h-[48px]"
-                      >
-                        <Link href="/booking" onClick={() => setIsMobileMenuOpen(false)}>
-                          Book Now
-                        </Link>
-                      </Button>
-                    </div>
+                    
                   </div>
                 </motion.div>
               )}
@@ -282,9 +262,7 @@ export default function Navbar() {
                 </Link>
               )
             )}
-            <Button asChild className="rounded-full bg-[#FA5C5C] hover:bg-[#E84A4A] text-white">
-              <Link href="/booking">Book Now</Link>
-            </Button>
+            
           </div>
 
           {/* Mobile Menu Button - Larger touch target */}
@@ -356,13 +334,7 @@ export default function Navbar() {
                     </Link>
                   )
                 )}
-                <div className="pt-2">
-                  <Button asChild className="w-full rounded-full py-4 text-base font-semibold bg-[#FA5C5C] hover:bg-[#E84A4A] text-white min-h-[48px]">
-                    <Link href="/booking" onClick={() => setIsMobileMenuOpen(false)}>
-                      Book Now
-                    </Link>
-                  </Button>
-                </div>
+                
               </div>
             </motion.div>
           )}

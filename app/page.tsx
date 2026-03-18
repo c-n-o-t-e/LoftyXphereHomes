@@ -61,8 +61,8 @@ export default function Home() {
             Book your stay today and discover why guests choose LoftyXphereHomes
           </p>
           <Button asChild size="lg" className="rounded-full px-6 sm:px-8 py-5 sm:py-6 text-base sm:text-lg bg-[#FA5C5C] text-white hover:bg-[#E84A4A] shadow-xl transition-all duration-300 min-h-[48px]">
-            <Link href="/booking" className="flex items-center justify-center">
-              Book Your Stay Now
+            <Link href="/apartments" className="flex items-center justify-center">
+              Browse Apartments
               <ArrowRight className="ml-2 h-5 w-5" />
             </Link>
           </Button>

@@ -125,7 +125,7 @@ export function BookingInquiryForm({ defaultApartmentId }: BookingInquiryFormPro
               <FormItem>
                 <FormLabel>Full Name</FormLabel>
                 <FormControl>
-                  <Input placeholder="John Doe" {...field} />
+                  <Input placeholder="John Doe" autoComplete="name" {...field} />
                 </FormControl>
                 <FormMessage />
               </FormItem>
@@ -139,7 +139,12 @@ export function BookingInquiryForm({ defaultApartmentId }: BookingInquiryFormPro
               <FormItem>
                 <FormLabel>Email</FormLabel>
                 <FormControl>
-                  <Input type="email" placeholder="john@example.com" {...field} />
+                  <Input
+                    type="email"
+                    placeholder="john@example.com"
+                    autoComplete="email"
+                    {...field}
+                  />
                 </FormControl>
                 <FormMessage />
               </FormItem>
@@ -155,7 +160,12 @@ export function BookingInquiryForm({ defaultApartmentId }: BookingInquiryFormPro
               <FormItem>
                 <FormLabel>Phone Number</FormLabel>
                 <FormControl>
-                  <Input type="tel" placeholder="+234 8161122328" {...field} />
+                  <Input
+                    type="tel"
+                    placeholder="+234 8161122328"
+                    autoComplete="tel"
+                    {...field}
+                  />
                 </FormControl>
                 <FormMessage />
               </FormItem>
@@ -193,7 +203,7 @@ export function BookingInquiryForm({ defaultApartmentId }: BookingInquiryFormPro
               <FormItem>
                 <FormLabel>Check-in Date</FormLabel>
                 <FormControl>
-                  <Input type="date" {...field} />
+                  <Input type="date" autoComplete="off" {...field} />
                 </FormControl>
                 <FormMessage />
               </FormItem>
@@ -207,7 +217,7 @@ export function BookingInquiryForm({ defaultApartmentId }: BookingInquiryFormPro
               <FormItem>
                 <FormLabel>Check-out Date</FormLabel>
                 <FormControl>
-                  <Input type="date" {...field} />
+                  <Input type="date" autoComplete="off" {...field} />
                 </FormControl>
                 <FormMessage />
               </FormItem>
@@ -271,6 +281,7 @@ export function BookingInquiryForm({ defaultApartmentId }: BookingInquiryFormPro
                 <Textarea
                   placeholder="Any special requests or questions?"
                   className="min-h-[120px]"
+                  autoComplete="off"
                   {...field}
                 />
               </FormControl>

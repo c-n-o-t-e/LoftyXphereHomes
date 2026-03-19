@@ -124,7 +124,9 @@ function LoginForm() {
                   <Label htmlFor="email">Email address</Label>
                   <Input
                     id="email"
+                name="email"
                     type="email"
+                autoComplete="email"
                     value={email}
                     onChange={(e) => setEmail(e.target.value)}
                     placeholder="your@email.com"

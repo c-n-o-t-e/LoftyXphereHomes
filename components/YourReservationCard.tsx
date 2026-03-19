@@ -396,8 +396,10 @@ export function YourReservationCard({
             </Label>
             <Input
               id="reservation-name"
+              name="name"
               type="text"
               placeholder="John Doe"
+              autoComplete="name"
               value={name}
               onChange={(e) => {
                 setName(e.target.value);
@@ -413,8 +415,10 @@ export function YourReservationCard({
             </Label>
             <Input
               id="reservation-email"
+              name="email"
               type="email"
               placeholder="you@example.com"
+              autoComplete="email"
               value={email}
               onChange={(e) => {
                 setEmail(e.target.value);
@@ -430,8 +434,10 @@ export function YourReservationCard({
             </Label>
             <Input
               id="reservation-phone"
+              name="tel"
               type="tel"
               placeholder="+234 800 000 0000"
+              autoComplete="tel"
               value={phone}
               onChange={(e) => {
                 setPhone(e.target.value);

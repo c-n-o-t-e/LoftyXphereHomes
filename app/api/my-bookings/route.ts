@@ -1,18 +1,18 @@
 import { NextRequest, NextResponse } from "next/server";
 import { createClient } from "@supabase/supabase-js";
+import { parseHeaders } from "@/lib/validation/http";
+import { bearerAuthHeaderSchema } from "@/lib/validation/schemas";
 
 /**
  * GET /api/my-bookings
  * Returns all bookings for the authenticated user (by email).
  */
 export async function GET(request: NextRequest) {
-  // Get the auth token from the Authorization header
-  const authHeader = request.headers.get("Authorization");
-  if (!authHeader?.startsWith("Bearer ")) {
-    return NextResponse.json({ error: "Unauthorized", details: "No bearer token" }, { status: 401 });
+  const parsedHeaders = parseHeaders(request, bearerAuthHeaderSchema);
+  if (!parsedHeaders.success) {
+    return parsedHeaders.response;
   }
-
-  const token = authHeader.substring(7);
+  const token = parsedHeaders.data.authorization.replace(/^Bearer\s+/i, "");
 
   // Verify the token with Supabase
   const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL;

@@ -1,6 +1,8 @@
 import { NextRequest, NextResponse } from "next/server";
 import { verifyTransaction } from "@/lib/paystack";
 import { upsertBookingFromPaystack } from "@/lib/booking";
+import { parseSearchParams } from "@/lib/validation/http";
+import { bookingVerifyQuerySchema } from "@/lib/validation/schemas";
 
 /**
  * GET /api/bookings/verify?reference=xxx
@@ -8,15 +10,13 @@ import { upsertBookingFromPaystack } from "@/lib/booking";
  * Call this from the booking success page to ensure the booking is recorded.
  */
 export async function GET(request: NextRequest) {
-    const reference = request.nextUrl.searchParams.get("reference");
-    if (!reference?.trim()) {
-        return NextResponse.json(
-            { error: "Missing reference" },
-            { status: 400 },
-        );
+    const parsedQuery = parseSearchParams(request, bookingVerifyQuerySchema);
+    if (!parsedQuery.success) {
+        return parsedQuery.response;
     }
+    const reference = parsedQuery.data.reference.trim();
 
-    const result = await verifyTransaction(reference.trim());
+    const result = await verifyTransaction(reference);
     if (!result) {
         return NextResponse.json(
             { error: "Paystack is not configured" },

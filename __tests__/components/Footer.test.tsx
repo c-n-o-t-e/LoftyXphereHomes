@@ -23,7 +23,8 @@ describe('Footer', () => {
     expect(screen.getByText('All Apartments')).toBeInTheDocument()
     expect(screen.getByText('Gallery')).toBeInTheDocument()
     expect(screen.getByText('About Us')).toBeInTheDocument()
-    expect(screen.getByText('View Apartments')).toBeInTheDocument()
+    // Footer quick links include All Apartments (not a separate CTA)
+    expect(screen.queryByText('View Apartments')).not.toBeInTheDocument()
   })
 
   it('renders legal links', () => {

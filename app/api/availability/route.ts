@@ -1,5 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/db";
+import { parseSearchParams } from "@/lib/validation/http";
+import { availabilityQuerySchema } from "@/lib/validation/schemas";
 
 /**
  * Helper to format date as YYYY-MM-DD in local time (avoids timezone issues)
@@ -24,15 +26,11 @@ function formatDateLocal(date: Date): string {
  * - First available check-in: 15th (Bob checks out that morning)
  */
 export async function GET(request: NextRequest) {
-  const { searchParams } = new URL(request.url);
-  const apartmentId = searchParams.get("apartmentId");
-
-  if (!apartmentId) {
-    return NextResponse.json(
-      { error: "apartmentId query parameter is required" },
-      { status: 400 }
-    );
+  const parsedQuery = parseSearchParams(request, availabilityQuerySchema);
+  if (!parsedQuery.success) {
+    return parsedQuery.response;
   }
+  const { apartmentId } = parsedQuery.data;
 
   try {
     // Fetch all active bookings for this apartment

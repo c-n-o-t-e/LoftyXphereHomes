@@ -1,5 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/db";
+import { parseJsonBody } from "@/lib/validation/http";
+import { paystackInitializeBodySchema } from "@/lib/validation/schemas";
 
 const PAYSTACK_BASE = "https://api.paystack.co";
 
@@ -12,32 +14,13 @@ export async function POST(request: NextRequest) {
     );
   }
 
-  let body: {
-    email: string;
-    name?: string;
-    phone?: string;
-    amount: number; // total in NGN (will convert to kobo)
-    apartmentId: string;
-    checkIn: string;
-    checkOut: string;
-  };
-
-  try {
-    body = await request.json();
-  } catch {
-    return NextResponse.json(
-      { error: "Invalid request body" },
-      { status: 400 }
-    );
+  const parsedBody = await parseJsonBody(request, paystackInitializeBodySchema);
+  if (!parsedBody.success) {
+    return parsedBody.response;
   }
 
-  const { email, name, phone, amount, apartmentId, checkIn, checkOut } = body;
-  if (!email || typeof amount !== "number" || amount < 100 || !apartmentId || !checkIn || !checkOut) {
-    return NextResponse.json(
-      { error: "Missing or invalid email, amount, apartmentId, checkIn, or checkOut" },
-      { status: 400 }
-    );
-  }
+  const { email, name, phone, amount, apartmentId, checkIn, checkOut } =
+    parsedBody.data;
 
   // --- SERVER-SIDE DOUBLE-BOOKING PREVENTION ---
   // Check if any existing PAID or PENDING booking overlaps with the requested dates.

@@ -37,7 +37,7 @@ function ApartmentsContent() {
         const params = new URLSearchParams();
         params.set("checkIn", filters.checkIn);
         params.set("checkOut", filters.checkOut);
-        if (filters.guests) params.set("guests", filters.guests.toString());
+        params.set("guests", (filters.guests || 1).toString());
 
         const res = await fetch(`/api/apartments/available?${params.toString()}`);
         if (res.ok) {

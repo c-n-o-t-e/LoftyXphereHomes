@@ -208,7 +208,7 @@ export function YourReservationCard({
         body: JSON.stringify({
           email: trimmedEmail,
           name: trimmedName,
-          phone: trimmedPhone || undefined,
+          phone: trimmedPhone,
           amount: calculation.total,
           apartmentId,
           checkIn,

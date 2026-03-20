@@ -1,6 +1,8 @@
 import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/db";
 import { apartments } from "@/lib/data/apartments";
+import { parseSearchParams } from "@/lib/validation/http";
+import { availableApartmentsQuerySchema } from "@/lib/validation/schemas";
 
 /**
  * GET /api/apartments/available?checkIn=YYYY-MM-DD&checkOut=YYYY-MM-DD&guests=N
@@ -17,25 +19,15 @@ import { apartments } from "@/lib/data/apartments";
  * - Search 19th→22nd: Available (Bob checks out 19th, new guest can check in)
  */
 export async function GET(request: NextRequest) {
-  const { searchParams } = new URL(request.url);
-  const checkIn = searchParams.get("checkIn");
-  const checkOut = searchParams.get("checkOut");
-  const guestsParam = searchParams.get("guests");
-  const guests = guestsParam ? parseInt(guestsParam, 10) : undefined;
+  const parsedQuery = parseSearchParams(request, availableApartmentsQuerySchema);
+  if (!parsedQuery.success) {
+    return parsedQuery.response;
+  }
+
+  const { checkIn, checkOut, guests } = parsedQuery.data;
 
   // Get all apartment IDs from static data
   const allApartmentIds = apartments.map((apt) => apt.id);
-
-  // If no dates provided, return all apartments (filtered by guests if specified)
-  if (!checkIn || !checkOut) {
-    let availableIds = allApartmentIds;
-    if (guests && guests > 0) {
-      availableIds = apartments
-        .filter((apt) => apt.capacity >= guests)
-        .map((apt) => apt.id);
-    }
-    return NextResponse.json({ availableApartmentIds: availableIds });
-  }
 
   try {
     const requestedCheckIn = new Date(checkIn);

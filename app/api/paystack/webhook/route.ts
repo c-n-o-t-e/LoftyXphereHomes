@@ -2,6 +2,8 @@ import { NextRequest, NextResponse } from "next/server";
 import { verifyTransaction, verifyWebhookSignature } from "@/lib/paystack";
 import { upsertBookingFromPaystack } from "@/lib/booking";
 import { inviteUserByEmail } from "@/lib/supabase/server";
+import { validationErrorResponse } from "@/lib/validation/http";
+import { paystackWebhookPayloadSchema } from "@/lib/validation/schemas";
 
 /**
  * POST /api/paystack/webhook
@@ -31,18 +33,23 @@ export async function POST(request: NextRequest) {
         );
     }
 
-    let payload: { event?: string; data?: { reference?: string } };
+    let payload: unknown;
     try {
         payload = JSON.parse(body);
     } catch {
         return NextResponse.json({ error: "Invalid JSON" }, { status: 400 });
     }
 
-    if (payload.event !== "charge.success") {
+    const parsedPayload = paystackWebhookPayloadSchema.safeParse(payload);
+    if (!parsedPayload.success) {
+        return validationErrorResponse(parsedPayload.error);
+    }
+
+    if (parsedPayload.data.event !== "charge.success") {
         return NextResponse.json({ received: true });
     }
 
-    const reference = payload.data?.reference;
+    const reference = parsedPayload.data.data?.reference?.trim();
     if (!reference) {
         return NextResponse.json(
             { error: "Missing reference" },

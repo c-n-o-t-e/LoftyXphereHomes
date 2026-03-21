@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
-import { prisma } from "@/lib/db";
 import { apartments } from "@/lib/data/apartments";
+import { getOverlappingBookingsCached } from "@/lib/cache/availability-data";
 import { parseSearchParams } from "@/lib/validation/http";
 import { availableApartmentsQuerySchema } from "@/lib/validation/schemas";
 
@@ -33,18 +33,11 @@ export async function GET(request: NextRequest) {
     const requestedCheckIn = new Date(checkIn);
     const requestedCheckOut = new Date(checkOut);
 
-    // Find all bookings that overlap with the requested date range
-    // Overlap condition: existingCheckIn < requestedCheckOut AND existingCheckOut > requestedCheckIn
-    const overlappingBookings = await prisma.booking.findMany({
-      where: {
-        status: { in: ["PAID", "PENDING"] },
-        checkIn: { lt: requestedCheckOut },
-        checkOut: { gt: requestedCheckIn },
-      },
-      select: {
-        apartmentId: true,
-      },
-    });
+    // Find all bookings that overlap with the requested date range (cached on server)
+    const overlappingBookings = await getOverlappingBookingsCached(
+      requestedCheckIn.toISOString(),
+      requestedCheckOut.toISOString()
+    );
 
     // Get set of apartment IDs that are booked (unavailable)
     const bookedApartmentIds = new Set(
@@ -65,14 +58,21 @@ export async function GET(request: NextRequest) {
 
     const availableIds = availableApartments.map((apt) => apt.id);
 
-    return NextResponse.json({
-      availableApartmentIds: availableIds,
-      checkIn,
-      checkOut,
-      guests,
-      totalAvailable: availableIds.length,
-      totalBooked: bookedApartmentIds.size,
-    });
+    return NextResponse.json(
+      {
+        availableApartmentIds: availableIds,
+        checkIn,
+        checkOut,
+        guests,
+        totalAvailable: availableIds.length,
+        totalBooked: bookedApartmentIds.size,
+      },
+      {
+        headers: {
+          "Cache-Control": "public, s-maxage=60, stale-while-revalidate=120",
+        },
+      }
+    );
   } catch (error) {
     console.error("Error checking apartment availability:", error);
     // On error, return all apartments (graceful degradation)

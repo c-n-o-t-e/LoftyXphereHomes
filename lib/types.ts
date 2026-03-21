@@ -35,18 +35,6 @@ export interface ContactFormData {
     message: string;
 }
 
-export interface BookingInquiryFormData {
-    fullName: string;
-    email: string;
-    phone: string;
-    cityVisiting: string;
-    checkInDate: string;
-    checkOutDate: string;
-    numberOfGuests: number;
-    apartmentId: string;
-    message: string;
-}
-
 export interface BlogPost {
     id: string;
     title: string;

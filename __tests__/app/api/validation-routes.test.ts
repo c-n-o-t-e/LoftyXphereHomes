@@ -43,6 +43,12 @@ jest.mock("@/lib/supabase/server", () => ({
   inviteUserByEmail: jest.fn(),
 }));
 
+jest.mock("next/cache", () => ({
+  revalidateTag: jest.fn(),
+  revalidatePath: jest.fn(),
+  unstable_cache: (fn: unknown) => fn,
+}));
+
 const { GET: getBookingVerify } = require("@/app/api/bookings/verify/route");
 const { GET: getAvailableApartments } = require("@/app/api/apartments/available/route");
 const { GET: getMyBookings } = require("@/app/api/my-bookings/route");

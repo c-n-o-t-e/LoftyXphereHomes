@@ -17,7 +17,7 @@ __tests__/
 │   ├── apartments/
 │   │   ├── page.test.tsx                # Apartment listing page
 │   │   └── [id]/page.test.tsx           # Apartment detail page
-│   ├── booking/page.test.tsx            # Booking page
+│   ├── booking/success/page.test.tsx    # Booking success (Paystack)
 │   ├── contact/page.test.tsx            # Contact page
 │   ├── about/page.test.tsx              # About page
 │   ├── gallery/page.test.tsx            # Gallery page
@@ -31,7 +31,6 @@ __tests__/
 │   ├── TrustSignals.test.tsx            # Trust signals section
 │   ├── TestimonialSlider.test.tsx       # Testimonials carousel
 │   ├── AmenitiesSection.test.tsx        # Amenities section
-│   ├── BookingInquiryForm.test.tsx      # Booking form
 │   └── ContactForm.test.tsx             # Contact form
 └── lib/
     ├── data/
@@ -42,7 +41,7 @@ __tests__/
 
 ## Test Coverage by Component
 
-### Components (11 test files)
+### Components (10 test files)
 
 1. **Navbar.test.tsx**
 
@@ -101,17 +100,7 @@ __tests__/
     - ✅ Renders description
     - ✅ Renders all amenities
 
-8. **BookingInquiryForm.test.tsx**
-
-    - ✅ Renders all form fields
-    - ✅ Shows validation errors
-    - ✅ Validates email format
-    - ✅ Validates phone number
-    - ✅ Validates number of guests
-    - ✅ Submits with valid data
-    - ✅ Uses default apartment ID
-
-10. **ContactForm.test.tsx**
+8. **ContactForm.test.tsx**
     - ✅ Renders all form fields
     - ✅ Shows validation errors
     - ✅ Validates email format

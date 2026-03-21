@@ -1,13 +1,14 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useMemo } from "react";
 import { useRouter } from "next/navigation";
 import Image from "next/image";
 import Link from "next/link";
+import { useInfiniteQuery } from "@tanstack/react-query";
 import { useAuth } from "@/components/AuthProvider";
 import { getSupabaseClient } from "@/lib/supabase/client";
 import { apartments } from "@/lib/data/apartments";
-import { Calendar, MapPin, Users, Clock, ChevronRight, Loader2 } from "lucide-react";
+import { Calendar, MapPin, Clock, ChevronRight, Loader2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 
 interface Booking {
@@ -48,66 +49,104 @@ function getBookingStatus(checkIn: string, checkOut: string, status: string) {
 }
 
 export default function MyBookingsPage() {
-  const { user, session, isLoading: authLoading } = useAuth();
+  const { user, isLoading: authLoading } = useAuth();
   const router = useRouter();
-  const [bookings, setBookings] = useState<Booking[]>([]);
-  const [isLoading, setIsLoading] = useState(true);
-  const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
-    // Redirect to login if not authenticated
     if (!authLoading && !user) {
       router.push("/login?redirect=/my-bookings");
-      return;
     }
+  }, [authLoading, user, router]);
 
-    if (session?.access_token) {
-      fetchBookings();
-    }
-  }, [authLoading, user, session, router]);
-
-  async function fetchBookings() {
-    try {
-      setIsLoading(true);
-      setError(null);
-
+  const {
+    data,
+    error,
+    isPending,
+    isError,
+    isFetching,
+    fetchNextPage,
+    hasNextPage,
+    isFetchingNextPage,
+    refetch,
+  } = useInfiniteQuery({
+    queryKey: ["my-bookings", user?.id],
+    enabled: Boolean(user) && !authLoading,
+    initialPageParam: undefined as string | undefined,
+    staleTime: 60_000,
+    queryFn: async ({ pageParam }) => {
       const supabase = getSupabaseClient();
-      const { data: { session } } = await supabase.auth.getSession();
-      
+      const {
+        data: { session },
+      } = await supabase.auth.getSession();
+
       if (!session?.access_token) {
         throw new Error("Not authenticated");
       }
 
-      const response = await fetch("/api/my-bookings", {
+      const params = new URLSearchParams();
+      if (pageParam) params.set("cursor", pageParam);
+      const qs = params.toString();
+
+      const response = await fetch(`/api/my-bookings${qs ? `?${qs}` : ""}`, {
         headers: {
           Authorization: `Bearer ${session.access_token}`,
         },
       });
 
-      const data = await response.json();
-      
+      const payload = await response.json();
+
       if (!response.ok) {
-        throw new Error(data.details || data.error || "Failed to fetch bookings");
+        throw new Error(
+          (typeof payload.details === "string" && payload.details) ||
+            (typeof payload.error === "string" && payload.error) ||
+            "Failed to fetch bookings"
+        );
       }
 
-      setBookings(data.bookings || []);
-    } catch (err) {
-      console.error("Error fetching bookings:", err);
-      const errorMsg = err instanceof Error ? err.message : "Unknown error";
-      
-      if (errorMsg.includes("TLS") || errorMsg.includes("certificate") || errorMsg.includes("Database")) {
-        setError("Database connection issue. Please contact support.");
-      } else if (errorMsg.includes("Not authenticated") || errorMsg.includes("token")) {
-        setError("Session expired. Please log in again.");
-        router.push("/login?redirect=/my-bookings");
-        return;
-      } else {
-        setError(`Failed to load your bookings: ${errorMsg}`);
-      }
-    } finally {
-      setIsLoading(false);
+      return {
+        bookings: (payload.bookings || []) as Booking[],
+        nextCursor: (payload.nextCursor ?? null) as string | null,
+      };
+    },
+    getNextPageParam: (lastPage) => lastPage.nextCursor ?? undefined,
+  });
+
+  useEffect(() => {
+    if (!isError || !(error instanceof Error)) return;
+    const msg = error.message;
+    if (
+      msg.includes("Not authenticated") ||
+      msg.includes("Invalid token") ||
+      (msg.includes("token") && msg.includes("expired"))
+    ) {
+      router.push("/login?redirect=/my-bookings");
     }
-  }
+  }, [isError, error, router]);
+
+  const bookings = useMemo(
+    () => data?.pages.flatMap((p) => p.bookings) ?? [],
+    [data]
+  );
+
+  const displayError = useMemo(() => {
+    if (!isError || !(error instanceof Error)) return null;
+    const msg = error.message;
+    if (
+      msg.includes("Not authenticated") ||
+      msg.includes("Invalid token") ||
+      msg.includes("Session expired")
+    ) {
+      return null;
+    }
+    if (
+      msg.includes("TLS") ||
+      msg.includes("certificate") ||
+      msg.includes("Database")
+    ) {
+      return "Database connection issue. Please contact support.";
+    }
+    return `Failed to load your bookings: ${msg}`;
+  }, [isError, error]);
 
   // Show loading while checking auth
   if (authLoading) {
@@ -118,8 +157,15 @@ export default function MyBookingsPage() {
     );
   }
 
-  // Show loading while fetching bookings
-  if (isLoading) {
+  if (!user) {
+    return (
+      <div className="min-h-screen bg-gray-50 flex items-center justify-center pt-20">
+        <Loader2 className="h-8 w-8 animate-spin text-amber-600" />
+      </div>
+    );
+  }
+
+  if (isPending) {
     return (
       <div className="min-h-screen bg-gray-50 pt-20">
         <div className="max-w-4xl mx-auto px-4 py-12">
@@ -127,6 +173,30 @@ export default function MyBookingsPage() {
           <div className="flex items-center justify-center py-12">
             <Loader2 className="h-8 w-8 animate-spin text-amber-600" />
             <span className="ml-3 text-gray-600">Loading your bookings...</span>
+          </div>
+        </div>
+      </div>
+    );
+  }
+
+  if (isError && !data) {
+    return (
+      <div className="min-h-screen bg-gray-50 pt-20">
+        <div className="max-w-4xl mx-auto px-4 py-12">
+          <h1 className="text-3xl font-bold text-gray-900 mb-8">My Bookings</h1>
+          <div className="bg-red-50 border border-red-200 rounded-lg p-4 mb-6">
+            <p className="text-red-700">
+              {displayError ||
+                "Something went wrong loading your bookings. Please try again."}
+            </p>
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={() => void refetch()}
+              className="mt-2"
+            >
+              Try Again
+            </Button>
           </div>
         </div>
       </div>
@@ -165,18 +235,24 @@ export default function MyBookingsPage() {
           </Button>
         </div>
 
-        {error && (
+        {displayError && (
           <div className="bg-red-50 border border-red-200 rounded-lg p-4 mb-6">
-            <p className="text-red-700">{error}</p>
+            <p className="text-red-700">{displayError}</p>
             <Button
               variant="outline"
               size="sm"
-              onClick={fetchBookings}
+              onClick={() => void refetch()}
               className="mt-2"
             >
               Try Again
             </Button>
           </div>
+        )}
+
+        {isFetching && !isPending && (
+          <p className="text-sm text-gray-500 mb-4" aria-live="polite">
+            Refreshing bookings…
+          </p>
         )}
 
         {bookings.length === 0 ? (
@@ -236,6 +312,26 @@ export default function MyBookingsPage() {
                   ))}
                 </div>
               </section>
+            )}
+
+            {hasNextPage && (
+              <div className="flex justify-center pt-4">
+                <Button
+                  type="button"
+                  variant="outline"
+                  disabled={isFetchingNextPage}
+                  onClick={() => void fetchNextPage()}
+                >
+                  {isFetchingNextPage ? (
+                    <>
+                      <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                      Loading…
+                    </>
+                  ) : (
+                    "Load more"
+                  )}
+                </Button>
+              </div>
             )}
           </div>
         )}

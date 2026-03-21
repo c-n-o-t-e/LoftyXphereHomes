@@ -1,5 +1,6 @@
-import { render, screen, waitFor } from '@testing-library/react'
+import { screen, waitFor } from '@testing-library/react'
 import ApartmentDetailPage from '@/app/apartments/[id]/page'
+import { renderWithQueryClient } from '@/lib/testing/render-with-query-client'
 import { notFound } from 'next/navigation'
 
 jest.mock('next/link', () => {
@@ -18,7 +19,7 @@ describe('Apartment Detail Page - Extended Coverage', () => {
 
   it('renders all apartment details', async () => {
     const params = Promise.resolve({ id: 'lofty-wuye-01' })
-    render(await ApartmentDetailPage({ params }))
+    renderWithQueryClient(await ApartmentDetailPage({ params }))
     await waitForReservationCard()
     expect(screen.getByText(/Lofty Wuye Premium/i)).toBeInTheDocument()
     expect(screen.getByText(/Wuye, Abuja/i)).toBeInTheDocument()
@@ -29,7 +30,7 @@ describe('Apartment Detail Page - Extended Coverage', () => {
 
   it('renders apartment amenities', async () => {
     const params = Promise.resolve({ id: 'lofty-wuye-01' })
-    render(await ApartmentDetailPage({ params }))
+    renderWithQueryClient(await ApartmentDetailPage({ params }))
     await waitForReservationCard()
     expect(screen.getByText('Amenities')).toBeInTheDocument()
     expect(screen.getByText(/24\/7 Power/i)).toBeInTheDocument()
@@ -37,7 +38,7 @@ describe('Apartment Detail Page - Extended Coverage', () => {
 
   it('renders house rules', async () => {
     const params = Promise.resolve({ id: 'lofty-wuye-01' })
-    render(await ApartmentDetailPage({ params }))
+    renderWithQueryClient(await ApartmentDetailPage({ params }))
     await waitForReservationCard()
     expect(screen.getByText('House Rules')).toBeInTheDocument()
     expect(screen.getByText(/No smoking indoors/i)).toBeInTheDocument()
@@ -45,7 +46,7 @@ describe('Apartment Detail Page - Extended Coverage', () => {
 
   it('renders check-in and check-out times', async () => {
     const params = Promise.resolve({ id: 'lofty-wuye-01' })
-    render(await ApartmentDetailPage({ params }))
+    renderWithQueryClient(await ApartmentDetailPage({ params }))
     await waitForReservationCard()
     expect(screen.getByText(/Check-in:/i)).toBeInTheDocument()
     expect(screen.getByText(/Check-out:/i)).toBeInTheDocument()
@@ -53,7 +54,7 @@ describe('Apartment Detail Page - Extended Coverage', () => {
 
   it('renders booking card with price', async () => {
     const params = Promise.resolve({ id: 'lofty-wuye-01' })
-    render(await ApartmentDetailPage({ params }))
+    renderWithQueryClient(await ApartmentDetailPage({ params }))
     await waitForReservationCard()
     expect(screen.getByText(/₦65,000/i)).toBeInTheDocument()
     // Price format may vary, just check that price is displayed
@@ -62,7 +63,7 @@ describe('Apartment Detail Page - Extended Coverage', () => {
 
   it('renders apartment images', async () => {
     const params = Promise.resolve({ id: 'lofty-wuye-01' })
-    render(await ApartmentDetailPage({ params }))
+    renderWithQueryClient(await ApartmentDetailPage({ params }))
     await waitForReservationCard()
     const images = screen.getAllByRole('img')
     expect(images.length).toBeGreaterThan(0)
@@ -71,7 +72,7 @@ describe('Apartment Detail Page - Extended Coverage', () => {
   it('calls notFound when apartment does not exist', async () => {
     const params = Promise.resolve({ id: 'non-existent-apartment' })
     try {
-      render(await ApartmentDetailPage({ params }))
+      renderWithQueryClient(await ApartmentDetailPage({ params }))
     } catch (e) {
       // Expected
     }
@@ -80,14 +81,14 @@ describe('Apartment Detail Page - Extended Coverage', () => {
 
   it('renders Book Apartment button', async () => {
     const params = Promise.resolve({ id: 'lofty-wuye-01' })
-    render(await ApartmentDetailPage({ params }))
+    renderWithQueryClient(await ApartmentDetailPage({ params }))
     await waitForReservationCard()
     expect(screen.getByText('Book Apartment')).toBeInTheDocument()
   })
 
   it('uses fallback image when apartment has no images', async () => {
     const params = Promise.resolve({ id: 'lofty-wuye-01' })
-    render(await ApartmentDetailPage({ params }))
+    renderWithQueryClient(await ApartmentDetailPage({ params }))
     await waitForReservationCard()
     // Should render images (or fallback)
     const images = screen.getAllByRole('img')

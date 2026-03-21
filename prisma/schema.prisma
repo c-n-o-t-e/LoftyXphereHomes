@@ -39,6 +39,8 @@ model Booking {
   @@index([bookerEmail])
   @@index([userId])
   @@index([checkIn, checkOut])
+  // Overlap queries: WHERE status IN (...) AND checkIn < ? AND checkOut > ?
+  @@index([status, checkIn, checkOut])
 }
 
 enum BookingStatus {

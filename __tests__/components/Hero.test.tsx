@@ -57,20 +57,18 @@ describe('Hero', () => {
     expect(source).toHaveAttribute('type', 'video/mp4')
   })
 
-  it('uses fallback image as video poster', () => {
-    const { container } = render(<Hero />)
-    const video = container.querySelector('video')
-    expect(video).toHaveAttribute('poster', expect.stringContaining('unsplash.com'))
+  it('shows loading state for hero video until ready', () => {
+    render(<Hero />)
+    expect(screen.getByLabelText('Loading hero video')).toBeInTheDocument()
   })
 
-  it('shows fallback background when video errors', () => {
+  it('shows CSS gradient backdrop when video errors', () => {
     const { container } = render(<Hero />)
     const video = container.querySelector('video')
     expect(video).toBeInTheDocument()
     fireEvent.error(video!)
     expect(container.querySelector('video')).toBeNull()
-    // Fallback is a div with bg-cover bg-center and inline backgroundImage
-    const fallback = container.querySelector('.bg-cover.bg-center')
+    const fallback = container.querySelector('.from-stone-900')
     expect(fallback).toBeInTheDocument()
   })
 

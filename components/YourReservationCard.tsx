@@ -1,6 +1,7 @@
 "use client";
 
-import { useState, useMemo, useEffect, useCallback } from "react";
+import { useState, useMemo } from "react";
+import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { Calendar, Users, Bed, Bath, Loader2, Info } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -60,6 +61,7 @@ export function YourReservationCard({
   baths,
   bookingUrl,
 }: YourReservationCardProps) {
+  const queryClient = useQueryClient();
   const today = useMemo(() => {
     const t = new Date();
     return formatDateForInput(t);
@@ -76,27 +78,23 @@ export function YourReservationCard({
   // Calendar popup state
   const [openCalendar, setOpenCalendar] = useState<"checkIn" | "checkOut" | null>(null);
 
-  // Availability data from API
-  const [blockedDates, setBlockedDates] = useState<string[]>([]);
-  const [bookingRanges, setBookingRanges] = useState<BookingRange[]>([]);
+  const { data: availabilityData } = useQuery({
+    queryKey: ["availability", apartmentId],
+    queryFn: async () => {
+      const res = await fetch(
+        `/api/availability?apartmentId=${encodeURIComponent(apartmentId)}`
+      );
+      if (!res.ok) throw new Error("Failed to load availability");
+      return res.json() as Promise<{
+        blockedDates?: string[];
+        bookingRanges?: BookingRange[];
+      }>;
+    },
+    staleTime: 60_000,
+  });
 
-  // Fetch availability data for this apartment
-  const fetchAvailability = useCallback(async () => {
-    try {
-      const res = await fetch(`/api/availability?apartmentId=${encodeURIComponent(apartmentId)}`);
-      if (res.ok) {
-        const data = await res.json();
-        setBlockedDates(data.blockedDates || []);
-        setBookingRanges(data.bookingRanges || []);
-      }
-    } catch (error) {
-      console.error("Failed to fetch availability:", error);
-    }
-  }, [apartmentId]);
-
-  useEffect(() => {
-    fetchAvailability();
-  }, [fetchAvailability]);
+  const blockedDates = availabilityData?.blockedDates ?? [];
+  const bookingRanges = availabilityData?.bookingRanges ?? [];
 
   const calculation = useMemo(() => {
     if (!checkOut) return null;
@@ -221,7 +219,7 @@ export function YourReservationCard({
         setIsRedirecting(false);
         // If conflict (dates already booked), refresh availability and clear dates
         if (res.status === 409) {
-          fetchAvailability();
+          void queryClient.invalidateQueries({ queryKey: ["availability", apartmentId] });
           setCheckIn("");
           setCheckOut("");
         }

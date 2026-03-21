@@ -28,7 +28,7 @@ A production-ready website for LoftyXphereHomes, a premium shortlet apartment re
 ├── app/
 │   ├── apartments/          # Apartment listing and detail pages
 │   ├── about/              # About page
-│   ├── booking/            # Booking page with inquiry form
+│   ├── booking/            # Booking success (Paystack redirect)
 │   ├── contact/            # Contact page
 │   ├── gallery/            # Image gallery
 │   ├── terms/              # Terms & conditions
@@ -46,7 +46,6 @@ A production-ready website for LoftyXphereHomes, a premium shortlet apartment re
 │   ├── TrustSignals.tsx     # Trust signals section
 │   ├── TestimonialSlider.tsx # Testimonials carousel
 │   ├── AmenitiesSection.tsx  # Amenities display
-│   ├── BookingInquiryForm.tsx # Booking inquiry form
 │   └── ContactForm.tsx       # Contact form
 ├── lib/
 │   ├── data/

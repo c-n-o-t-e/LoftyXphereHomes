@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
-import { prisma } from "@/lib/db";
+import { getBookingsForApartmentCached } from "@/lib/cache/availability-data";
 import { parseSearchParams } from "@/lib/validation/http";
 import { availabilityQuerySchema } from "@/lib/validation/schemas";
 
@@ -33,20 +33,7 @@ export async function GET(request: NextRequest) {
   const { apartmentId } = parsedQuery.data;
 
   try {
-    // Fetch all active bookings for this apartment
-    const bookings = await prisma.booking.findMany({
-      where: {
-        apartmentId,
-        status: { in: ["PAID", "PENDING"] },
-      },
-      select: {
-        checkIn: true,
-        checkOut: true,
-      },
-      orderBy: {
-        checkIn: "asc",
-      },
-    });
+    const bookings = await getBookingsForApartmentCached(apartmentId);
 
     // Build blocked dates (check-in date through checkout-1)
     // Example: booking 11th→15th blocks check-in on 11th, 12th, 13th, 14th
@@ -69,11 +56,18 @@ export async function GET(request: NextRequest) {
       }
     }
 
-    return NextResponse.json({
-      apartmentId,
-      blockedDates: Array.from(blockedDates).sort(),
-      bookingRanges,
-    });
+    return NextResponse.json(
+      {
+        apartmentId,
+        blockedDates: Array.from(blockedDates).sort(),
+        bookingRanges,
+      },
+      {
+        headers: {
+          "Cache-Control": "public, s-maxage=60, stale-while-revalidate=120",
+        },
+      }
+    );
   } catch (error) {
     console.error("Error fetching availability:", error);
     return NextResponse.json(

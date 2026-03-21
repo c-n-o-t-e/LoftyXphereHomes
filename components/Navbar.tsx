@@ -3,7 +3,7 @@
 import Link from "next/link";
 import Image from "next/image";
 import { useState, useEffect } from "react";
-import { usePathname } from "next/navigation";
+import { usePathname, useRouter } from "next/navigation";
 import { Menu, X, User, LogOut } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { motion, AnimatePresence } from "framer-motion";
@@ -13,11 +13,18 @@ import HeroSearchBar from "./HeroSearchBar";
 export default function Navbar() {
   const { user, isLoading: authLoading, signOut } = useAuth();
   const pathname = usePathname();
+  const router = useRouter();
   const isHome = pathname === "/";
 
   const [isScrolled, setIsScrolled] = useState(false);
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
   const [showSearchBarNav, setShowSearchBarNav] = useState(false);
+
+  useEffect(() => {
+    if (!authLoading && user) {
+      router.prefetch("/my-bookings");
+    }
+  }, [authLoading, user, router]);
 
   useEffect(() => {
     const handleScroll = () => {

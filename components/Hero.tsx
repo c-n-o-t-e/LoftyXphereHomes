@@ -1,24 +1,58 @@
 "use client";
 
-import { useRef, useEffect, useState } from "react";
+import { useRef, useEffect, useState, useCallback } from "react";
 import { motion } from "framer-motion";
+import { Loader2 } from "lucide-react";
 import HeroSearchBar from "./HeroSearchBar";
 
 // Video URL from Pexels - luxury apartment interior tour
 const HERO_VIDEO_URL = "https://videos.pexels.com/video-files/7578554/7578554-uhd_2560_1440_30fps.mp4";
-// Fallback poster image if video fails to load
-const FALLBACK_IMAGE = "https://images.unsplash.com/photo-1522708323590-d24dbb6b0267?w=1920&q=80";
+
+/** CSS-only backdrop when the video fails (no third-party image dependency). */
+function HeroVideoErrorBackdrop() {
+  return (
+    <div
+      className="absolute inset-0 bg-gradient-to-br from-stone-900 via-stone-800 to-neutral-950"
+      aria-hidden
+    />
+  );
+}
 
 export default function Hero() {
   const videoRef = useRef<HTMLVideoElement>(null);
   const [videoError, setVideoError] = useState(false);
+  const [videoReady, setVideoReady] = useState(false);
+
+  const markVideoReady = useCallback(() => {
+    setVideoReady(true);
+  }, []);
+
+  // Hide loading when the first frame is available or playback actually starts
+  // (loadeddata covers autoplay-blocked cases where playing may never fire until user gesture)
+  useEffect(() => {
+    if (videoError) return;
+    const video = videoRef.current;
+    if (!video) return;
+
+    const onReady = () => markVideoReady();
+    video.addEventListener("playing", onReady);
+    video.addEventListener("loadeddata", onReady);
+
+    if (video.readyState >= HTMLMediaElement.HAVE_CURRENT_DATA) {
+      markVideoReady();
+    }
+
+    return () => {
+      video.removeEventListener("playing", onReady);
+      video.removeEventListener("loadeddata", onReady);
+    };
+  }, [videoError, markVideoReady]);
 
   // Ensure video plays on mount (some browsers block autoplay)
   useEffect(() => {
     const video = videoRef.current;
     if (video) {
       video.play().catch(() => {
-        // Autoplay was prevented, video will show poster instead
         console.log("Video autoplay was prevented");
       });
     }
@@ -29,23 +63,35 @@ export default function Hero() {
       {/* Video Background */}
       <div className="absolute inset-0 z-0">
         {!videoError ? (
-          <video
-            ref={videoRef}
-            autoPlay
-            muted
-            loop
-            playsInline
-            poster={FALLBACK_IMAGE}
-            onError={() => setVideoError(true)}
-            className="absolute inset-0 w-full h-full object-cover"
-          >
-            <source src={HERO_VIDEO_URL} type="video/mp4" />
-          </video>
+          <>
+            <video
+              ref={videoRef}
+              autoPlay
+              muted
+              loop
+              playsInline
+              preload="auto"
+              onError={() => setVideoError(true)}
+              className="absolute inset-0 w-full h-full object-cover"
+            >
+              <source src={HERO_VIDEO_URL} type="video/mp4" />
+            </video>
+            {/* Loading until first frame / playback (no external poster image) */}
+            <div
+              className={`absolute inset-0 z-[1] flex items-center justify-center bg-gradient-to-br from-stone-900/95 via-stone-800/95 to-neutral-950/95 transition-opacity duration-700 ease-out ${
+                videoReady ? "pointer-events-none opacity-0" : "opacity-100"
+              }`}
+              aria-busy={!videoReady}
+              aria-label="Loading hero video"
+            >
+              <Loader2
+                className="h-10 w-10 text-white/40 animate-spin"
+                aria-hidden
+              />
+            </div>
+          </>
         ) : (
-          <div
-            className="absolute inset-0 bg-cover bg-center"
-            style={{ backgroundImage: `url(${FALLBACK_IMAGE})` }}
-          />
+          <HeroVideoErrorBackdrop />
         )}
         {/* Light gradient overlay for text readability */}
         <div className="absolute inset-0 bg-gradient-to-b from-black/20 via-black/10 to-black/20" />

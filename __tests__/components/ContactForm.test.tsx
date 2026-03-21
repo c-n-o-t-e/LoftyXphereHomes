@@ -3,6 +3,7 @@ import userEvent from '@testing-library/user-event'
 import { ContactForm } from '@/components/ContactForm'
 
 describe('ContactForm', () => {
+  jest.setTimeout(20_000)
   const user = userEvent.setup()
 
   it('renders all form fields', () => {

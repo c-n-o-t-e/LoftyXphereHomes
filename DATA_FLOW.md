@@ -6,10 +6,9 @@ Supabase hosts a **PostgreSQL** database. Your app reaches it in two different w
 
 | Path | Client | Table(s) | Used by |
 |------|--------|----------|---------|
-| **1** | Supabase JS client | `guests` | BookingInquiryForm |
-| **2** | Prisma (connects to Supabase Postgres) | `Booking` | Paystack booking flow |
+| **1** | Prisma (connects to Supabase Postgres) | `Booking` | Paystack booking flow |
 
-Both paths talk to the **same** Supabase PostgreSQL database. They use different clients but write to the same project.
+Supabase Auth (JS client) is also used for **login/session**; booking records are persisted via Prisma to the same Supabase PostgreSQL database.
 
 ---
 
@@ -20,73 +19,33 @@ Both paths talk to the **same** Supabase PostgreSQL database. They use different
 │                         SUPABASE PROJECT                                     │
 │  (One PostgreSQL database: db.liksmvjgvphkfogweezi.supabase.co)              │
 │                                                                              │
-│  ┌──────────────┐    ┌──────────────┐    ┌──────────────┐                   │
-│  │   guests     │    │   Booking    │    │  (others)    │                   │
-│  │   table      │    │   table      │    │              │                   │
-│  └──────▲───────┘    └──────▲───────┘    └──────────────┘                   │
-│         │                   │                                                │
-└─────────┼───────────────────┼────────────────────────────────────────────────┘
-          │                   │
-          │                   │  DATABASE_URL
-          │                   │  (PostgreSQL connection string)
-          │                   │
-          │                   ▼
-          │            ┌──────────────┐
-          │            │   PRISMA     │
-          │            │   ORM        │
-          │            │  (lib/db.ts) │
-          │            └──────▲───────┘
-          │                   │
-          │  NEXT_PUBLIC_     │  prisma.booking.upsert()
-          │  SUPABASE_*       │
-          │                   │
-          ▼                   │
-   ┌──────────────┐           │
-   │  Supabase    │           │
-   │  JS Client   │           │
-   │  (REST API)  │           │
-   └──────▲───────┘           │
-          │                   │
-          │                   │
-   supabase.from("guests")    lib/booking.ts
-   .insert(...)                    │
-          │                        │
-          │                        │
-   ┌──────┴───────────────────────┴──────┐
-   │         YOUR NEXT.JS APP            │
-   └─────────────────────────────────────┘
-```
-
----
-
-## Path 1: Supabase JS client → `guests` table
-
-```
-User fills Booking Inquiry form
-         │
-         ▼
-┌─────────────────────┐
-│ BookingInquiryForm  │
-│ (apartment page)    │
-└─────────┬───────────┘
+│  ┌──────────────┐    ┌──────────────┐                                        │
+│  │   Booking    │    │  (others)    │                                        │
+│  │   table      │    │              │                                        │
+│  └──────▲───────┘    └──────────────┘                                        │
+│         │                                                                     │
+└─────────┼─────────────────────────────────────────────────────────────────────┘
           │
-          │ supabase.from("guests").insert({ name, email, phone, ... })
+          │  DATABASE_URL (PostgreSQL connection string)
           │
           ▼
-┌─────────────────────┐      HTTP/REST       ┌─────────────────┐
-│  supabase-client.js │ ──────────────────►  │  Supabase API   │
-│  (NEXT_PUBLIC_*)    │                      │  → Postgres     │
-└─────────────────────┘                      └────────┬────────┘
-                                                      │
-                                                      ▼
-                                              ┌───────────────┐
-                                              │ guests table  │
-                                              └───────────────┘
+   ┌──────────────┐
+   │   PRISMA     │
+   │   ORM        │
+   │  (lib/db.ts) │
+   └──────▲───────┘
+          │
+          │  prisma.booking.*  +  lib/booking.ts
+          │
+   ┌──────┴──────────────────────────────────┐
+   │         YOUR NEXT.JS APP                 │
+   │  (+ Supabase JS client for Auth/session) │
+   └──────────────────────────────────────────┘
 ```
 
 ---
 
-## Path 2: Prisma → `Booking` table (Paystack flow)
+## Prisma → `Booking` table (Paystack flow)
 
 ```
 User pays via Paystack
@@ -147,7 +106,5 @@ You can confirm in Supabase Dashboard → Table Editor → `Booking`.
 
 | What | Where it goes | How |
 |------|----------------|-----|
-| Booking inquiry form | Supabase `guests` table | Supabase JS client |
 | Paystack booking (after payment) | Supabase `Booking` table | Prisma → Supabase Postgres |
-
-Both end up in the same Supabase project’s database.
+| User login / session | Supabase Auth | Supabase JS client (`NEXT_PUBLIC_*`) |

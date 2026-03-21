@@ -1,8 +1,8 @@
 "use client";
 
-import { Suspense, useEffect, useState } from "react";
+import { Suspense, useMemo } from "react";
 import { useSearchParams } from "next/navigation";
-import { useMemo } from "react";
+import { useQuery } from "@tanstack/react-query";
 import { apartments } from "@/lib/data/apartments";
 import ApartmentCard from "@/components/ApartmentCard";
 import { filterApartments, SearchFilters, calculateNights } from "@/lib/utils/search";
@@ -10,8 +10,6 @@ import { Info, Loader2 } from "lucide-react";
 
 function ApartmentsContent() {
   const searchParams = useSearchParams();
-  const [availableIds, setAvailableIds] = useState<string[] | null>(null);
-  const [isLoadingAvailability, setIsLoadingAvailability] = useState(false);
 
   // Extract search filters from URL params
   const filters: SearchFilters = useMemo(() => {
@@ -23,53 +21,51 @@ function ApartmentsContent() {
     };
   }, [searchParams]);
 
-  // Fetch availability when dates are provided
-  useEffect(() => {
-    async function fetchAvailability() {
-      // Only fetch if dates are provided
-      if (!filters.checkIn || !filters.checkOut) {
-        setAvailableIds(null);
-        return;
-      }
+  const guestsCount = filters.guests || 1;
+  const availabilityEnabled = !!(filters.checkIn && filters.checkOut);
 
-      setIsLoadingAvailability(true);
-      try {
-        const params = new URLSearchParams();
-        params.set("checkIn", filters.checkIn);
-        params.set("checkOut", filters.checkOut);
-        params.set("guests", (filters.guests || 1).toString());
+  const { data: availabilityIds, isPending, isError } = useQuery({
+    queryKey: [
+      "apartments-available",
+      filters.checkIn,
+      filters.checkOut,
+      guestsCount,
+    ],
+    queryFn: async (): Promise<string[] | null> => {
+      const params = new URLSearchParams();
+      params.set("checkIn", filters.checkIn!);
+      params.set("checkOut", filters.checkOut!);
+      params.set("guests", guestsCount.toString());
+      const res = await fetch(`/api/apartments/available?${params.toString()}`);
+      if (!res.ok) return null;
+      const data = await res.json();
+      return data.availableApartmentIds ?? [];
+    },
+    enabled: availabilityEnabled,
+    staleTime: 60_000,
+  });
 
-        const res = await fetch(`/api/apartments/available?${params.toString()}`);
-        if (res.ok) {
-          const data = await res.json();
-          setAvailableIds(data.availableApartmentIds || []);
-        } else {
-          // On error, show all apartments
-          setAvailableIds(null);
-        }
-      } catch (error) {
-        console.error("Failed to fetch availability:", error);
-        setAvailableIds(null);
-      } finally {
-        setIsLoadingAvailability(false);
-      }
-    }
-
-    fetchAvailability();
-  }, [filters.checkIn, filters.checkOut, filters.guests]);
+  const isLoadingAvailability = availabilityEnabled && isPending;
+  const availableForFilter =
+    !availabilityEnabled
+      ? null
+      : isLoadingAvailability
+        ? null
+        : isError || availabilityIds === null
+          ? null
+          : availabilityIds ?? null;
 
   // Filter apartments based on search criteria AND availability
   const filteredApartments = useMemo(() => {
     let filtered = filterApartments(apartments, filters);
-    
-    // If we have availability data, further filter by available IDs
-    if (availableIds !== null) {
-      const availableSet = new Set(availableIds);
+
+    if (availableForFilter !== null) {
+      const availableSet = new Set(availableForFilter);
       filtered = filtered.filter((apt) => availableSet.has(apt.id));
     }
-    
+
     return filtered;
-  }, [filters, availableIds]);
+  }, [filters, availableForFilter]);
 
   // Check if search is active
   const isSearchActive = !!(filters.location || filters.checkIn || filters.checkOut || filters.guests);

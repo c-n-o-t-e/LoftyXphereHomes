@@ -8,14 +8,8 @@ This guide outlines where Supabase is used and how to set it up.
 
 | Location | Purpose |
 |----------|---------|
-| `app/supabase-client.js` | Creates the Supabase client from env vars |
-| `components/BookingInquiryForm.tsx` | Inserts booking inquiries into a `guests` table |
-| `lib/db.ts` + Prisma | Uses Supabase **PostgreSQL** (via `DATABASE_URL`) for bookings after Paystack payment |
-
-So there are **two** Supabase integration paths:
-
-1. **Supabase JS client** – BookingInquiryForm → `guests` table  
-2. **Prisma + Supabase Postgres** – Paystack bookings → `Booking` model  
+| `lib/supabase/client.ts` (and related) | **Auth** – login, session, `getSession` for API calls |
+| `lib/db.ts` + Prisma | **Bookings** – Supabase **PostgreSQL** via `DATABASE_URL` after Paystack payment |
 
 ---
 
@@ -31,7 +25,7 @@ So there are **two** Supabase integration paths:
 
 ## Step 2: Get Supabase Credentials
 
-### For the Supabase JS client (BookingInquiryForm)
+### For the Supabase JS client (Auth)
 
 1. In Supabase Dashboard: **Project Settings** → **API**.
 2. Note:
@@ -52,7 +46,7 @@ So there are **two** Supabase integration paths:
 Add to `.env` (or `.env.local`):
 
 ```env
-# Supabase (JS client – used by BookingInquiryForm)
+# Supabase (JS client – Auth / session)
 NEXT_PUBLIC_SUPABASE_URL=https://your-project-ref.supabase.co
 NEXT_PUBLIC_SUPABASE_ANON_KEY=eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...
 
@@ -60,43 +54,11 @@ NEXT_PUBLIC_SUPABASE_ANON_KEY=eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...
 DATABASE_URL=postgresql://postgres.[ref]:[YOUR-PASSWORD]@aws-0-[region].pooler.supabase.com:6543/postgres?pgbouncer=true
 ```
 
+If you use **server-side** user management (e.g. invites), you may also set a **service role** key where documented in code—never expose it to the client.
+
 ---
 
-## Step 4: Create Tables in Supabase
-
-### A) `guests` table (for BookingInquiryForm)
-
-BookingInquiryForm inserts into a `guests` table with columns:  
-`name`, `email`, `phone`, `check_in`, `check_out`.
-
-**Using Supabase SQL Editor:**
-
-1. In Supabase Dashboard: **SQL Editor** → **New query**.
-2. Run:
-
-```sql
-create table if not exists public.guests (
-  id uuid default gen_random_uuid() primary key,
-  name text not null,
-  email text not null,
-  phone text not null,
-  check_in date,
-  check_out date,
-  created_at timestamptz default now()
-);
-
--- Optional: enable Row Level Security (RLS)
-alter table public.guests enable row level security;
-
--- Allow inserts from the anon key (adjust policy as needed)
-create policy "Allow insert from anon"
-  on public.guests
-  for insert
-  to anon
-  with check (true);
-```
-
-### B) `Booking` table (for Prisma / Paystack flow)
+## Step 4: Create the `Booking` Table (Prisma)
 
 Run Prisma migrations:
 
@@ -117,17 +79,16 @@ This creates the `Booking` table (and `BookingStatus` enum) from `prisma/schema.
 
 ## Step 5: Verify Integration
 
-### BookingInquiryForm (guests table)
-
-1. Open the site and go to an apartment detail page.
-2. Use the **Booking Inquiry** form and submit.
-3. In Supabase: **Table Editor** → `guests` – check for the new row.
-
-### Paystack bookings (Booking table)
+### Paystack bookings (`Booking` table)
 
 1. Complete a Paystack payment.
 2. You should be redirected to `/booking/success`.
 3. In Supabase: **Table Editor** → `Booking` – check for the new booking.
+
+### Auth
+
+1. Sign up / log in via your login page.
+2. Confirm session works (e.g. **My Bookings** with a logged-in user).
 
 ---
 
@@ -136,7 +97,6 @@ This creates the `Booking` table (and `BookingStatus` enum) from `prisma/schema.
 - [ ] Create Supabase project
 - [ ] Add `NEXT_PUBLIC_SUPABASE_URL` and `NEXT_PUBLIC_SUPABASE_ANON_KEY` to `.env`
 - [ ] Add `DATABASE_URL` (Supabase Postgres URI) to `.env`
-- [ ] Create `guests` table (SQL above)
 - [ ] Run `npx prisma generate` and `npx prisma db push` (or migrate)
 - [ ] Restart dev server (`npm run dev`)
 

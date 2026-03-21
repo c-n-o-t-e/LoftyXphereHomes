@@ -1,8 +1,13 @@
 import { NextRequest, NextResponse } from "next/server";
+import { revalidateTag } from "next/cache";
 import { verifyTransaction } from "@/lib/paystack";
 import { upsertBookingFromPaystack } from "@/lib/booking";
 import { parseSearchParams } from "@/lib/validation/http";
 import { bookingVerifyQuerySchema } from "@/lib/validation/schemas";
+import {
+  AVAILABILITY_TAG,
+  availabilityApartmentTag,
+} from "@/lib/cache/constants";
 
 /**
  * GET /api/bookings/verify?reference=xxx
@@ -48,6 +53,10 @@ export async function GET(request: NextRequest) {
 
     try {
         const booking = await upsertBookingFromPaystack(data);
+
+        revalidateTag(AVAILABILITY_TAG, "max");
+        revalidateTag(availabilityApartmentTag(booking.apartmentId), "max");
+
         return NextResponse.json({
             success: true,
             booking: {

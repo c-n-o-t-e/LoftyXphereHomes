@@ -18,6 +18,7 @@ const customJestConfig = {
     'app/**/*.{js,jsx,ts,tsx}',
     'components/**/*.{js,jsx,ts,tsx}',
     'lib/**/*.{js,jsx,ts,tsx}',
+    '!lib/testing/**',
     '!**/*.d.ts',
     '!**/node_modules/**',
     '!**/.next/**',

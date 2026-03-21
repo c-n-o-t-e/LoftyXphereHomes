@@ -1,6 +1,14 @@
 // Learn more: https://github.com/testing-library/jest-dom
 import '@testing-library/jest-dom'
 
+const { TextEncoder, TextDecoder } = require('util')
+if (typeof globalThis.TextEncoder === 'undefined') {
+  globalThis.TextEncoder = TextEncoder
+}
+if (typeof globalThis.TextDecoder === 'undefined') {
+  globalThis.TextDecoder = TextDecoder
+}
+
 // Polyfill fetch for Jest/jsdom (e.g. YourReservationCard fetches /api/availability)
 if (typeof globalThis.fetch === 'undefined') {
   globalThis.fetch = jest.fn(() =>

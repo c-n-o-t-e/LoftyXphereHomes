@@ -131,3 +131,16 @@ export const bearerAuthHeaderSchema = z.object({
       message: "Authorization header must be a Bearer token",
     }),
 });
+
+/** GET /api/my-bookings — optional pagination (cursor = last booking id from previous page) */
+export const myBookingsQuerySchema = z
+  .object({
+    limit: z.string().trim().optional(),
+    cursor: z.string().trim().min(1).optional(),
+  })
+  .strict()
+  .transform((q) => {
+    const parsed = q.limit ? Number.parseInt(q.limit, 10) : 50;
+    const limit = Number.isFinite(parsed) ? Math.min(100, Math.max(1, parsed)) : 50;
+    return { limit, cursor: q.cursor };
+  });

@@ -1,5 +1,6 @@
-import { render, screen } from '@testing-library/react'
+import { screen } from '@testing-library/react'
 import ApartmentsPage from '@/app/apartments/page'
+import { renderWithQueryClient } from '@/lib/testing/render-with-query-client'
 
 jest.mock('next/link', () => {
   return ({ children, href }: { children: React.ReactNode; href: string }) => {
@@ -9,17 +10,17 @@ jest.mock('next/link', () => {
 
 describe('Apartments Page', () => {
   it('renders the page heading', () => {
-    render(<ApartmentsPage />)
+    renderWithQueryClient(<ApartmentsPage />)
     expect(screen.getByText('Our Apartments')).toBeInTheDocument()
   })
 
   it('renders the page description', () => {
-    render(<ApartmentsPage />)
+    renderWithQueryClient(<ApartmentsPage />)
     expect(screen.getByText(/Discover our complete collection/i)).toBeInTheDocument()
   })
 
   it('renders apartment cards', () => {
-    render(<ApartmentsPage />)
+    renderWithQueryClient(<ApartmentsPage />)
     // Should render at least one apartment card
     const apartmentCards = screen.getAllByText(/Lofty/i)
     expect(apartmentCards.length).toBeGreaterThan(0)

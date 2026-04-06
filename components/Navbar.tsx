@@ -11,7 +11,13 @@ import { useAuth } from "@/components/AuthProvider";
 import HeroSearchBar from "./HeroSearchBar";
 
 export default function Navbar() {
-  const { user, isLoading: authLoading, signOut } = useAuth();
+  const {
+    user,
+    isLoading: authLoading,
+    signOut,
+    authError,
+    clearAuthError,
+  } = useAuth();
   const pathname = usePathname();
   const router = useRouter();
   const isHome = pathname === "/";
@@ -69,6 +75,31 @@ export default function Navbar() {
       animate={{ y: 0 }}
       className={`fixed top-0 left-0 right-0 z-50 transition-all duration-300 overflow-visible ${navBgClasses}`}
     >
+      <AnimatePresence>
+        {authError ? (
+          <motion.div
+            key="auth-error"
+            role="alert"
+            initial={{ height: 0, opacity: 0 }}
+            animate={{ height: "auto", opacity: 1 }}
+            exit={{ height: 0, opacity: 0 }}
+            className="border-b border-amber-200 bg-amber-50 text-sm text-amber-950 overflow-hidden"
+          >
+            <div className="container mx-auto flex items-start justify-between gap-3 px-4 py-2 sm:px-6 lg:px-8">
+              <p className="min-w-0 flex-1 pt-0.5 leading-snug">{authError}</p>
+              <Button
+                type="button"
+                variant="ghost"
+                size="sm"
+                className="shrink-0 text-amber-900 hover:bg-amber-100/90"
+                onClick={clearAuthError}
+              >
+                Dismiss
+              </Button>
+            </div>
+          </motion.div>
+        ) : null}
+      </AnimatePresence>
       <div className="container mx-auto px-4 sm:px-6 lg:px-8">
         {isSearchMode ? (
           <div className="py-2 relative">

@@ -42,8 +42,15 @@ export async function GET(request: NextRequest) {
   const supabaseAnonKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY;
 
   if (!supabaseUrl || !supabaseAnonKey) {
+    console.error("my-bookings: missing Supabase env vars", {
+      hasUrl: Boolean(supabaseUrl),
+      hasAnonKey: Boolean(supabaseAnonKey),
+    });
     return NextResponse.json(
-      { error: "Server configuration error", details: "Missing Supabase env vars" },
+      {
+        error: "Service temporarily unavailable",
+        code: "SERVICE_MISCONFIGURED",
+      },
       { status: 500 }
     );
   }
@@ -55,10 +62,15 @@ export async function GET(request: NextRequest) {
   } = await supabase.auth.getUser(token);
 
   if (authError || !user?.email) {
+    console.warn("my-bookings: invalid token", {
+      hasUser: Boolean(user),
+      hasEmail: Boolean(user?.email),
+      authError: authError?.message,
+    });
     return NextResponse.json(
       {
-        error: "Invalid token",
-        details: authError?.message || "No user email found",
+        error: "Unauthorized",
+        code: "UNAUTHORIZED",
       },
       { status: 401 }
     );
@@ -101,21 +113,11 @@ export async function GET(request: NextRequest) {
     );
   } catch (err) {
     console.error("Error fetching bookings:", err);
-
-    const errorMessage = err instanceof Error ? err.message : "Unknown error";
-
-    if (errorMessage.includes("TLS") || errorMessage.includes("certificate")) {
-      return NextResponse.json(
-        {
-          error: "Database connection error",
-          details: "SSL/TLS certificate issue. Check DATABASE_URL configuration.",
-        },
-        { status: 500 }
-      );
-    }
-
     return NextResponse.json(
-      { error: "Failed to fetch bookings", details: errorMessage },
+      {
+        error: "Failed to fetch bookings",
+        code: "BOOKINGS_FETCH_FAILED",
+      },
       { status: 500 }
     );
   }

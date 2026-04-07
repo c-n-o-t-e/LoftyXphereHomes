@@ -53,12 +53,17 @@ jest.mock("@/lib/cache/availability-data", () => ({
   getOverlappingBookingsCached: jest.fn(),
 }));
 
+jest.mock("@supabase/supabase-js", () => ({
+  createClient: jest.fn(),
+}));
+
 const { GET: getAvailableApartments } = require("@/app/api/apartments/available/route");
 const { GET: getMyBookings } = require("@/app/api/my-bookings/route");
 const { POST: postPaystackWebhook } = require("@/app/api/paystack/webhook/route");
 const { POST: postPaystackInitialize } = require("@/app/api/paystack/initialize/route");
 const { verifyTransaction, verifyWebhookSignature } = require("@/lib/paystack");
 const { getOverlappingBookingsCached } = require("@/lib/cache/availability-data");
+const { createClient } = require("@supabase/supabase-js");
 
 type HeaderBag = {
   get: (name: string) => string | null;
@@ -169,6 +174,35 @@ describe("API validation integration", () => {
 
     expect(response.status).toBe(400);
     expectValidation400(json);
+  });
+
+  it("does not leak auth internals for invalid token", async () => {
+    process.env.NEXT_PUBLIC_SUPABASE_URL = "https://example.supabase.co";
+    process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY = "anon_key";
+
+    (createClient as jest.Mock).mockReturnValue({
+      auth: {
+        getUser: jest.fn().mockResolvedValue({
+          data: { user: null },
+          error: { message: "JWT expired; TLS handshake failed; DATABASE_URL=..." },
+        }),
+      },
+    });
+
+    const request = makeNextRequest("http://localhost/api/my-bookings", {
+      headers: { authorization: "Bearer bad" },
+    });
+    const response = await getMyBookings(request);
+    const json = await response.json();
+
+    expect(response.status).toBe(401);
+    expect(json).toEqual(
+      expect.objectContaining({
+        error: "Unauthorized",
+        code: "UNAUTHORIZED",
+      })
+    );
+    expect(JSON.stringify(json)).not.toMatch(/TLS|certificate|DATABASE_URL|JWT/i);
   });
 
   it("returns standardized 400 for charge.success webhook missing reference", async () => {

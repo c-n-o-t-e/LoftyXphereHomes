@@ -1,6 +1,5 @@
 import {
   availableApartmentsQuerySchema,
-  bookingVerifyQuerySchema,
   paystackInitializeBodySchema,
   paystackWebhookPayloadSchema,
 } from "@/lib/validation/schemas";
@@ -136,9 +135,5 @@ describe("validation schemas", () => {
       ).toBe(false);
     });
 
-    it("accepts valid booking verify query", () => {
-      const result = bookingVerifyQuerySchema.safeParse({ reference: "ref_123456" });
-      expect(result.success).toBe(true);
-    });
   });
 });

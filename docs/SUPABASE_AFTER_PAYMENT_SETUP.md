@@ -62,7 +62,6 @@ By default Supabase allows access based on your connection string (service role 
 | **`lib/booking.ts`** | `upsertBookingFromPaystack(data)` – maps Paystack data to `Booking` and calls `prisma.booking.upsert()` so guest/booking data is stored in Supabase. |
 | **`app/booking/success/page.tsx`** | After redirect from Paystack: verifies payment, then calls `upsertBookingFromPaystack()` so the booking is saved. |
 | **`app/api/paystack/webhook/route.ts`** | Paystack webhook: on `charge.success`, verifies and calls `upsertBookingFromPaystack()` so booking is saved even if the user closes the browser. |
-| **`app/api/bookings/verify/route.ts`** | Optional API: verifies by reference and upserts the booking (e.g. for client-side or external use). |
 
 So: **Supabase** is used as the PostgreSQL database. **Prisma** is what actually writes the `Booking` row into Supabase. The “guest data” after payment is the row in the `Booking` table (booker email, name, phone, dates, amount, etc.).
 

@@ -49,7 +49,6 @@ jest.mock("next/cache", () => ({
   unstable_cache: (fn: unknown) => fn,
 }));
 
-const { GET: getBookingVerify } = require("@/app/api/bookings/verify/route");
 const { GET: getAvailableApartments } = require("@/app/api/apartments/available/route");
 const { GET: getMyBookings } = require("@/app/api/my-bookings/route");
 const { POST: postPaystackWebhook } = require("@/app/api/paystack/webhook/route");
@@ -102,26 +101,6 @@ function makeNextRequest(
 describe("API validation integration", () => {
   beforeEach(() => {
     jest.clearAllMocks();
-  });
-
-  it("returns standardized 400 for missing booking verify reference", async () => {
-    const request = makeNextRequest("http://localhost/api/bookings/verify");
-    const response = await getBookingVerify(request);
-    const json = await response.json();
-
-    expect(response.status).toBe(400);
-    expectValidation400(json);
-  });
-
-  it("returns standardized 400 for empty/whitespace booking verify reference", async () => {
-    const request = makeNextRequest(
-      "http://localhost/api/bookings/verify?reference=%20%20%20"
-    );
-    const response = await getBookingVerify(request);
-    const json = await response.json();
-
-    expect(response.status).toBe(400);
-    expectValidation400(json);
   });
 
   it("returns standardized 400 for invalid guests query", async () => {

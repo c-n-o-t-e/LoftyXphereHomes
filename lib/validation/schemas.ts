@@ -27,8 +27,6 @@ export const dateStringSchema = nonEmptyTrimmedString.refine(isValidDateOnlyStri
   message: "Invalid date format. Use YYYY-MM-DD.",
 });
 
-export const referenceSchema = nonEmptyTrimmedString.min(6).max(200);
-
 export const apartmentIdSchema = nonEmptyTrimmedString.min(1).max(120);
 
 export const positiveIntStringToNumberSchema = z
@@ -121,12 +119,6 @@ export const availableApartmentsQuerySchema = z
 export const availabilityQuerySchema = z
   .object({
     apartmentId: apartmentIdSchema,
-  })
-  .strict();
-
-export const bookingVerifyQuerySchema = z
-  .object({
-    reference: referenceSchema,
   })
   .strict();
 

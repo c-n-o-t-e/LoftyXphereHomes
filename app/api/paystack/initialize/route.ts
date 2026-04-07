@@ -1,3 +1,4 @@
+import { randomBytes } from "crypto";
 import { NextRequest, NextResponse } from "next/server";
 import { getApartmentById } from "@/lib/data/apartments";
 import { prisma } from "@/lib/db";
@@ -85,7 +86,10 @@ export async function POST(request: NextRequest) {
     // Log but continue - Paystack webhook will do final validation
   }
 
-  const reference = `lxh_${apartmentId}_${Date.now()}`.replace(/[^a-zA-Z0-9_-]/g, "_");
+  const reference = `lxh_${apartmentId}_${Date.now()}_${randomBytes(8).toString("hex")}`.replace(
+    /[^a-zA-Z0-9_-]/g,
+    "_"
+  );
   const baseUrl = process.env.NEXT_PUBLIC_SITE_URL || request.nextUrl.origin;
   const callbackUrl = `${baseUrl}/booking/success?reference=${reference}`;
 

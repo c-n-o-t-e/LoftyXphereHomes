@@ -1,6 +1,21 @@
 import { render, screen, fireEvent } from '@testing-library/react'
 import Navbar from '@/components/Navbar'
 
+jest.mock('@/components/AuthProvider', () => ({
+  useAuth: () => ({
+    user: null,
+    session: null,
+    isLoading: false,
+    authError: null,
+    clearAuthError: jest.fn(),
+    signOut: jest.fn().mockResolvedValue(undefined),
+  }),
+}))
+
+function renderNavbar() {
+  return render(<Navbar />)
+}
+
 jest.mock('next/link', () => {
   return ({ children, href }: { children: React.ReactNode; href: string }) => {
     return <a href={href}>{children}</a>
@@ -17,7 +32,7 @@ describe('Navbar - Extended Coverage', () => {
   })
 
   it('handles scroll events', () => {
-    render(<Navbar />)
+    renderNavbar()
     const nav = screen.getByRole('navigation')
     
     // Simulate scroll
@@ -29,12 +44,12 @@ describe('Navbar - Extended Coverage', () => {
   })
 
   it('includes blog link in navigation', () => {
-    render(<Navbar />)
+    renderNavbar()
     expect(screen.getByText('Blog')).toBeInTheDocument()
   })
 
   it('closes mobile menu when Apartments is clicked', () => {
-    render(<Navbar />)
+    renderNavbar()
     const menuButton = screen.getByLabelText('Toggle menu')
     
     // Open menu
@@ -47,7 +62,7 @@ describe('Navbar - Extended Coverage', () => {
   })
 
   it('cleans up scroll listener on unmount', () => {
-    const { unmount } = render(<Navbar />)
+    const { unmount } = renderNavbar()
     const removeEventListenerSpy = jest.spyOn(window, 'removeEventListener')
     
     unmount()

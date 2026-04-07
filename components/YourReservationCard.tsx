@@ -6,7 +6,8 @@ import { Calendar, Users, Bed, Bath, Loader2, Info } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { getStayDiscountAmount, PAYSTACK_FEE } from "@/lib/constants";
+import { PAYSTACK_FEE } from "@/lib/constants";
+import { computeBookingQuote } from "@/lib/pricing";
 import { DatePickerCalendar } from "@/components/DatePickerCalendar";
 
 function formatPrice(price: number) {
@@ -37,6 +38,20 @@ function formatDisplayDate(dateStr: string): string {
     day: "numeric",
     year: "numeric",
   });
+}
+
+/** API returns `{ error: "Validation failed", details: [...] }` from `parseJsonBody`; surface `details` for users. */
+function messageFromApiError(data: {
+  error?: string;
+  details?: { message?: string }[];
+}): string {
+  if (Array.isArray(data.details) && data.details.length > 0) {
+    return data.details
+      .map((d) => d.message)
+      .filter(Boolean)
+      .join(" · ");
+  }
+  return data.error ?? "Unable to start payment. Please try again.";
 }
 
 interface BookingRange {
@@ -97,21 +112,15 @@ export function YourReservationCard({
   const bookingRanges = availabilityData?.bookingRanges ?? [];
 
   const calculation = useMemo(() => {
-    if (!checkOut) return null;
-    const inDate = parseLocalDate(checkIn);
-    const outDate = parseLocalDate(checkOut);
-    if (outDate <= inDate) return null;
-    const nights = Math.ceil((outDate.getTime() - inDate.getTime()) / (1000 * 60 * 60 * 24));
-    const subtotal = pricePerNight * nights;
-    const discountAmount = getStayDiscountAmount(nights);
-    const afterDiscount = subtotal - discountAmount;
-    const total = afterDiscount + PAYSTACK_FEE;
+    if (!checkOut || !checkIn) return null;
+    const quote = computeBookingQuote(pricePerNight, checkIn, checkOut);
+    if (!quote) return null;
     return {
-      nights,
-      subtotal,
-      discountAmount,
-      hasDiscount: discountAmount > 0,
-      total,
+      nights: quote.nights,
+      subtotal: quote.subtotal,
+      discountAmount: quote.discountAmount,
+      hasDiscount: quote.hasDiscount,
+      total: quote.totalNgn,
     };
   }, [checkIn, checkOut, pricePerNight]);
 
@@ -207,15 +216,16 @@ export function YourReservationCard({
           email: trimmedEmail,
           name: trimmedName,
           phone: trimmedPhone,
-          amount: calculation.total,
           apartmentId,
           checkIn,
           checkOut,
+          // Display total for debugging/legacy clients; server recomputes and ignores for charging.
+          amount: calculation.total,
         }),
       });
       const data = await res.json();
       if (!res.ok) {
-        setPayError(data.error || "Unable to start payment. Please try again.");
+        setPayError(messageFromApiError(data));
         setIsRedirecting(false);
         // If conflict (dates already booked), refresh availability and clear dates
         if (res.status === 409) {

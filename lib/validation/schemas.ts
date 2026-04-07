@@ -42,15 +42,19 @@ export const positiveIntStringToNumberSchema = z
     message: "Must be greater than 0.",
   });
 
+/**
+ * `amount` is optional: ignored for charging (server recomputes). Kept for strict-schema
+ * compatibility with older clients/CDN bundles that still send it.
+ */
 export const paystackInitializeBodySchema = z
   .object({
     email: emailSchema,
     name: nonEmptyTrimmedString,
     phone: nonEmptyTrimmedString,
-    amount: z.number().finite().min(100, { message: "amount must be at least 100" }),
     apartmentId: apartmentIdSchema,
     checkIn: dateStringSchema,
     checkOut: dateStringSchema,
+    amount: z.number().finite().min(100, { message: "amount must be at least 100" }).optional(),
   })
   .strict()
   .refine(
@@ -63,9 +67,12 @@ export const paystackInitializeBodySchema = z
     }
   )
   .transform((data) => ({
-    ...data,
+    email: data.email,
     name: data.name.trim(),
     phone: data.phone.trim(),
+    apartmentId: data.apartmentId,
+    checkIn: data.checkIn,
+    checkOut: data.checkOut,
   }));
 
 export const paystackWebhookPayloadSchema = z

@@ -12,7 +12,6 @@ describe("validation schemas", () => {
         email: "Guest@Email.com ",
         name: "  John Doe ",
         phone: " 08031234567 ",
-        amount: 25000,
         apartmentId: "apt_happy",
         checkIn: "2026-03-20",
         checkOut: "2026-03-24",
@@ -29,7 +28,6 @@ describe("validation schemas", () => {
       expect(
         paystackInitializeBodySchema.safeParse({
           email: "guest@example.com",
-          amount: 25000,
           apartmentId: "apt_happy",
           checkIn: "2026-03-20",
           checkOut: "2026-03-24",
@@ -39,7 +37,6 @@ describe("validation schemas", () => {
         paystackInitializeBodySchema.safeParse({
           email: "guest@example.com",
           name: "Jane",
-          amount: 25000,
           apartmentId: "apt_happy",
           checkIn: "2026-03-20",
           checkOut: "2026-03-24",
@@ -52,7 +49,6 @@ describe("validation schemas", () => {
         email: "guest@example.com",
         name: "Jane",
         phone: "08012345678",
-        amount: 25000,
         apartmentId: "apt_happy",
         checkIn: "03/20/2026",
         checkOut: "2026-03-24",
@@ -66,7 +62,6 @@ describe("validation schemas", () => {
         email: "guest@example.com",
         name: "Jane",
         phone: "08012345678",
-        amount: 25000,
         apartmentId: "apt_happy",
         checkIn: "2026-03-24",
         checkOut: "2026-03-24",
@@ -75,18 +70,20 @@ describe("validation schemas", () => {
       expect(result.success).toBe(false);
     });
 
-    it("rejects malformed amount", () => {
+    it("accepts optional client amount and strips it from output", () => {
       const result = paystackInitializeBodySchema.safeParse({
         email: "guest@example.com",
         name: "Jane",
         phone: "08012345678",
-        amount: "25000",
+        amount: 25000,
         apartmentId: "apt_happy",
         checkIn: "2026-03-20",
         checkOut: "2026-03-24",
       });
 
-      expect(result.success).toBe(false);
+      expect(result.success).toBe(true);
+      if (!result.success) return;
+      expect("amount" in result.data).toBe(false);
     });
   });
 

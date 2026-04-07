@@ -1,5 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
+import { getApartmentById } from "@/lib/data/apartments";
 import { prisma } from "@/lib/db";
+import { computeBookingQuote, totalNgnToKobo } from "@/lib/pricing";
 import { parseJsonBody } from "@/lib/validation/http";
 import { paystackInitializeBodySchema } from "@/lib/validation/schemas";
 
@@ -19,8 +21,30 @@ export async function POST(request: NextRequest) {
     return parsedBody.response;
   }
 
-  const { email, name, phone, amount, apartmentId, checkIn, checkOut } =
-    parsedBody.data;
+  const { email, name, phone, apartmentId, checkIn, checkOut } = parsedBody.data;
+
+  const apartment = getApartmentById(apartmentId);
+  if (!apartment) {
+    return NextResponse.json({ error: "Apartment not found" }, { status: 404 });
+  }
+
+  const quote = computeBookingQuote(apartment.pricePerNight, checkIn, checkOut);
+  if (!quote) {
+    return NextResponse.json(
+      { error: "Invalid stay dates for pricing" },
+      { status: 400 }
+    );
+  }
+
+  // Paystack minimum charge (documented as whole currency units; we use NGN ≥ 100)
+  if (quote.totalNgn < 100) {
+    return NextResponse.json(
+      { error: "Computed amount is below the minimum allowed for payment" },
+      { status: 400 }
+    );
+  }
+
+  const amountInKobo = totalNgnToKobo(quote.totalNgn);
 
   // --- SERVER-SIDE DOUBLE-BOOKING PREVENTION ---
   // Check if any existing PAID or PENDING booking overlaps with the requested dates.
@@ -61,7 +85,6 @@ export async function POST(request: NextRequest) {
     // Log but continue - Paystack webhook will do final validation
   }
 
-  const amountInKobo = Math.round(amount * 100);
   const reference = `lxh_${apartmentId}_${Date.now()}`.replace(/[^a-zA-Z0-9_-]/g, "_");
   const baseUrl = process.env.NEXT_PUBLIC_SITE_URL || request.nextUrl.origin;
   const callbackUrl = `${baseUrl}/booking/success?reference=${reference}`;

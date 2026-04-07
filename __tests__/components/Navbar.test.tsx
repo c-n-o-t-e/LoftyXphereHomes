@@ -1,6 +1,21 @@
 import { render, screen, fireEvent } from '@testing-library/react'
 import Navbar from '@/components/Navbar'
 
+jest.mock('@/components/AuthProvider', () => ({
+  useAuth: () => ({
+    user: null,
+    session: null,
+    isLoading: false,
+    authError: null,
+    clearAuthError: jest.fn(),
+    signOut: jest.fn().mockResolvedValue(undefined),
+  }),
+}))
+
+function renderNavbar() {
+  return render(<Navbar />)
+}
+
 // Mock next/link
 jest.mock('next/link', () => {
   return ({ children, href }: { children: React.ReactNode; href: string }) => {
@@ -19,12 +34,12 @@ describe('Navbar', () => {
   })
 
   it('renders the navbar with brand name', () => {
-    render(<Navbar />)
+    renderNavbar()
     expect(screen.getByAltText('LoftyXphereHomes Logo')).toBeInTheDocument()
   })
 
   it('renders all navigation links', () => {
-    render(<Navbar />)
+    renderNavbar()
     expect(screen.getByText('Home')).toBeInTheDocument()
     expect(screen.getByText('Apartments')).toBeInTheDocument()
     expect(screen.getByText('Gallery')).toBeInTheDocument()
@@ -33,7 +48,7 @@ describe('Navbar', () => {
   })
 
   it('toggles mobile menu when menu button is clicked', () => {
-    render(<Navbar />)
+    renderNavbar()
     const menuButton = screen.getByLabelText('Toggle menu')
     
     // Menu should be closed initially
@@ -47,7 +62,7 @@ describe('Navbar', () => {
   })
 
   it('closes mobile menu when a link is clicked', () => {
-    render(<Navbar />)
+    renderNavbar()
     const menuButton = screen.getByLabelText('Toggle menu')
     
     fireEvent.click(menuButton)
@@ -57,7 +72,7 @@ describe('Navbar', () => {
   })
 
   it('closes mobile menu when Apartments is clicked in mobile menu', () => {
-    render(<Navbar />)
+    renderNavbar()
     const menuButton = screen.getByLabelText('Toggle menu')
     
     // Open menu
@@ -68,7 +83,7 @@ describe('Navbar', () => {
   })
 
   it('has navigation role and nav element', () => {
-    render(<Navbar />)
+    renderNavbar()
     const nav = screen.getByRole('navigation')
     expect(nav).toBeInTheDocument()
     // On homepage Navbar is transparent by default, hover shows bg

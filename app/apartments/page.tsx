@@ -2,11 +2,13 @@
 
 import { Suspense, useMemo } from "react";
 import { useSearchParams } from "next/navigation";
+import Link from "next/link";
 import { useQuery } from "@tanstack/react-query";
 import { apartments } from "@/lib/data/apartments";
 import ApartmentCard from "@/components/ApartmentCard";
 import { filterApartments, SearchFilters, calculateNights } from "@/lib/utils/search";
 import { Info, Loader2 } from "lucide-react";
+import { Button } from "@/components/ui/button";
 
 function ApartmentsContent() {
   const searchParams = useSearchParams();
@@ -24,7 +26,13 @@ function ApartmentsContent() {
   const guestsCount = filters.guests || 1;
   const availabilityEnabled = !!(filters.checkIn && filters.checkOut);
 
-  const { data: availabilityIds, isPending, isError } = useQuery({
+  const {
+    data: availabilityIds,
+    isPending,
+    isError,
+    error: availabilityError,
+    refetch,
+  } = useQuery({
     queryKey: [
       "apartments-available",
       filters.checkIn,
@@ -37,8 +45,14 @@ function ApartmentsContent() {
       params.set("checkOut", filters.checkOut!);
       params.set("guests", guestsCount.toString());
       const res = await fetch(`/api/apartments/available?${params.toString()}`);
-      if (!res.ok) return null;
-      const data = await res.json();
+      const data = await res.json().catch(() => ({}));
+      if (!res.ok) {
+        const message =
+          typeof data?.error === "string"
+            ? data.error
+            : "Availability is temporarily unavailable.";
+        throw new Error(message);
+      }
       return data.availableApartmentIds ?? [];
     },
     enabled: availabilityEnabled,
@@ -52,8 +66,8 @@ function ApartmentsContent() {
       : isLoadingAvailability
         ? null
         : isError || availabilityIds === null
-          ? null
-          : availabilityIds ?? null;
+          ? []
+          : availabilityIds ?? [];
 
   // Filter apartments based on search criteria AND availability
   const filteredApartments = useMemo(() => {
@@ -129,7 +143,50 @@ function ApartmentsContent() {
         )}
 
         {/* Results */}
-        {isLoadingAvailability ? (
+        {availabilityEnabled && isError ? (
+          <div
+            className="text-center py-12 sm:py-16 bg-white rounded-xl shadow-sm border border-black/10 px-4"
+            role="alert"
+            aria-live="polite"
+          >
+            <Info className="h-10 w-10 sm:h-12 sm:w-12 text-black/40 mx-auto mb-4" />
+            <h2 className="text-xl sm:text-2xl font-bold text-black mb-2">
+              Availability temporarily unavailable
+            </h2>
+            <p className="text-sm sm:text-base text-black/70 mb-6 max-w-md mx-auto">
+              {availabilityError instanceof Error
+                ? availabilityError.message
+                : "We couldn’t confirm availability right now. Please retry before booking."}
+            </p>
+            <div className="flex items-center justify-center gap-3 flex-wrap">
+              <Button
+                type="button"
+                className="min-h-[44px]"
+                onClick={() => {
+                  void refetch();
+                }}
+              >
+                Retry
+              </Button>
+              <Link
+                href={`/contact?category=booking&message=${encodeURIComponent(
+                  `Availability check failed for dates: ${filters.checkIn ?? ""} → ${
+                    filters.checkOut ?? ""
+                  }, guests: ${guestsCount}. Please assist.`
+                )}`}
+                className="inline-flex items-center justify-center px-6 py-3 bg-[#FA5C5C] text-white rounded-full hover:bg-[#E84A4A] transition-colors text-sm sm:text-base min-h-[44px]"
+              >
+                Contact us
+              </Link>
+              <a
+                href="/apartments"
+                className="inline-flex items-center justify-center px-6 py-3 bg-white text-black rounded-full border border-black/15 hover:bg-black/5 transition-colors text-sm sm:text-base min-h-[44px]"
+              >
+                Clear dates
+              </a>
+            </div>
+          </div>
+        ) : isLoadingAvailability ? (
           <div className="text-center py-12 sm:py-16 bg-white rounded-xl shadow-sm border border-black/10 px-4">
             <Loader2 className="h-10 w-10 sm:h-12 sm:w-12 text-[#FA5C5C] mx-auto mb-4 animate-spin" />
             <h2 className="text-xl sm:text-2xl font-bold text-black mb-2">Checking availability...</h2>

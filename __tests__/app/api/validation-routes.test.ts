@@ -49,11 +49,16 @@ jest.mock("next/cache", () => ({
   unstable_cache: (fn: unknown) => fn,
 }));
 
+jest.mock("@/lib/cache/availability-data", () => ({
+  getOverlappingBookingsCached: jest.fn(),
+}));
+
 const { GET: getAvailableApartments } = require("@/app/api/apartments/available/route");
 const { GET: getMyBookings } = require("@/app/api/my-bookings/route");
 const { POST: postPaystackWebhook } = require("@/app/api/paystack/webhook/route");
 const { POST: postPaystackInitialize } = require("@/app/api/paystack/initialize/route");
 const { verifyTransaction, verifyWebhookSignature } = require("@/lib/paystack");
+const { getOverlappingBookingsCached } = require("@/lib/cache/availability-data");
 
 type HeaderBag = {
   get: (name: string) => string | null;
@@ -123,6 +128,27 @@ describe("API validation integration", () => {
 
     expect(response.status).toBe(400);
     expectValidation400(json);
+  });
+
+  it("fails closed with 503 when availability lookup errors", async () => {
+    (getOverlappingBookingsCached as jest.Mock).mockRejectedValueOnce(
+      new Error("db down")
+    );
+
+    const request = makeNextRequest(
+      "http://localhost/api/apartments/available?checkIn=2026-03-20&checkOut=2026-03-22&guests=2"
+    );
+    const response = await getAvailableApartments(request);
+    const json = await response.json();
+
+    expect(response.status).toBe(503);
+    expect(json).toEqual(
+      expect.objectContaining({
+        availableApartmentIds: [],
+        code: "AVAILABILITY_UNAVAILABLE",
+        error: expect.any(String),
+      })
+    );
   });
 
   it("returns standardized 400 for missing bearer authorization header", async () => {

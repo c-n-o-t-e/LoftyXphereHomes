@@ -26,9 +26,6 @@ export async function GET(request: NextRequest) {
 
   const { checkIn, checkOut, guests } = parsedQuery.data;
 
-  // Get all apartment IDs from static data
-  const allApartmentIds = apartments.map((apt) => apt.id);
-
   try {
     const requestedCheckIn = new Date(checkIn);
     const requestedCheckOut = new Date(checkOut);
@@ -75,10 +72,19 @@ export async function GET(request: NextRequest) {
     );
   } catch (error) {
     console.error("Error checking apartment availability:", error);
-    // On error, return all apartments (graceful degradation)
-    return NextResponse.json({
-      availableApartmentIds: allApartmentIds,
-      error: "Failed to check availability, showing all apartments",
-    });
+    // Booking engine safety: fail CLOSED (unknown availability => not available).
+    return NextResponse.json(
+      {
+        availableApartmentIds: [],
+        checkIn,
+        checkOut,
+        guests,
+        totalAvailable: 0,
+        error:
+          "Availability is temporarily unavailable. Please retry before booking.",
+        code: "AVAILABILITY_UNAVAILABLE",
+      },
+      { status: 503 }
+    );
   }
 }

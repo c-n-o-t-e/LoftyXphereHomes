@@ -4,13 +4,19 @@ import { parseSearchParams } from "@/lib/validation/http";
 import { availabilityQuerySchema } from "@/lib/validation/schemas";
 
 /**
- * Helper to format date as YYYY-MM-DD in local time (avoids timezone issues)
+ * Helper to format date as YYYY-MM-DD (date-only, stable across server TZ)
+ *
+ * We intentionally use the UTC date part (`toISOString().slice(0, 10)`) so that:
+ * - DB-stored date-only values remain consistent regardless of server timezone
+ * - Clients can safely treat the returned strings as calendar dates (YYYY-MM-DD)
  */
-function formatDateLocal(date: Date): string {
-  const y = date.getFullYear();
-  const m = String(date.getMonth() + 1).padStart(2, "0");
-  const d = String(date.getDate()).padStart(2, "0");
-  return `${y}-${m}-${d}`;
+function formatDateOnly(date: Date): string {
+  return date.toISOString().slice(0, 10);
+}
+
+function parseDateOnly(iso: string): Date {
+  // Force UTC midnight to avoid timezone drift.
+  return new Date(`${iso}T00:00:00.000Z`);
 }
 
 /**
@@ -41,20 +47,20 @@ export async function GET(request: NextRequest) {
     const bookingRanges: { checkIn: string; checkOut: string }[] = [];
 
     for (const booking of bookings) {
-      const checkIn = new Date(booking.checkIn);
-      const checkOut = new Date(booking.checkOut);
-
-      const checkInStr = formatDateLocal(checkIn);
-      const checkOutStr = formatDateLocal(checkOut);
+      const checkInStr = formatDateOnly(booking.checkIn);
+      const checkOutStr = formatDateOnly(booking.checkOut);
       bookingRanges.push({ checkIn: checkInStr, checkOut: checkOutStr });
 
       // Block all dates from checkIn to checkOut-1 (the nights occupied)
-      const current = new Date(checkIn);
-      while (current < checkOut) {
-        blockedDates.add(formatDateLocal(current));
-        current.setDate(current.getDate() + 1);
+      const current = parseDateOnly(checkInStr);
+      const checkOutDate = parseDateOnly(checkOutStr);
+      while (current < checkOutDate) {
+        blockedDates.add(formatDateOnly(current));
+        current.setUTCDate(current.getUTCDate() + 1);
       }
     }
+
+    bookingRanges.sort((a, b) => a.checkIn.localeCompare(b.checkIn));
 
     return NextResponse.json(
       {

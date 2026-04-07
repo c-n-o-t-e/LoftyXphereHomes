@@ -5,6 +5,7 @@ import { useRouter, useSearchParams } from "next/navigation";
 import Link from "next/link";
 import { useAuth } from "@/components/AuthProvider";
 import { getSupabaseClient } from "@/lib/supabase/client";
+import { normalizeInternalRedirect } from "@/lib/security/redirect";
 import { Mail, Loader2, CheckCircle, ArrowLeft } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -14,7 +15,10 @@ function LoginForm() {
   const { user, isLoading: authLoading } = useAuth();
   const router = useRouter();
   const searchParams = useSearchParams();
-  const redirect = searchParams.get("redirect") || "/my-bookings";
+  const redirect = normalizeInternalRedirect(
+    searchParams.get("redirect"),
+    "/my-bookings"
+  );
 
   const [email, setEmail] = useState("");
   const [isLoading, setIsLoading] = useState(false);

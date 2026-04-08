@@ -83,7 +83,15 @@ export async function POST(request: NextRequest) {
     }
   } catch (dbError) {
     console.error("Database error checking availability:", dbError);
-    // Log but continue - Paystack webhook will do final validation
+    // Fail CLOSED: if we can't check conflicts, we must not start payment.
+    return NextResponse.json(
+      {
+        error:
+          "Availability is temporarily unavailable. Please retry before booking.",
+        code: "AVAILABILITY_UNAVAILABLE",
+      },
+      { status: 503 }
+    );
   }
 
   const reference = `lxh_${apartmentId}_${Date.now()}_${randomBytes(8).toString("hex")}`.replace(

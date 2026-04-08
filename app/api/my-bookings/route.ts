@@ -1,6 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
 import { createClient } from "@supabase/supabase-js";
-import type { PrismaClient } from "@/lib/generated/prisma/client";
 import { parseHeaders, parseSearchParams } from "@/lib/validation/http";
 import {
   bearerAuthHeaderSchema,
@@ -99,10 +98,6 @@ export async function GET(request: NextRequest) {
     const page = hasMore ? bookings.slice(0, limit) : bookings;
     const nextCursor = hasMore ? page[page.length - 1]?.id ?? null : null;
 
-    void linkBookingsToUser(prisma as PrismaClient, user.id, page).catch((err) => {
-      console.warn("Background userId link skipped:", err);
-    });
-
     const privateHeaders = {
       "Cache-Control": "private, no-store",
     };
@@ -123,17 +118,5 @@ export async function GET(request: NextRequest) {
   }
 }
 
-async function linkBookingsToUser(
-  prisma: PrismaClient,
-  userId: string,
-  bookings: { id: string; userId: string | null }[]
-) {
-  const bookingIdsToLink = bookings.filter((b) => !b.userId).map((b) => b.id);
 
-  if (bookingIdsToLink.length === 0) return;
-
-  await prisma.booking.updateMany({
-    where: { id: { in: bookingIdsToLink } },
-    data: { userId },
-  });
 }

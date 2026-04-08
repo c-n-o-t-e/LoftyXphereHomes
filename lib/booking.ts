@@ -1,7 +1,9 @@
 import type { PaystackVerifyData } from "./paystack";
 import { getApartmentById } from "./data/apartments";
 import { prisma } from "./db";
+import { revalidateTag } from "next/cache";
 import { computeBookingQuote, nightsBetweenStayDates, totalNgnToKobo } from "./pricing";
+import { AVAILABILITY_TAG, availabilityApartmentTag } from "./cache/constants";
 
 function parseDate(s: string): Date {
     const d = new Date(s);
@@ -45,7 +47,7 @@ export async function upsertBookingFromPaystack(data: PaystackVerifyData) {
     const amountPaidNgn = Math.round(data.amount / 100); // kobo -> NGN
     const status = data.status === "success" ? "PAID" : "PENDING";
 
-    return prisma.booking.upsert({
+    const booking = await prisma.booking.upsert({
         where: { reference: data.reference },
         create: {
             reference: data.reference,
@@ -65,4 +67,10 @@ export async function upsertBookingFromPaystack(data: PaystackVerifyData) {
             updatedAt: new Date(),
         },
     });
+
+    // Ensure calendar/availability reflects new bookings immediately.
+    revalidateTag(AVAILABILITY_TAG, "max");
+    revalidateTag(availabilityApartmentTag(apartmentId), "max");
+
+    return booking;
 }

@@ -2,6 +2,10 @@ import { upsertBookingFromPaystack } from "@/lib/booking";
 import { computeBookingQuote, totalNgnToKobo } from "@/lib/pricing";
 import type { PaystackVerifyData } from "@/lib/paystack";
 
+jest.mock("next/cache", () => ({
+  revalidateTag: jest.fn(),
+}));
+
 jest.mock("@/lib/db", () => ({
   prisma: {
     booking: {
@@ -11,6 +15,7 @@ jest.mock("@/lib/db", () => ({
 }));
 
 const { prisma } = require("@/lib/db");
+const { revalidateTag } = require("next/cache");
 
 describe("upsertBookingFromPaystack", () => {
   beforeEach(() => {
@@ -61,5 +66,6 @@ describe("upsertBookingFromPaystack", () => {
 
     await upsertBookingFromPaystack(data);
     expect(prisma.booking.upsert).toHaveBeenCalledTimes(1);
+    expect(revalidateTag).toHaveBeenCalled();
   });
 });

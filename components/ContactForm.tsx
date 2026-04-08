@@ -3,6 +3,8 @@
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import * as z from "zod";
+import { useEffect, useMemo, useState } from "react";
+import { useSearchParams } from "next/navigation";
 import { Button } from "@/components/ui/button";
 import {
   Form,
@@ -21,7 +23,6 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import { useState } from "react";
 
 const contactFormSchema = z.object({
   name: z.string().min(2, "Name must be at least 2 characters"),
@@ -32,13 +33,30 @@ const contactFormSchema = z.object({
     { message: "Please select an inquiry category" }
   ),
   message: z.string().min(10, "Message must be at least 10 characters"),
+  // Honeypot: should remain empty (hidden from humans)
+  website: z.string().optional(),
 });
 
 type ContactFormData = z.infer<typeof contactFormSchema>;
 
 export function ContactForm() {
+  const searchParams = useSearchParams();
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [isSubmitted, setIsSubmitted] = useState(false);
+  const [submitError, setSubmitError] = useState<string | null>(null);
+
+  const prefill = useMemo(() => {
+    const category = searchParams.get("category");
+    const message = searchParams.get("message");
+    const allowed = new Set(["booking", "partnership", "long-stay", "complaints"]);
+    return {
+      category:
+        category && allowed.has(category)
+          ? (category as ContactFormData["category"])
+          : undefined,
+      message: typeof message === "string" && message.trim() ? message : "",
+    };
+  }, [searchParams]);
 
   const form = useForm<ContactFormData>({
     resolver: zodResolver(contactFormSchema),
@@ -48,23 +66,61 @@ export function ContactForm() {
       phone: '',
       category: undefined,
       message: '',
+      website: '',
     },
   });
 
+  useEffect(() => {
+    if (prefill.category) {
+      form.setValue("category", prefill.category, { shouldValidate: true });
+    }
+    if (prefill.message) {
+      form.setValue("message", prefill.message, { shouldValidate: true });
+    }
+    // We only want to apply prefill on first load / when URL changes.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [prefill.category, prefill.message]);
+
   const onSubmit = async (data: ContactFormData) => {
     setIsSubmitting(true);
+    setSubmitError(null);
 
-    // Here you would typically send the data to your API
-    await new Promise((resolve) => setTimeout(resolve, 1000));
+    try {
+      const res = await fetch("/api/contact", {
+        method: "POST",
+        headers: { "content-type": "application/json" },
+        body: JSON.stringify(data),
+      });
+      const payload = await res.json().catch(() => ({}));
+      if (!res.ok) {
+        const msg =
+          (typeof payload?.error === "string" && payload.error) ||
+          "We couldn’t send your message right now. Please try again.";
+        throw new Error(msg);
+      }
 
-    console.log("Contact form submitted:", data);
-    setIsSubmitting(false);
-    setIsSubmitted(true);
+      setIsSubmitted(true);
+      form.reset({
+        name: "",
+        email: "",
+        phone: "",
+        category: undefined,
+        message: "",
+        website: "",
+      });
 
-    setTimeout(() => {
-      setIsSubmitted(false);
-      form.reset();
-    }, 3000);
+      setTimeout(() => {
+        setIsSubmitted(false);
+      }, 3000);
+    } catch (err) {
+      setSubmitError(
+        err instanceof Error
+          ? err.message
+          : "We couldn’t send your message right now. Please try again."
+      );
+    } finally {
+      setIsSubmitting(false);
+    }
   };
 
   if (isSubmitted) {
@@ -96,6 +152,17 @@ export function ContactForm() {
   return (
     <Form {...form}>
       <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6">
+        {/* Honeypot field (hidden from humans) */}
+        <div className="hidden" aria-hidden="true">
+          <label htmlFor="website">Website</label>
+          <input
+            id="website"
+            tabIndex={-1}
+            autoComplete="off"
+            {...form.register("website")}
+          />
+        </div>
+
         <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
           <FormField
             control={form.control}
@@ -194,6 +261,15 @@ export function ContactForm() {
             </FormItem>
           )}
         />
+
+        {submitError && (
+          <div
+            className="bg-red-50 border border-red-200 rounded-lg p-3"
+            role="alert"
+          >
+            <p className="text-sm text-red-700">{submitError}</p>
+          </div>
+        )}
 
         <Button
           type="submit"

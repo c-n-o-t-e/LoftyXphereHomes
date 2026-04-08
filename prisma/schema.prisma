@@ -48,3 +48,23 @@ enum BookingStatus {
   PAID      // Paystack charge successful
   CANCELLED
 }
+
+// --- Contact messages (public contact form submissions) ---
+model ContactMessage {
+  id        String   @id @default(cuid())
+  name      String
+  email     String
+  phone     String
+  category  String
+  message   String
+
+  // Basic abuse triage (optional)
+  ip        String?
+  userAgent String?
+
+  createdAt DateTime @default(now())
+
+  @@index([createdAt])
+  @@index([email])
+  @@index([category])
+}

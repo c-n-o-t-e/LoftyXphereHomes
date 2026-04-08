@@ -143,3 +143,23 @@ export const myBookingsQuerySchema = z
     const limit = Number.isFinite(parsed) ? Math.min(100, Math.max(1, parsed)) : 50;
     return { limit, cursor: q.cursor };
   });
+
+export const contactMessageBodySchema = z
+  .object({
+    name: nonEmptyTrimmedString.min(2, { message: "Name must be at least 2 characters" }),
+    email: emailSchema,
+    phone: nonEmptyTrimmedString.min(10, { message: "Please enter a valid phone number" }),
+    category: z.enum(["booking", "partnership", "long-stay", "complaints"]),
+    message: nonEmptyTrimmedString.min(10, { message: "Message must be at least 10 characters" }),
+    // Honeypot: bots often fill hidden fields. Humans should leave empty.
+    website: z.string().trim().optional(),
+  })
+  .strict()
+  .transform((data) => ({
+    name: data.name.trim(),
+    email: data.email,
+    phone: data.phone.trim(),
+    category: data.category,
+    message: data.message.trim(),
+    website: data.website?.trim() || "",
+  }));

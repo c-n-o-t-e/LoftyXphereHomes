@@ -96,8 +96,11 @@ export function YourReservationCard({
   const { data: availabilityData } = useQuery({
     queryKey: ["availability", apartmentId],
     queryFn: async () => {
+      // Availability must reflect newly created bookings quickly.
+      // Bypass browser/Next fetch caching; server-side route still has CDN caching + tag revalidation.
       const res = await fetch(
-        `/api/availability?apartmentId=${encodeURIComponent(apartmentId)}`
+        `/api/availability?apartmentId=${encodeURIComponent(apartmentId)}`,
+        { cache: "no-store" }
       );
       if (!res.ok) throw new Error("Failed to load availability");
       return res.json() as Promise<{
@@ -105,7 +108,10 @@ export function YourReservationCard({
         bookingRanges?: BookingRange[];
       }>;
     },
-    staleTime: 60_000,
+    // Ensure we refetch whenever user returns to the page.
+    staleTime: 0,
+    refetchOnMount: "always",
+    refetchOnWindowFocus: true,
   });
 
   const blockedDates = availabilityData?.blockedDates ?? [];

@@ -10,8 +10,12 @@ import { availabilityQuerySchema } from "@/lib/validation/schemas";
  * - DB-stored date-only values remain consistent regardless of server timezone
  * - Clients can safely treat the returned strings as calendar dates (YYYY-MM-DD)
  */
-function formatDateOnly(date: Date): string {
-  return date.toISOString().slice(0, 10);
+function formatDateOnly(date: Date | string): string {
+  const d = typeof date === "string" ? new Date(date) : date;
+  if (Number.isNaN(d.getTime())) {
+    throw new Error(`Invalid date value: ${String(date)}`);
+  }
+  return d.toISOString().slice(0, 10);
 }
 
 function parseDateOnly(iso: string): Date {

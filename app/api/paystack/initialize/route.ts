@@ -9,137 +9,154 @@ import { paystackInitializeBodySchema } from "@/lib/validation/schemas";
 const PAYSTACK_BASE = "https://api.paystack.co";
 
 export async function POST(request: NextRequest) {
-  const secretKey = process.env.PAYSTACK_SECRET_KEY;
-  if (!secretKey) {
-    return NextResponse.json(
-      { error: "Paystack is not configured" },
-      { status: 500 }
+    const secretKey = process.env.PAYSTACK_SECRET_KEY;
+    if (!secretKey) {
+        return NextResponse.json(
+            { error: "Paystack is not configured" },
+            { status: 500 },
+        );
+    }
+
+    const parsedBody = await parseJsonBody(
+        request,
+        paystackInitializeBodySchema,
     );
-  }
+    if (!parsedBody.success) {
+        return parsedBody.response;
+    }
 
-  const parsedBody = await parseJsonBody(request, paystackInitializeBodySchema);
-  if (!parsedBody.success) {
-    return parsedBody.response;
-  }
+    const { email, name, phone, apartmentId, checkIn, checkOut } =
+        parsedBody.data;
 
-  const { email, name, phone, apartmentId, checkIn, checkOut } = parsedBody.data;
+    const apartment = getApartmentById(apartmentId);
+    if (!apartment) {
+        return NextResponse.json(
+            { error: "Apartment not found" },
+            { status: 404 },
+        );
+    }
 
-  const apartment = getApartmentById(apartmentId);
-  if (!apartment) {
-    return NextResponse.json({ error: "Apartment not found" }, { status: 404 });
-  }
-
-  const quote = computeBookingQuote(apartment.pricePerNight, checkIn, checkOut);
-  if (!quote) {
-    return NextResponse.json(
-      { error: "Invalid stay dates for pricing" },
-      { status: 400 }
+    const quote = computeBookingQuote(
+        apartment.pricePerNight,
+        checkIn,
+        checkOut,
     );
-  }
+    if (!quote) {
+        return NextResponse.json(
+            { error: "Invalid stay dates for pricing" },
+            { status: 400 },
+        );
+    }
 
-  // Paystack minimum charge (documented as whole currency units; we use NGN ≥ 100)
-  if (quote.totalNgn < 100) {
-    return NextResponse.json(
-      { error: "Computed amount is below the minimum allowed for payment" },
-      { status: 400 }
-    );
-  }
+    // Paystack minimum charge (documented as whole currency units; we use NGN ≥ 100)
+    if (quote.totalNgn < 100) {
+        return NextResponse.json(
+            {
+                error: "Computed amount is below the minimum allowed for payment",
+            },
+            { status: 400 },
+        );
+    }
 
-  const amountInKobo = totalNgnToKobo(quote.totalNgn);
+    const amountInKobo = totalNgnToKobo(quote.totalNgn);
 
-  // --- SERVER-SIDE DOUBLE-BOOKING PREVENTION ---
-  // Check if any existing PAID or PENDING booking overlaps with the requested dates.
-  // Overlap condition: existing.checkIn < requested.checkOut AND existing.checkOut > requested.checkIn
-  try {
-    const requestedCheckIn = new Date(checkIn);
-    const requestedCheckOut = new Date(checkOut);
+    // --- SERVER-SIDE DOUBLE-BOOKING PREVENTION ---
+    // Check if any existing PAID or PENDING booking overlaps with the requested dates.
+    // Overlap condition: existing.checkIn < requested.checkOut AND existing.checkOut > requested.checkIn
+    try {
+        const requestedCheckIn = new Date(checkIn);
+        const requestedCheckOut = new Date(checkOut);
 
-    const conflictingBooking = await prisma.booking.findFirst({
-      where: {
-        apartmentId,
-        status: { in: ["PAID", "PENDING"] },
-        // Date ranges overlap if: existingCheckIn < requestedCheckOut AND existingCheckOut > requestedCheckIn
-        checkIn: { lt: requestedCheckOut },
-        checkOut: { gt: requestedCheckIn },
-      },
-      select: { id: true, checkIn: true, checkOut: true },
+        const conflictingBooking = await prisma.booking.findFirst({
+            where: {
+                apartmentId,
+                status: { in: ["PAID", "PENDING"] },
+                // Date ranges overlap if: existingCheckIn < requestedCheckOut AND existingCheckOut > requestedCheckIn
+                checkIn: { lt: requestedCheckOut },
+                checkOut: { gt: requestedCheckIn },
+            },
+            select: { id: true, checkIn: true, checkOut: true },
+        });
+
+        if (conflictingBooking) {
+            const conflictStart = new Date(
+                conflictingBooking.checkIn,
+            ).toLocaleDateString("en-US", {
+                month: "short",
+                day: "numeric",
+            });
+            const conflictEnd = new Date(
+                conflictingBooking.checkOut,
+            ).toLocaleDateString("en-US", {
+                month: "short",
+                day: "numeric",
+            });
+            return NextResponse.json(
+                {
+                    error: `This apartment is already booked from ${conflictStart} to ${conflictEnd}. Please select different dates.`,
+                },
+                { status: 409 },
+            );
+        }
+    } catch (dbError) {
+        console.error("Database error checking availability:", dbError);
+        // Fail CLOSED: if we can't check conflicts, we must not start payment.
+        return NextResponse.json(
+            {
+                error: "Availability is temporarily unavailable. Please retry before booking.",
+                code: "AVAILABILITY_UNAVAILABLE",
+            },
+            { status: 503 },
+        );
+    }
+
+    const reference =
+        `lxh_${apartmentId}_${Date.now()}_${randomBytes(8).toString("hex")}`.replace(
+            /[^a-zA-Z0-9_-]/g,
+            "_",
+        );
+    const baseUrl = process.env.NEXT_PUBLIC_SITE_URL || request.nextUrl.origin;
+    const callbackUrl = `${baseUrl}/booking/success?reference=${reference}`;
+
+    const res = await fetch(`${PAYSTACK_BASE}/transaction/initialize`, {
+        method: "POST",
+        headers: {
+            Authorization: `Bearer ${secretKey}`,
+            "Content-Type": "application/json",
+        },
+        body: JSON.stringify({
+            email: email.trim(),
+            amount: amountInKobo,
+            reference,
+            callback_url: callbackUrl,
+            metadata: {
+                apartment_id: apartmentId,
+                check_in: checkIn,
+                check_out: checkOut,
+                booker_name: name?.trim() || undefined,
+                booker_phone: phone?.trim() || undefined,
+            },
+        }),
     });
 
-    if (conflictingBooking) {
-      const conflictStart = new Date(conflictingBooking.checkIn).toLocaleDateString("en-US", {
-        month: "short",
-        day: "numeric",
-      });
-      const conflictEnd = new Date(conflictingBooking.checkOut).toLocaleDateString("en-US", {
-        month: "short",
-        day: "numeric",
-      });
-      return NextResponse.json(
-        {
-          error: `This apartment is already booked from ${conflictStart} to ${conflictEnd}. Please select different dates.`,
-        },
-        { status: 409 }
-      );
+    const data = await res.json();
+
+    if (!res.ok) {
+        return NextResponse.json(
+            { error: data.message || "Failed to initialize payment" },
+            { status: res.status >= 400 ? res.status : 500 },
+        );
     }
-  } catch (dbError) {
-    console.error("Database error checking availability:", dbError);
-    // Fail CLOSED: if we can't check conflicts, we must not start payment.
-    return NextResponse.json(
-      {
-        error:
-          "Availability is temporarily unavailable. Please retry before booking.",
-        code: "AVAILABILITY_UNAVAILABLE",
-      },
-      { status: 503 }
-    );
-  }
 
-  const reference = `lxh_${apartmentId}_${Date.now()}_${randomBytes(8).toString("hex")}`.replace(
-    /[^a-zA-Z0-9_-]/g,
-    "_"
-  );
-  const baseUrl = process.env.NEXT_PUBLIC_SITE_URL || request.nextUrl.origin;
-  const callbackUrl = `${baseUrl}/booking/success?reference=${reference}`;
+    if (!data.status || !data.data?.authorization_url) {
+        return NextResponse.json(
+            { error: data.message || "Invalid response from Paystack" },
+            { status: 500 },
+        );
+    }
 
-  const res = await fetch(`${PAYSTACK_BASE}/transaction/initialize`, {
-    method: "POST",
-    headers: {
-      Authorization: `Bearer ${secretKey}`,
-      "Content-Type": "application/json",
-    },
-    body: JSON.stringify({
-      email: email.trim(),
-      amount: amountInKobo,
-      reference,
-      callback_url: callbackUrl,
-      metadata: {
-        apartment_id: apartmentId,
-        check_in: checkIn,
-        check_out: checkOut,
-        booker_name: name?.trim() || undefined,
-        booker_phone: phone?.trim() || undefined,
-      },
-    }),
-  });
-
-  const data = await res.json();
-
-  if (!res.ok) {
-    return NextResponse.json(
-      { error: data.message || "Failed to initialize payment" },
-      { status: res.status >= 400 ? res.status : 500 }
-    );
-  }
-
-  if (!data.status || !data.data?.authorization_url) {
-    return NextResponse.json(
-      { error: data.message || "Invalid response from Paystack" },
-      { status: 500 }
-    );
-  }
-
-  return NextResponse.json({
-    authorization_url: data.data.authorization_url,
-    reference: data.data.reference,
-  });
+    return NextResponse.json({
+        authorization_url: data.data.authorization_url,
+        reference: data.data.reference,
+    });
 }

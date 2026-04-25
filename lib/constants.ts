@@ -48,3 +48,39 @@ export const SITE_NAME = "LoftyXphereHomes";
 export const SITE_DESCRIPTION = "Premium shortlet apartment rentals in Nigeria. Experience luxury, comfort, and exceptional service.";
 export const SITE_URL = process.env.NEXT_PUBLIC_SITE_URL || "https://loftyxpherehomes.com";
 
+/** Pre-filled message when visitors tap the site-wide WhatsApp button. */
+export const WHATSAPP_DEFAULT_MESSAGE =
+  "Hello, I'm interested in booking your apartment.";
+
+/**
+ * Strips to digits and, for common Nigerian local mobile format (0 + 10 digits),
+ * converts to international (234 + national number) so wa.me works reliably.
+ */
+export function normalizeWhatsAppPhoneDigits(phone: string): string | null {
+  let digits = phone.replace(/\D/g, "");
+  if (!digits) return null;
+  if (digits.startsWith("234")) {
+    return digits;
+  }
+  // Nigerian local mobile: 070/080/081/090/091… (11 digits including leading 0)
+  if (digits.length === 11 && digits.startsWith("0") && /^0[1-9]/.test(digits)) {
+    return `234${digits.slice(1)}`;
+  }
+  return digits;
+}
+
+/**
+ * Builds a wa.me link. `phone` may include spaces or +; only digits are used
+ * (with Nigerian 0-prefixed numbers normalized to 234…).
+ * @returns null if there are no digits (invalid / missing number).
+ */
+export function getWhatsAppChatUrl(
+  phone: string,
+  message: string = WHATSAPP_DEFAULT_MESSAGE
+): string | null {
+  const digits = normalizeWhatsAppPhoneDigits(phone);
+  if (!digits) return null;
+  const text = encodeURIComponent(message);
+  return `https://wa.me/${digits}?text=${text}`;
+}
+

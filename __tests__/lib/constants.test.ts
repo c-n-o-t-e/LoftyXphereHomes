@@ -12,6 +12,9 @@ import {
   getStayDiscountPerNight,
   getStayDiscountAmount,
   PAYSTACK_FEE,
+  WHATSAPP_DEFAULT_MESSAGE,
+  getWhatsAppChatUrl,
+  normalizeWhatsAppPhoneDigits,
 } from '@/lib/constants'
 
 describe('constants', () => {
@@ -102,6 +105,42 @@ describe('constants', () => {
       expect(getStayDiscountAmount(5)).toBe(50_000)
       expect(getStayDiscountAmount(14)).toBe(280_000)
       expect(getStayDiscountAmount(30)).toBe(900_000)
+    })
+  })
+
+  describe('normalizeWhatsAppPhoneDigits', () => {
+    it('returns null for empty or non-numeric', () => {
+      expect(normalizeWhatsAppPhoneDigits('')).toBeNull()
+      expect(normalizeWhatsAppPhoneDigits('abc')).toBeNull()
+    })
+    it('leaves 234-prefixed numbers as-is', () => {
+      expect(normalizeWhatsAppPhoneDigits('+234 801 234 5678')).toBe('2348012345678')
+    })
+    it('converts Nigerian 0-prefixed mobile to 234…', () => {
+      expect(normalizeWhatsAppPhoneDigits('08161122328')).toBe('2348161122328')
+    })
+  })
+
+  describe('getWhatsAppChatUrl', () => {
+    it('returns null when there are no digits', () => {
+      expect(getWhatsAppChatUrl('')).toBeNull()
+      expect(getWhatsAppChatUrl('abc')).toBeNull()
+    })
+
+    it('strips non-digits and builds wa.me URL with default message', () => {
+      const url = getWhatsAppChatUrl('+234 801 234 5678')
+      expect(url).toContain('https://wa.me/2348012345678')
+      expect(url).toContain(encodeURIComponent(WHATSAPP_DEFAULT_MESSAGE))
+    })
+
+    it('uses custom message when provided', () => {
+      const url = getWhatsAppChatUrl('2348012345678', 'Custom hi')
+      expect(url).toContain(encodeURIComponent('Custom hi'))
+    })
+
+    it('normalizes local Nigerian 081… for wa.me', () => {
+      const url = getWhatsAppChatUrl('08161122328')
+      expect(url).toContain('https://wa.me/2348161122328')
     })
   })
 })

@@ -97,7 +97,6 @@ export function YourReservationCard({
     queryKey: ["availability", apartmentId],
     queryFn: async () => {
       // Availability must reflect newly created bookings quickly.
-      // Bypass browser/Next fetch caching; server-side route still has CDN caching + tag revalidation.
       const res = await fetch(
         `/api/availability?apartmentId=${encodeURIComponent(apartmentId)}`,
         { cache: "no-store" }

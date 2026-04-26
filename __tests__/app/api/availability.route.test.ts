@@ -20,11 +20,11 @@ jest.mock("@/lib/validation/http", () => ({
 }));
 
 jest.mock("@/lib/cache/availability-data", () => ({
-  getBookingsForApartmentCached: jest.fn(),
+  getBookingsForApartment: jest.fn(),
 }));
 
 const { GET } = require("@/app/api/availability/route");
-const { getBookingsForApartmentCached } = require("@/lib/cache/availability-data");
+const { getBookingsForApartment } = require("@/lib/cache/availability-data");
 
 function makeReq(url: string): NextRequest {
   return { url, nextUrl: new URL(url) } as unknown as NextRequest;
@@ -37,7 +37,7 @@ describe("GET /api/availability", () => {
 
   it("returns blockedDates excluding checkout day", async () => {
     // Booking is 2026-04-08 -> 2026-04-17, so block 8..16
-    (getBookingsForApartmentCached as jest.Mock).mockResolvedValueOnce([
+    (getBookingsForApartment as jest.Mock).mockResolvedValueOnce([
       {
         checkIn: new Date("2026-04-08T00:00:00.000Z"),
         checkOut: new Date("2026-04-17T00:00:00.000Z"),

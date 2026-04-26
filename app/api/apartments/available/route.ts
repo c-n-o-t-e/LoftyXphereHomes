@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { apartments } from "@/lib/data/apartments";
-import { getOverlappingBookingsCached } from "@/lib/cache/availability-data";
+import { getOverlappingBookings } from "@/lib/cache/availability-data";
 import { parseSearchParams } from "@/lib/validation/http";
 import { availableApartmentsQuerySchema } from "@/lib/validation/schemas";
 
@@ -30,8 +30,8 @@ export async function GET(request: NextRequest) {
     const requestedCheckIn = new Date(checkIn);
     const requestedCheckOut = new Date(checkOut);
 
-    // Find all bookings that overlap with the requested date range (cached on server)
-    const overlappingBookings = await getOverlappingBookingsCached(
+    // Find all bookings that overlap with the requested date range.
+    const overlappingBookings = await getOverlappingBookings(
       requestedCheckIn.toISOString(),
       requestedCheckOut.toISOString()
     );
@@ -66,7 +66,7 @@ export async function GET(request: NextRequest) {
       },
       {
         headers: {
-          "Cache-Control": "public, s-maxage=60, stale-while-revalidate=120",
+          "Cache-Control": "no-store, max-age=0",
         },
       }
     );

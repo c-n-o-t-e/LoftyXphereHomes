@@ -46,11 +46,10 @@ jest.mock("@/lib/supabase/server", () => ({
 jest.mock("next/cache", () => ({
   revalidateTag: jest.fn(),
   revalidatePath: jest.fn(),
-  unstable_cache: (fn: unknown) => fn,
 }));
 
 jest.mock("@/lib/cache/availability-data", () => ({
-  getOverlappingBookingsCached: jest.fn(),
+  getOverlappingBookings: jest.fn(),
 }));
 
 jest.mock("@supabase/supabase-js", () => ({
@@ -62,7 +61,7 @@ const { GET: getMyBookings } = require("@/app/api/my-bookings/route");
 const { POST: postPaystackWebhook } = require("@/app/api/paystack/webhook/route");
 const { POST: postPaystackInitialize } = require("@/app/api/paystack/initialize/route");
 const { verifyTransaction, verifyWebhookSignature } = require("@/lib/paystack");
-const { getOverlappingBookingsCached } = require("@/lib/cache/availability-data");
+const { getOverlappingBookings } = require("@/lib/cache/availability-data");
 const { createClient } = require("@supabase/supabase-js");
 
 type HeaderBag = {
@@ -136,7 +135,7 @@ describe("API validation integration", () => {
   });
 
   it("fails closed with 503 when availability lookup errors", async () => {
-    (getOverlappingBookingsCached as jest.Mock).mockRejectedValueOnce(
+    (getOverlappingBookings as jest.Mock).mockRejectedValueOnce(
       new Error("db down")
     );
 

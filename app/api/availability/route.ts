@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
-import { getBookingsForApartmentCached } from "@/lib/cache/availability-data";
+import { getBookingsForApartment } from "@/lib/cache/availability-data";
 import { parseSearchParams } from "@/lib/validation/http";
 import { availabilityQuerySchema } from "@/lib/validation/schemas";
 
@@ -43,7 +43,7 @@ export async function GET(request: NextRequest) {
   const { apartmentId } = parsedQuery.data;
 
   try {
-    const bookings = await getBookingsForApartmentCached(apartmentId);
+    const bookings = await getBookingsForApartment(apartmentId);
 
     // Build blocked dates (check-in date through checkout-1)
     // Example: booking 11th→15th blocks check-in on 11th, 12th, 13th, 14th
@@ -74,7 +74,7 @@ export async function GET(request: NextRequest) {
       },
       {
         headers: {
-          "Cache-Control": "public, s-maxage=60, stale-while-revalidate=120",
+          "Cache-Control": "no-store, max-age=0",
         },
       }
     );

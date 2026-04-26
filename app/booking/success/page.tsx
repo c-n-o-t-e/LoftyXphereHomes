@@ -9,16 +9,6 @@ export const metadata: Metadata = {
   description: "Your payment was successful. Thank you for booking with LoftyXphereHomes.",
 };
 
-type BookingResult = {
-  id: string;
-  apartmentId: string;
-  checkIn: Date;
-  checkOut: Date;
-  nights: number;
-  amountPaid: number;
-  bookerName: string;
-};
-
 export default async function BookingSuccessPage({
   searchParams,
 }: {
@@ -38,8 +28,13 @@ export default async function BookingSuccessPage({
         const { upsertBookingFromPaystack } = await import("@/lib/booking");
         await upsertBookingFromPaystack(result.data);
         didPersistBooking = true;
-      } catch {
-        verifyError = "Booking could not be saved (database not configured).";
+      } catch (error) {
+        console.error("Booking payment verified but persistence failed", {
+          reference: reference.trim(),
+          error,
+        });
+        verifyError =
+          "Payment was verified, but we could not save your booking. Please contact support with your payment reference.";
       }
     } else if (result?.data?.status) {
       verifyError = "Payment was not successful.";

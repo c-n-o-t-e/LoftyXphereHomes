@@ -1,9 +1,11 @@
 import type { PaystackVerifyData } from "./paystack";
 import { getApartmentById } from "./data/apartments";
 import { prisma } from "./db";
-import { revalidateTag } from "next/cache";
-import { computeBookingQuote, nightsBetweenStayDates, totalNgnToKobo } from "./pricing";
-import { AVAILABILITY_TAG, availabilityApartmentTag } from "./cache/constants";
+import {
+    computeBookingQuote,
+    nightsBetweenStayDates,
+    totalNgnToKobo,
+} from "./pricing";
 
 function parseDate(s: string): Date {
     const d = new Date(s);
@@ -29,7 +31,11 @@ export async function upsertBookingFromPaystack(data: PaystackVerifyData) {
         throw new Error("Unknown apartment: " + apartmentId);
     }
 
-    const quote = computeBookingQuote(apartment.pricePerNight, checkInStr, checkOutStr);
+    const quote = computeBookingQuote(
+        apartment.pricePerNight,
+        checkInStr,
+        checkOutStr,
+    );
     if (!quote) {
         throw new Error("Invalid stay dates for booking");
     }
@@ -67,10 +73,6 @@ export async function upsertBookingFromPaystack(data: PaystackVerifyData) {
             updatedAt: new Date(),
         },
     });
-
-    // Ensure calendar/availability reflects new bookings immediately.
-    revalidateTag(AVAILABILITY_TAG, "max");
-    revalidateTag(availabilityApartmentTag(apartmentId), "max");
 
     return booking;
 }

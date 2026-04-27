@@ -1,15 +1,10 @@
 import { NextRequest, NextResponse } from "next/server";
-import { revalidateTag } from "next/cache";
 import { verifyTransaction, verifyWebhookSignature } from "@/lib/paystack";
 import { upsertBookingFromPaystack } from "@/lib/booking";
 import { inviteUserByEmail } from "@/lib/supabase/server";
 import { validationErrorResponse } from "@/lib/validation/http";
 import { paystackWebhookPayloadSchema } from "@/lib/validation/schemas";
 import { sendAdminAlertBookingPersistenceFailed } from "@/lib/email/admin-alerts";
-import {
-  AVAILABILITY_TAG,
-  availabilityApartmentTag,
-} from "@/lib/cache/constants";
 
 /**
  * POST /api/paystack/webhook
@@ -73,9 +68,6 @@ export async function POST(request: NextRequest) {
 
     try {
         const booking = await upsertBookingFromPaystack(result.data);
-
-        revalidateTag(AVAILABILITY_TAG, "max");
-        revalidateTag(availabilityApartmentTag(booking.apartmentId), "max");
 
         // Send magic link to create/login user account
         // This runs async and doesn't block the webhook response

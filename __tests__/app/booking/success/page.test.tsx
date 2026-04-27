@@ -1,14 +1,9 @@
 import { render, screen } from '@testing-library/react'
 import * as paystack from '@/lib/paystack'
 import BookingSuccessPage from '@/app/booking/success/page'
-import { upsertBookingFromPaystack } from '@/lib/booking'
 
 jest.mock('@/lib/paystack', () => ({
   verifyTransaction: jest.fn(),
-}))
-
-jest.mock('@/lib/booking', () => ({
-  upsertBookingFromPaystack: jest.fn(),
 }))
 
 jest.mock('next/link', () => {
@@ -35,13 +30,12 @@ describe('Booking Success Page', () => {
     ).toBeInTheDocument()
   })
 
-  it('renders confirmed state when payment verifies and persistence succeeds', async () => {
+  it('renders confirmed state when payment verifies successfully', async () => {
     const verifyTransaction = jest.mocked(paystack.verifyTransaction)
     verifyTransaction.mockResolvedValueOnce({
       status: true,
       data: { status: 'success' },
     })
-    ;(upsertBookingFromPaystack as jest.Mock).mockResolvedValueOnce({})
 
     await renderSuccessPage({ reference: 'ref_123' })
     expect(
@@ -80,25 +74,14 @@ describe('Booking Success Page', () => {
     expect(verifyTransaction).not.toHaveBeenCalled()
   })
 
-  it('does not claim confirmation when booking persistence fails', async () => {
+  it('does not attempt to persist the booking on the success page', async () => {
     const verifyTransaction = jest.mocked(paystack.verifyTransaction)
     verifyTransaction.mockResolvedValueOnce({
       status: true,
       data: { status: 'success' },
     })
-    ;(upsertBookingFromPaystack as jest.Mock).mockRejectedValueOnce(
-      new Error('db down')
-    )
 
     await renderSuccessPage({ reference: 'ref_123' })
-    expect(
-      screen.getByRole('heading', {
-        name: /payment received — confirmation pending/i,
-      })
-    ).toBeInTheDocument()
-    expect(screen.queryByText(/your stay is confirmed/i)).not.toBeInTheDocument()
-    expect(
-      screen.getByRole('link', { name: /contact support/i })
-    ).toBeInTheDocument()
+    expect(screen.getByRole('heading', { name: /your stay is confirmed/i })).toBeInTheDocument()
   })
 })

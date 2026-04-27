@@ -43,6 +43,10 @@ jest.mock("@/lib/supabase/server", () => ({
   inviteUserByEmail: jest.fn(),
 }));
 
+jest.mock("@/lib/email/admin-alerts", () => ({
+  sendAdminAlertBookingPersistenceFailed: jest.fn(),
+}));
+
 jest.mock("next/cache", () => ({
   revalidateTag: jest.fn(),
   revalidatePath: jest.fn(),
@@ -61,6 +65,7 @@ const { GET: getMyBookings } = require("@/app/api/my-bookings/route");
 const { POST: postPaystackWebhook } = require("@/app/api/paystack/webhook/route");
 const { POST: postPaystackInitialize } = require("@/app/api/paystack/initialize/route");
 const { verifyTransaction, verifyWebhookSignature } = require("@/lib/paystack");
+const { sendAdminAlertBookingPersistenceFailed } = require("@/lib/email/admin-alerts");
 const { getOverlappingBookings } = require("@/lib/cache/availability-data");
 const { createClient } = require("@supabase/supabase-js");
 
@@ -286,5 +291,51 @@ describe("API validation integration", () => {
 
     expect(response.status).toBe(400);
     expectValidation400(json);
+  });
+
+  it("sends admin alert when webhook booking persistence fails", async () => {
+    (verifyWebhookSignature as jest.Mock).mockReturnValue(true);
+    (verifyTransaction as jest.Mock).mockResolvedValue({
+      status: true,
+      data: {
+        reference: "ref_123",
+        status: "success",
+        amount: 1000,
+        metadata: {
+          apartment_id: "lofty-wuye-01",
+          check_in: "2026-01-01",
+          check_out: "2026-01-02",
+        },
+        customer: { email: "guest@example.com" },
+      },
+    });
+
+    const { upsertBookingFromPaystack } = require("@/lib/booking");
+    (upsertBookingFromPaystack as jest.Mock).mockRejectedValueOnce(
+      new Error("db down")
+    );
+
+    const request = makeNextRequest("http://localhost/api/paystack/webhook", {
+      method: "POST",
+      headers: {
+        "x-paystack-signature": "sig",
+        "content-type": "application/json",
+      },
+      body: JSON.stringify({
+        event: "charge.success",
+        data: { reference: "ref_123" },
+      }),
+    });
+
+    const response = await postPaystackWebhook(request);
+    const json = await response.json();
+
+    expect(response.status).toBe(500);
+    expect(json).toEqual(expect.objectContaining({ error: expect.any(String) }));
+    expect(sendAdminAlertBookingPersistenceFailed).toHaveBeenCalledWith(
+      expect.objectContaining({
+        reference: "ref_123",
+      })
+    );
   });
 });

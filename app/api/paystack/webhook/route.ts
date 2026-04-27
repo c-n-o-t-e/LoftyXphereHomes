@@ -5,6 +5,7 @@ import { upsertBookingFromPaystack } from "@/lib/booking";
 import { inviteUserByEmail } from "@/lib/supabase/server";
 import { validationErrorResponse } from "@/lib/validation/http";
 import { paystackWebhookPayloadSchema } from "@/lib/validation/schemas";
+import { sendAdminAlertBookingPersistenceFailed } from "@/lib/email/admin-alerts";
 import {
   AVAILABILITY_TAG,
   availabilityApartmentTag,
@@ -88,6 +89,15 @@ export async function POST(request: NextRequest) {
         return NextResponse.json({ received: true });
     } catch (err) {
         console.error("Webhook booking upsert error:", err);
+        try {
+            await sendAdminAlertBookingPersistenceFailed({
+                reference,
+                paystackData: result.data,
+                error: err,
+            });
+        } catch (alertErr) {
+            console.error("Failed to send admin alert email:", alertErr);
+        }
         return NextResponse.json(
             { error: "Failed to save booking" },
             { status: 500 },

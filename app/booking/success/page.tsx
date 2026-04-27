@@ -3,6 +3,8 @@ import Link from "next/link";
 import { CheckCircle, XCircle } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { verifyTransaction } from "@/lib/paystack";
+import { upsertBookingFromPaystack } from "@/lib/booking";
+import { sendAdminAlertBookingPersistenceFailed } from "@/lib/email/admin-alerts";
 
 export const metadata: Metadata = {
   title: "Booking Successful",
@@ -23,6 +25,19 @@ export default async function BookingSuccessPage({
     const result = await verifyTransaction(reference.trim());
     if (result?.status && result.data?.status === "success") {
       didVerifyPaymentSuccess = true;
+      try {
+        await upsertBookingFromPaystack(result.data);
+      } catch (error) {
+        try {
+          await sendAdminAlertBookingPersistenceFailed({
+            reference: reference.trim(),
+            paystackData: result.data,
+            error,
+          });
+        } catch {
+          // Ignore alert failures; payment verification is still successful.
+        }
+      }
     } else if (result?.data?.status) {
       verifyError = "Payment was not successful.";
     } else {

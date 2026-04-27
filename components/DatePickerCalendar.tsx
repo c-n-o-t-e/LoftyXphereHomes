@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useMemo } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { ChevronLeft, ChevronRight } from "lucide-react";
 
 const DAYS_HEADER = ["M", "T", "W", "T", "F", "S", "S"];
@@ -21,10 +21,59 @@ function parseISO(str: string): Date {
   return new Date(y, m - 1, d);
 }
 
+function startOfMonth(date: Date): Date {
+  return new Date(date.getFullYear(), date.getMonth(), 1);
+}
+
+function addDays(date: Date, days: number): Date {
+  const d = new Date(date);
+  d.setDate(d.getDate() + days);
+  return d;
+}
+
+function isSameMonth(a: Date, b: Date): boolean {
+  return a.getFullYear() === b.getFullYear() && a.getMonth() === b.getMonth();
+}
+
 /** Monday = 0, Sunday = 6 */
 function getDayOfWeek(date: Date): number {
   const d = date.getDay();
   return d === 0 ? 6 : d - 1;
+}
+
+function findFirstSelectableDate(params: {
+  anchor: Date;
+  minDate: string;
+  disabledSet: Set<string>;
+  maxDaysToScan: number;
+}): Date | null {
+  const { anchor, minDate, disabledSet, maxDaysToScan } = params;
+  const todayIso = toISO(anchor);
+  const effectiveStartIso = minDate && todayIso < minDate ? minDate : todayIso;
+  let current = parseISO(effectiveStartIso);
+
+  for (let i = 0; i <= maxDaysToScan; i++) {
+    const iso = toISO(current);
+    if ((minDate ? iso >= minDate : true) && !disabledSet.has(iso)) return current;
+    current = addDays(current, 1);
+  }
+
+  return null;
+}
+
+function monthHasSelectableDate(params: {
+  month: Date;
+  minDate: string;
+  disabledSet: Set<string>;
+}): boolean {
+  const { month, minDate, disabledSet } = params;
+  const start = startOfMonth(month);
+  const end = new Date(start.getFullYear(), start.getMonth() + 1, 0);
+  for (let d = new Date(start); d <= end; d = addDays(d, 1)) {
+    const iso = toISO(d);
+    if ((minDate ? iso >= minDate : true) && !disabledSet.has(iso)) return true;
+  }
+  return false;
 }
 
 export interface DatePickerCalendarProps {
@@ -57,11 +106,53 @@ export function DatePickerCalendar({
 }: DatePickerCalendarProps) {
   const initialMonth = value ? parseISO(value) : minDate ? parseISO(minDate) : new Date();
   const [viewDate, setViewDate] = useState(initialMonth);
+  const prevOpen = useRef(open);
 
   const minDateObj = minDate ? parseISO(minDate) : null;
 
   // Create a Set for O(1) lookup of disabled dates
   const disabledSet = useMemo(() => new Set(disabledDates), [disabledDates]);
+
+  useEffect(() => {
+    if (!open) {
+      prevOpen.current = open;
+      return;
+    }
+
+    const didJustOpen = !prevOpen.current && open;
+    prevOpen.current = open;
+
+    // If user already picked a value, keep that month visible.
+    if (value) {
+      const next = parseISO(value);
+      if (!isSameMonth(viewDate, next)) {
+        queueMicrotask(() => setViewDate(next));
+      }
+      return;
+    }
+
+    const visibleMonthHasAvailability = monthHasSelectableDate({
+      month: viewDate,
+      minDate,
+      disabledSet,
+    });
+
+    // Only auto-jump when opening, or when the current visible month has no selectable dates
+    // (e.g. availability finishes loading and the month becomes fully blocked).
+    if (!didJustOpen && visibleMonthHasAvailability) return;
+
+    const anchor = minDate ? parseISO(minDate) : new Date();
+    const firstSelectable = findFirstSelectableDate({
+      anchor,
+      minDate,
+      disabledSet,
+      maxDaysToScan: 366 * 2,
+    });
+
+    if (firstSelectable && !isSameMonth(viewDate, firstSelectable)) {
+      queueMicrotask(() => setViewDate(firstSelectable));
+    }
+  }, [open, value, minDate, disabledSet, viewDate]);
 
   const { weeks, month, year } = useMemo(() => {
     const y = viewDate.getFullYear();
@@ -111,7 +202,7 @@ export function DatePickerCalendar({
       month: m,
       year: y,
     };
-  }, [viewDate, minDate, disabledSet]);
+  }, [viewDate, minDate, minDateObj, disabledSet]);
 
   const goPrev = () => {
     setViewDate((d) => new Date(d.getFullYear(), d.getMonth() - 1));

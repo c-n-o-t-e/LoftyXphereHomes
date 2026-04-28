@@ -131,9 +131,14 @@ export default function NewManualBookingPage() {
                             row to Google Sheets.
                         </p>
                     </div>
-                    <Button variant="outline" asChild>
-                        <Link href="/admin">Back</Link>
-                    </Button>
+                    <div className="flex gap-2 flex-wrap">
+                        <Button variant="outline" asChild>
+                            <Link href="/admin/bookings/cancel">Cancel booking</Link>
+                        </Button>
+                        <Button variant="outline" asChild>
+                            <Link href="/admin">Back</Link>
+                        </Button>
+                    </div>
                 </div>
 
                 <Card className="p-6 mt-6">

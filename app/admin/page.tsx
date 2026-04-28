@@ -76,9 +76,14 @@ export default function AdminHomePage() {
                             Sheets.
                         </p>
                     </div>
-                    <Button asChild>
-                        <Link href="/admin/bookings/new">New manual booking</Link>
-                    </Button>
+                    <div className="flex gap-2 flex-wrap">
+                        <Button asChild>
+                            <Link href="/admin/bookings/new">New manual booking</Link>
+                        </Button>
+                        <Button variant="outline" asChild>
+                            <Link href="/admin/bookings/cancel">Cancel booking</Link>
+                        </Button>
+                    </div>
                 </div>
 
                 <div className="mt-8 grid gap-4 sm:grid-cols-2">
@@ -87,9 +92,14 @@ export default function AdminHomePage() {
                         <p className="text-sm text-gray-600 mt-1">
                             Create a paid booking for walk-ins / WhatsApp / Instagram.
                         </p>
-                        <Button className="mt-4" variant="outline" asChild>
-                            <Link href="/admin/bookings/new">Create booking</Link>
-                        </Button>
+                        <div className="mt-4 flex flex-wrap gap-2">
+                            <Button variant="outline" asChild>
+                                <Link href="/admin/bookings/new">Create booking</Link>
+                            </Button>
+                            <Button variant="outline" asChild>
+                                <Link href="/admin/bookings/cancel">Cancel by invoice</Link>
+                            </Button>
+                        </div>
                     </Card>
                     <Card className="p-6">
                         <h2 className="font-semibold text-gray-900">Access</h2>

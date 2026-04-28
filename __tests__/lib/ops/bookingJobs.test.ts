@@ -92,8 +92,68 @@ describe("bookingJobs", () => {
             expect.objectContaining({ processed: 2, succeeded: 2, failed: 0 }),
         );
         expect(prisma.booking.update).toHaveBeenCalled();
-        expect(appendBookingRowToSheet).toHaveBeenCalled();
+        expect(appendBookingRowToSheet).toHaveBeenCalledWith(
+            expect.objectContaining({
+                checkIn: "2026-01-01",
+                checkOut: "2026-01-02",
+                invoiceId: "LXH-260101-ABCDEF",
+                stayed: true,
+            }),
+        );
         expect(prisma.bookingJob.update).toHaveBeenCalledTimes(2);
+    });
+
+    it("passes stayed false when booking is CANCELLED", async () => {
+        const { prisma } = await import("@/lib/db");
+        const { generateInvoicePdf } = await import("@/lib/ops/invoicePdf");
+        const { appendBookingRowToSheet } = await import("@/lib/ops/googleSheets");
+
+        (prisma.bookingJob.findMany as jest.Mock).mockResolvedValueOnce([
+            { id: "j2", bookingId: "b1", type: "GOOGLE_SHEETS", attempts: 0 },
+            { id: "j1", bookingId: "b1", type: "INVOICE_PDF", attempts: 0 },
+        ]);
+
+        (prisma.booking.findUnique as jest.Mock)
+            .mockResolvedValueOnce({
+                id: "b1",
+                apartmentId: "lofty-wuye-01",
+                bookerName: "Jane",
+                bookerPhone: "0800",
+                bookerEmail: "jane@example.com",
+                checkIn: new Date("2026-06-01T00:00:00.000Z"),
+                checkOut: new Date("2026-06-03T00:00:00.000Z"),
+                amountPaid: 2000,
+                invoiceId: null,
+                invoicePdfPath: null,
+                createdAt: new Date("2026-01-01T12:00:00.000Z"),
+            })
+            .mockResolvedValueOnce({
+                id: "b1",
+                apartmentId: "lofty-wuye-01",
+                bookerName: "Jane",
+                bookerPhone: "0800",
+                bookerEmail: "jane@example.com",
+                checkIn: new Date("2026-06-01T00:00:00.000Z"),
+                checkOut: new Date("2026-06-03T00:00:00.000Z"),
+                amountPaid: 2000,
+                invoiceId: "LXH-260101-ABCDEF",
+                createdAt: new Date("2026-01-01T12:00:00.000Z"),
+                status: "CANCELLED",
+            });
+
+        (generateInvoicePdf as jest.Mock).mockResolvedValueOnce({
+            invoiceId: "LXH-260101-ABCDEF",
+            pdfPath: "/tmp/inv.pdf",
+        });
+
+        await processPostBookingJobs({ limit: 10 });
+
+        expect(appendBookingRowToSheet).toHaveBeenCalledWith(
+            expect.objectContaining({
+                stayed: false,
+                checkIn: "2026-06-01",
+            }),
+        );
     });
 
     it("can process jobs for one booking", async () => {

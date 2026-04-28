@@ -40,3 +40,27 @@ export function parseDateFromInvoiceId(invoiceId: string): Date | null {
     return date;
 }
 
+/** Extract LXH-… id from free text (e.g. pasted email or sentence). */
+export function parseInvoiceIdFromText(text: string): string | null {
+    const t = String(text ?? "").trim();
+    if (!t) return null;
+
+    const labeled = t.match(
+        /invoice\s*(?:id|number)?\s*[:#-]?\s*(LXH-[A-Z0-9]+(?:-[A-Z0-9]+)+)/i,
+    );
+    if (labeled?.[1]) return labeled[1];
+
+    const embedded = t.match(/\b(LXH-[A-Z0-9]+(?:-[A-Z0-9]+)+)\b/i);
+    return embedded?.[1] ?? null;
+}
+
+/** Accept pasted invoice id or free text containing an LXH-… id. */
+export function resolveInvoiceIdFromFormInput(raw: string): string | null {
+    const t = String(raw ?? "").trim();
+    if (!t) return null;
+    return (
+        parseInvoiceIdFromText(t) ||
+        parseInvoiceIdFromText(`Invoice ID: ${t}`)
+    );
+}
+

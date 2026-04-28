@@ -195,3 +195,13 @@ export const adminCreateManualBookingBodySchema = z
     paymentReference: data.paymentReference?.trim() || undefined,
     notes: data.notes?.trim() || undefined,
   }));
+
+/** Invoice id or free text containing `LXH-…` (resolved server-side). */
+export const adminCancelBookingBodySchema = z
+  .object({
+    invoiceId: nonEmptyTrimmedString.max(2000),
+  })
+  .strict()
+  .transform((data) => ({
+    invoiceInput: data.invoiceId.trim(),
+  }));

@@ -23,16 +23,28 @@ model Booking {
   currency     String   @default("NGN")
   status       BookingStatus @default(PENDING)
 
+  source       BookingSource @default(WEBSITE)
+
   // Booker details (from Paystack / form)
-  bookerEmail  String
+  bookerEmail  String?
   bookerName   String?
   bookerPhone  String?
+
+  // Manual/offline payment metadata (for admin-created bookings)
+  manualPaymentMethod    String?
+  manualPaymentReference String?
+
+  // Downstream artifacts
+  invoiceId     String?
+  invoicePdfPath String?
 
   // Optional: Link to Supabase Auth user (set when user verifies email)
   userId       String?  // Supabase auth.users.id
 
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
+
+  jobs BookingJob[]
 
   @@index([reference])
   @@index([apartmentId])
@@ -47,6 +59,56 @@ enum BookingStatus {
   PENDING   // payment initiated, not yet confirmed
   PAID      // Paystack charge successful
   CANCELLED
+}
+
+enum BookingSource {
+  WEBSITE
+  MANUAL
+}
+
+model BookingJob {
+  id        String @id @default(cuid())
+  bookingId String
+  booking   Booking @relation(fields: [bookingId], references: [id], onDelete: Cascade)
+
+  type      BookingJobType
+  status    BookingJobStatus @default(PENDING)
+  attempts  Int @default(0)
+  lastError String?
+  nextRunAt DateTime?
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@unique([bookingId, type])
+  @@index([status, nextRunAt])
+  @@index([bookingId])
+}
+
+enum BookingJobType {
+  INVOICE_PDF
+  GOOGLE_SHEETS
+}
+
+enum BookingJobStatus {
+  PENDING
+  SUCCESS
+  FAILED
+}
+
+model AdminUser {
+  id             String @id @default(cuid())
+  supabaseUserId String @unique
+  email          String @unique
+  role           AdminRole
+  createdAt      DateTime @default(now())
+
+  @@index([role])
+}
+
+enum AdminRole {
+  admin
+  receptionist
 }
 
 // --- Contact messages (public contact form submissions) ---

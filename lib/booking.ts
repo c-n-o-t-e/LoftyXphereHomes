@@ -69,6 +69,7 @@ export async function upsertBookingFromPaystack(data: PaystackVerifyData) {
             nights,
             amountPaid: amountPaidNgn,
             status,
+            source: "WEBSITE",
             bookerEmail: email,
             bookerName: meta.booker_name ?? null,
             bookerPhone: meta.booker_phone ?? null,

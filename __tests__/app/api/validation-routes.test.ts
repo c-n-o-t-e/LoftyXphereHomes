@@ -35,12 +35,26 @@ jest.mock("@/lib/db", () => ({
       findMany: jest.fn(),
       findFirst: jest.fn(),
       updateMany: jest.fn(),
+      upsert: jest.fn(),
+    },
+    adminUser: {
+      findFirst: jest.fn(),
+    },
+    bookingJob: {
+      createMany: jest.fn(),
+      findMany: jest.fn(),
+      update: jest.fn(),
     },
   },
 }));
 
 jest.mock("@/lib/supabase/server", () => ({
   inviteUserByEmail: jest.fn(),
+}));
+
+jest.mock("@/lib/ops/bookingJobs", () => ({
+  enqueuePostBookingJobs: jest.fn(),
+  processPostBookingJobs: jest.fn(),
 }));
 
 jest.mock("@/lib/email/admin-alerts", () => ({

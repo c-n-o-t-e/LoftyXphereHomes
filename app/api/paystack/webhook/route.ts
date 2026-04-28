@@ -5,6 +5,8 @@ import { inviteUserByEmail } from "@/lib/supabase/server";
 import { validationErrorResponse } from "@/lib/validation/http";
 import { paystackWebhookPayloadSchema } from "@/lib/validation/schemas";
 import { sendAdminAlertBookingPersistenceFailed } from "@/lib/email/admin-alerts";
+import { enqueuePostBookingJobs } from "@/lib/ops/bookingJobs";
+import { processPostBookingJobs } from "@/lib/ops/bookingJobs";
 
 /**
  * POST /api/paystack/webhook
@@ -68,6 +70,15 @@ export async function POST(request: NextRequest) {
 
     try {
         const booking = await upsertBookingFromPaystack(result.data);
+        // Enqueue downstream artifacts (invoice + Google Sheets)
+        enqueuePostBookingJobs(booking.id).catch((err) => {
+            console.error("Failed to enqueue post-booking jobs:", err);
+        });
+        // Best-effort: process a small batch immediately so normal flows feel instant.
+        // Safe to call repeatedly (jobs are deduped; Sheets append checks invoiceId).
+        processPostBookingJobs({ limit: 5 }).catch((err) => {
+            console.error("Failed to process post-booking jobs:", err);
+        });
 
         // Send magic link to create/login user account
         // This runs async and doesn't block the webhook response

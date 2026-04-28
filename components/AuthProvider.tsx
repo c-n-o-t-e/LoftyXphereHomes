@@ -85,6 +85,28 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     };
   }, []);
 
+  // Link bookings to userId after login (best-effort).
+  useEffect(() => {
+    if (!session?.access_token || !user?.email || !user?.id) return;
+    let cancelled = false;
+    const run = async () => {
+      try {
+        await fetch("/api/link-bookings", {
+          method: "POST",
+          headers: {
+            Authorization: `Bearer ${session.access_token}`,
+          },
+        });
+      } catch {
+        // ignore
+      }
+    };
+    void run();
+    return () => {
+      cancelled = true;
+    };
+  }, [session?.access_token, user?.email, user?.id]);
+
   const signOut = async () => {
     const supabase = getSupabaseClient();
     clearAuthError();

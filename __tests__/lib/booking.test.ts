@@ -2,10 +2,6 @@ import { upsertBookingFromPaystack } from "@/lib/booking";
 import { computeBookingQuote, totalNgnToKobo } from "@/lib/pricing";
 import type { PaystackVerifyData } from "@/lib/paystack";
 
-jest.mock("next/cache", () => ({
-  revalidateTag: jest.fn(),
-}));
-
 jest.mock("@/lib/db", () => ({
   prisma: {
     booking: {
@@ -15,11 +11,29 @@ jest.mock("@/lib/db", () => ({
 }));
 
 const { prisma } = require("@/lib/db");
-const { revalidateTag } = require("next/cache");
 
 describe("upsertBookingFromPaystack", () => {
   beforeEach(() => {
     jest.clearAllMocks();
+  });
+
+  it("rejects non-successful Paystack transactions", async () => {
+    const data: PaystackVerifyData = {
+      reference: "ref_failed",
+      status: "failed",
+      amount: 100_00,
+      metadata: {
+        apartment_id: "lofty-wuye-04",
+        check_in: "2026-03-20",
+        check_out: "2026-03-24",
+      },
+      customer: { email: "a@b.com" },
+    };
+
+    await expect(upsertBookingFromPaystack(data)).rejects.toThrow(
+      /non-successful Paystack transaction/
+    );
+    expect(prisma.booking.upsert).not.toHaveBeenCalled();
   });
 
   it("rejects when Paystack amount does not match server-computed price", async () => {
@@ -66,6 +80,11 @@ describe("upsertBookingFromPaystack", () => {
 
     await upsertBookingFromPaystack(data);
     expect(prisma.booking.upsert).toHaveBeenCalledTimes(1);
-    expect(revalidateTag).toHaveBeenCalled();
+    expect(prisma.booking.upsert).toHaveBeenCalledWith(
+      expect.objectContaining({
+        create: expect.objectContaining({ status: "PAID" }),
+        update: expect.objectContaining({ status: "PAID" }),
+      })
+    );
   });
 });

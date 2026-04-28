@@ -14,6 +14,12 @@ function parseDate(s: string): Date {
 }
 
 export async function upsertBookingFromPaystack(data: PaystackVerifyData) {
+    if (data.status !== "success") {
+        throw new Error(
+            `Cannot create booking from non-successful Paystack transaction: ${data.status}`,
+        );
+    }
+
     const meta = data.metadata ?? {};
     const apartmentId = meta.apartment_id;
     const checkInStr = meta.check_in;
@@ -51,7 +57,7 @@ export async function upsertBookingFromPaystack(data: PaystackVerifyData) {
     const checkOut = parseDate(checkOutStr);
     const nights = nightsBetweenStayDates(checkInStr, checkOutStr);
     const amountPaidNgn = Math.round(data.amount / 100); // kobo -> NGN
-    const status = data.status === "success" ? "PAID" : "PENDING";
+    const status = "PAID";
 
     const booking = await prisma.booking.upsert({
         where: { reference: data.reference },

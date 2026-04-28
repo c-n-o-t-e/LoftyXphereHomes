@@ -47,8 +47,8 @@ describe("bookingJobs", () => {
         const { appendBookingRowToSheet } = await import("@/lib/ops/googleSheets");
 
         (prisma.bookingJob.findMany as jest.Mock).mockResolvedValueOnce([
-            { id: "j1", bookingId: "b1", type: "INVOICE_PDF", attempts: 0 },
             { id: "j2", bookingId: "b1", type: "GOOGLE_SHEETS", attempts: 0 },
+            { id: "j1", bookingId: "b1", type: "INVOICE_PDF", attempts: 0 },
         ]);
 
         (prisma.booking.findUnique as jest.Mock)
@@ -94,6 +94,21 @@ describe("bookingJobs", () => {
         expect(prisma.booking.update).toHaveBeenCalled();
         expect(appendBookingRowToSheet).toHaveBeenCalled();
         expect(prisma.bookingJob.update).toHaveBeenCalledTimes(2);
+    });
+
+    it("can process jobs for one booking", async () => {
+        const { prisma } = await import("@/lib/db");
+
+        (prisma.bookingJob.findMany as jest.Mock).mockResolvedValueOnce([]);
+
+        await processPostBookingJobs({ bookingId: "b1", limit: 2 });
+
+        expect(prisma.bookingJob.findMany).toHaveBeenCalledWith(
+            expect.objectContaining({
+                where: expect.objectContaining({ bookingId: "b1" }),
+                take: 2,
+            }),
+        );
     });
 });
 

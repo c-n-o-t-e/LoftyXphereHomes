@@ -5,6 +5,11 @@ const MAX_ATTEMPTS = 5;
 
 type BookingJobType = "INVOICE_PDF" | "GOOGLE_SHEETS";
 
+const JOB_TYPE_PRIORITY: Record<BookingJobType, number> = {
+    INVOICE_PDF: 0,
+    GOOGLE_SHEETS: 1,
+};
+
 function computeNextRunAt(attempts: number): Date {
     // exponential-ish backoff: 1m, 5m, 15m, 1h, 6h
     const minutes = [1, 5, 15, 60, 360][Math.min(attempts, 4)] ?? 360;
@@ -115,6 +120,7 @@ async function runJob(bookingId: string, type: BookingJobType) {
 
 export async function processPostBookingJobs(args?: {
     limit?: number;
+    bookingId?: string;
 }): Promise<{ processed: number; succeeded: number; failed: number }> {
     const limit = Math.min(50, Math.max(1, args?.limit ?? 10));
     const now = new Date();
@@ -122,6 +128,7 @@ export async function processPostBookingJobs(args?: {
 
     const jobs = await prisma.bookingJob.findMany({
         where: {
+            ...(args?.bookingId ? { bookingId: args.bookingId } : {}),
             status: { in: ["PENDING", "FAILED"] },
             attempts: { lt: MAX_ATTEMPTS },
             OR: [{ nextRunAt: null }, { nextRunAt: { lte: now } }],
@@ -139,7 +146,13 @@ export async function processPostBookingJobs(args?: {
     let succeeded = 0;
     let failed = 0;
 
-    for (const job of jobs) {
+    const orderedJobs = [...jobs].sort(
+        (a, b) =>
+            JOB_TYPE_PRIORITY[a.type as BookingJobType] -
+            JOB_TYPE_PRIORITY[b.type as BookingJobType],
+    );
+
+    for (const job of orderedJobs) {
         try {
             await runJob(job.bookingId, job.type as BookingJobType);
             await prisma.bookingJob.update({

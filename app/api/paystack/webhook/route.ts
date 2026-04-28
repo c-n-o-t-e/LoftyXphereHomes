@@ -5,8 +5,10 @@ import { inviteUserByEmail } from "@/lib/supabase/server";
 import { validationErrorResponse } from "@/lib/validation/http";
 import { paystackWebhookPayloadSchema } from "@/lib/validation/schemas";
 import { sendAdminAlertBookingPersistenceFailed } from "@/lib/email/admin-alerts";
-import { enqueuePostBookingJobs } from "@/lib/ops/bookingJobs";
-import { processPostBookingJobs } from "@/lib/ops/bookingJobs";
+import {
+    enqueuePostBookingJobs,
+    processPostBookingJobs,
+} from "@/lib/ops/bookingJobs";
 
 /**
  * POST /api/paystack/webhook
@@ -71,14 +73,14 @@ export async function POST(request: NextRequest) {
     try {
         const booking = await upsertBookingFromPaystack(result.data);
         // Enqueue downstream artifacts (invoice + Google Sheets)
-        enqueuePostBookingJobs(booking.id).catch((err) => {
-            console.error("Failed to enqueue post-booking jobs:", err);
-        });
-        // Best-effort: process a small batch immediately so normal flows feel instant.
+        await enqueuePostBookingJobs(booking.id);
+        // Best-effort: process this booking immediately so it does not wait for cron.
         // Safe to call repeatedly (jobs are deduped; Sheets append checks invoiceId).
-        processPostBookingJobs({ limit: 5 }).catch((err) => {
+        try {
+            await processPostBookingJobs({ bookingId: booking.id, limit: 2 });
+        } catch (err) {
             console.error("Failed to process post-booking jobs:", err);
-        });
+        }
 
         // Send magic link to create/login user account
         // This runs async and doesn't block the webhook response
@@ -88,7 +90,7 @@ export async function POST(request: NextRequest) {
                 // Don't fail the webhook if email fails
             });
         }
-        
+
         return NextResponse.json({ received: true });
     } catch (err) {
         console.error("Webhook booking upsert error:", err);

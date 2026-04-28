@@ -34,6 +34,7 @@ jest.mock("@/lib/db", () => ({
     booking: {
       findMany: jest.fn(),
       findFirst: jest.fn(),
+      create: jest.fn(),
       updateMany: jest.fn(),
       upsert: jest.fn(),
     },
@@ -76,12 +77,14 @@ jest.mock("@supabase/supabase-js", () => ({
 
 const { GET: getAvailableApartments } = require("@/app/api/apartments/available/route");
 const { GET: getMyBookings } = require("@/app/api/my-bookings/route");
+const { POST: postAdminBooking } = require("@/app/api/admin/bookings/route");
 const { POST: postPaystackWebhook } = require("@/app/api/paystack/webhook/route");
 const { POST: postPaystackInitialize } = require("@/app/api/paystack/initialize/route");
 const { verifyTransaction, verifyWebhookSignature } = require("@/lib/paystack");
 const { sendAdminAlertBookingPersistenceFailed } = require("@/lib/email/admin-alerts");
 const { getOverlappingBookings } = require("@/lib/cache/availability-data");
 const { createClient } = require("@supabase/supabase-js");
+const { enqueuePostBookingJobs, processPostBookingJobs } = require("@/lib/ops/bookingJobs");
 
 type HeaderBag = {
   get: (name: string) => string | null;
@@ -307,6 +310,59 @@ describe("API validation integration", () => {
     expectValidation400(json);
   });
 
+  it("enqueues then processes the current booking from a successful webhook", async () => {
+    (verifyWebhookSignature as jest.Mock).mockReturnValue(true);
+    (verifyTransaction as jest.Mock).mockResolvedValue({
+      status: true,
+      data: {
+        reference: "ref_123",
+        status: "success",
+        amount: 1000,
+        metadata: {
+          apartment_id: "lofty-wuye-01",
+          check_in: "2026-01-01",
+          check_out: "2026-01-02",
+        },
+        customer: { email: "guest@example.com" },
+      },
+    });
+
+    const { upsertBookingFromPaystack } = require("@/lib/booking");
+    (upsertBookingFromPaystack as jest.Mock).mockResolvedValueOnce({
+      id: "booking_website_1",
+      bookerEmail: null,
+      status: "PAID",
+    });
+
+    const request = makeNextRequest("http://localhost/api/paystack/webhook", {
+      method: "POST",
+      headers: {
+        "x-paystack-signature": "sig",
+        "content-type": "application/json",
+      },
+      body: JSON.stringify({
+        event: "charge.success",
+        data: { reference: "ref_123" },
+      }),
+    });
+
+    const response = await postPaystackWebhook(request);
+    const json = await response.json();
+
+    expect(response.status).toBe(200);
+    expect(json).toEqual(expect.objectContaining({ received: true }));
+    expect(enqueuePostBookingJobs).toHaveBeenCalledWith("booking_website_1");
+    expect(processPostBookingJobs).toHaveBeenCalledWith({
+      bookingId: "booking_website_1",
+      limit: 2,
+    });
+    expect(
+      (enqueuePostBookingJobs as jest.Mock).mock.invocationCallOrder[0]
+    ).toBeLessThan(
+      (processPostBookingJobs as jest.Mock).mock.invocationCallOrder[0]
+    );
+  });
+
   it("sends admin alert when webhook booking persistence fails", async () => {
     (verifyWebhookSignature as jest.Mock).mockReturnValue(true);
     (verifyTransaction as jest.Mock).mockResolvedValue({
@@ -351,5 +407,60 @@ describe("API validation integration", () => {
         reference: "ref_123",
       })
     );
+  });
+
+  it("processes post-booking jobs after a manual admin booking is created", async () => {
+    process.env.NEXT_PUBLIC_SUPABASE_URL = "https://example.supabase.co";
+    process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY = "anon_key";
+
+    const { prisma } = require("@/lib/db");
+    (createClient as jest.Mock).mockReturnValue({
+      auth: {
+        getUser: jest.fn().mockResolvedValue({
+          data: { user: { id: "admin_user_1", email: "admin@example.com" } },
+          error: null,
+        }),
+      },
+    });
+    (prisma.adminUser.findFirst as jest.Mock).mockResolvedValueOnce({
+      supabaseUserId: "admin_user_1",
+      email: "admin@example.com",
+      role: "admin",
+    });
+    (prisma.booking.findFirst as jest.Mock).mockResolvedValueOnce(null);
+    (prisma.booking.create as jest.Mock).mockResolvedValueOnce({
+      id: "booking_1",
+      reference: "manual_ref_1",
+    });
+
+    const request = makeNextRequest("http://localhost/api/admin/bookings", {
+      method: "POST",
+      headers: {
+        authorization: "Bearer admin_token",
+        "content-type": "application/json",
+      },
+      body: JSON.stringify({
+        name: "Manual Guest",
+        phone: "08000000000",
+        apartmentId: "lofty-wuye-01",
+        checkIn: "2026-05-01",
+        checkOut: "2026-05-03",
+        amountNgn: 150000,
+        paymentMethod: "cash",
+      }),
+    });
+
+    const response = await postAdminBooking(request);
+    const json = await response.json();
+
+    expect(response.status).toBe(200);
+    expect(json).toEqual(
+      expect.objectContaining({ ok: true, bookingId: "booking_1" })
+    );
+    expect(enqueuePostBookingJobs).toHaveBeenCalledWith("booking_1");
+    expect(processPostBookingJobs).toHaveBeenCalledWith({
+      bookingId: "booking_1",
+      limit: 2,
+    });
   });
 });

@@ -3,7 +3,10 @@ import { NextRequest, NextResponse } from "next/server";
 import { requireAdmin } from "@/lib/admin/auth";
 import { parseJsonBody } from "@/lib/validation/http";
 import { adminCreateManualBookingBodySchema } from "@/lib/validation/schemas";
-import { enqueuePostBookingJobs } from "@/lib/ops/bookingJobs";
+import {
+    enqueuePostBookingJobs,
+    processPostBookingJobs,
+} from "@/lib/ops/bookingJobs";
 
 function safeManualReference() {
     return `manual_${Date.now()}_${randomBytes(6).toString("hex")}`;
@@ -23,7 +26,10 @@ export async function POST(request: NextRequest) {
         );
     }
 
-    const parsed = await parseJsonBody(request, adminCreateManualBookingBodySchema);
+    const parsed = await parseJsonBody(
+        request,
+        adminCreateManualBookingBodySchema,
+    );
     if (!parsed.success) return parsed.response;
 
     const body = parsed.data;
@@ -81,6 +87,14 @@ export async function POST(request: NextRequest) {
         });
 
         await enqueuePostBookingJobs(booking.id);
+        try {
+            await processPostBookingJobs({ bookingId: booking.id, limit: 2 });
+        } catch (jobErr) {
+            console.error(
+                "admin manual booking post-processing failed:",
+                jobErr,
+            );
+        }
 
         return NextResponse.json({
             ok: true,
@@ -95,4 +109,3 @@ export async function POST(request: NextRequest) {
         );
     }
 }
-

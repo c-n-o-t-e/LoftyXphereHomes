@@ -5,8 +5,10 @@ import { Button } from "@/components/ui/button";
 import { verifyTransaction } from "@/lib/paystack";
 import { upsertBookingFromPaystack } from "@/lib/booking";
 import { sendAdminAlertBookingPersistenceFailed } from "@/lib/email/admin-alerts";
-import { enqueuePostBookingJobs } from "@/lib/ops/bookingJobs";
-import { processPostBookingJobs } from "@/lib/ops/bookingJobs";
+import {
+  enqueuePostBookingJobs,
+  processPostBookingJobs,
+} from "@/lib/ops/bookingJobs";
 
 export const metadata: Metadata = {
   title: "Booking Successful",
@@ -31,9 +33,13 @@ export default async function BookingSuccessPage({
         const booking = await upsertBookingFromPaystack(result.data);
         // Backup path: if Paystack webhook is not configured/reachable, still enqueue downstream work.
         // This is idempotent (bookingId+type unique + skipDuplicates).
-        enqueuePostBookingJobs(booking.id).catch(() => {});
-        // Best-effort: process immediately so jobs don't sit pending in dev.
-        processPostBookingJobs({ limit: 5 }).catch(() => {});
+        await enqueuePostBookingJobs(booking.id);
+        // Best-effort: process this booking immediately so it does not wait for cron.
+        try {
+          await processPostBookingJobs({ bookingId: booking.id, limit: 2 });
+        } catch (jobError) {
+          console.error("Failed to process post-booking jobs:", jobError);
+        }
       } catch (error) {
         try {
           await sendAdminAlertBookingPersistenceFailed({

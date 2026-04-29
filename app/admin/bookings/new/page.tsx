@@ -15,6 +15,7 @@ import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { DatePickerCalendar } from "@/components/DatePickerCalendar";
 import { useApartmentAvailability } from "@/hooks/useApartmentAvailability";
+import { useAdminMe } from "@/hooks/useAdminMe";
 import { buildCheckoutDisabledDates } from "@/lib/booking/checkoutDisabledDates";
 import {
     formatDateForInput,
@@ -43,6 +44,7 @@ export default function NewManualBookingPage() {
     const { user, isLoading } = useAuth();
     const router = useRouter();
     const queryClient = useQueryClient();
+    const { data: me } = useAdminMe(Boolean(user) && !isLoading);
 
     const [name, setName] = useState("");
     const [email, setEmail] = useState("");
@@ -178,6 +180,8 @@ export default function NewManualBookingPage() {
     if (isLoading) return null;
     if (!user) return null;
 
+    const canCancelBookings = me?.ok === true && me.role === "admin";
+
     return (
         <div className="min-h-screen bg-gray-50 pt-20">
             <div className="max-w-3xl mx-auto px-4 py-10">
@@ -192,9 +196,11 @@ export default function NewManualBookingPage() {
                         </p>
                     </div>
                     <div className="flex gap-2 flex-wrap">
-                        <Button variant="outline" asChild>
-                            <Link href="/admin/bookings/cancel">Cancel booking</Link>
-                        </Button>
+                        {canCancelBookings && (
+                            <Button variant="outline" asChild>
+                                <Link href="/admin/bookings/cancel">Cancel booking</Link>
+                            </Button>
+                        )}
                         <Button variant="outline" asChild>
                             <Link href="/admin">Back</Link>
                         </Button>

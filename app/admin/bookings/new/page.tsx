@@ -46,6 +46,8 @@ export default function NewManualBookingPage() {
     const queryClient = useQueryClient();
     const { data: me } = useAdminMe(Boolean(user) && !isLoading);
 
+    const [formResetKey, setFormResetKey] = useState(0);
+
     const [name, setName] = useState("");
     const [email, setEmail] = useState("");
     const [phone, setPhone] = useState("");
@@ -179,6 +181,7 @@ export default function NewManualBookingPage() {
             setPaymentMethod("cash");
             setPaymentReference("");
             setOpenCalendar(null);
+            setFormResetKey((k) => k + 1);
             void queryClient.invalidateQueries({ queryKey: ["availability", apartmentId] });
         } catch (e) {
             setError(e instanceof Error ? e.message : "Failed to create booking.");
@@ -217,7 +220,7 @@ export default function NewManualBookingPage() {
                     </div>
                 </div>
 
-                <Card className="p-6 mt-6">
+                <Card key={formResetKey} className="p-6 mt-6">
                     <div className="grid gap-4 sm:grid-cols-2">
                         <div className="sm:col-span-2">
                             <Label htmlFor="name">Full name</Label>

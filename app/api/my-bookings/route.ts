@@ -18,6 +18,8 @@ const BOOKING_LIST_SELECT = {
     bookerName: true,
     createdAt: true,
     userId: true,
+    invoiceId: true,
+    invoicePdfPath: true,
 } as const;
 
 /**
@@ -98,12 +100,18 @@ export async function GET(request: NextRequest) {
         const page = hasMore ? bookings.slice(0, limit) : bookings;
         const nextCursor = hasMore ? (page[page.length - 1]?.id ?? null) : null;
 
+        const responseBookings = page.map((b) => ({
+            ...b,
+            invoiceReady: Boolean(b.invoicePdfPath),
+            invoicePdfPath: undefined,
+        }));
+
         const privateHeaders = {
             "Cache-Control": "private, no-store",
         };
 
         return NextResponse.json(
-            { bookings: page, nextCursor },
+            { bookings: responseBookings, nextCursor },
             { headers: privateHeaders },
         );
     } catch (err) {

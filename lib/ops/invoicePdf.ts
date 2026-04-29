@@ -52,6 +52,39 @@ function getTemplatePath(): string {
     return path.join(process.cwd(), "lib", "ops", "templates", "invoice.html");
 }
 
+function resolveInvoiceLogoPath(): string | null {
+    const env =
+        process.env.INVOICE_LOGO_PATH?.trim() ||
+        process.env.BUSINESS_LOGO_PATH?.trim() ||
+        "";
+    if (env) {
+        return path.isAbsolute(env) ? env : path.join(process.cwd(), env);
+    }
+    const fallback = path.join(process.cwd(), "public", "lofty-logo-black.png");
+    return fs.existsSync(fallback) ? fallback : null;
+}
+
+function logoPathToDataUri(filePath: string): string | null {
+    try {
+        const ext = path.extname(filePath).toLowerCase();
+        const mime =
+            ext === ".svg"
+                ? "image/svg+xml"
+                : ext === ".png"
+                  ? "image/png"
+                  : ext === ".jpg" || ext === ".jpeg"
+                    ? "image/jpeg"
+                    : ext === ".webp"
+                      ? "image/webp"
+                      : null;
+        if (!mime) return null;
+        const bytes = fs.readFileSync(filePath);
+        return `data:${mime};base64,${bytes.toString("base64")}`;
+    } catch {
+        return null;
+    }
+}
+
 export async function generateInvoicePdf(data: InvoiceData): Promise<{
     invoiceId: string;
     pdfPath: string;
@@ -72,7 +105,12 @@ export async function generateInvoicePdf(data: InvoiceData): Promise<{
     const issueDate = formatDateDisplay(new Date());
 
     // Template contains {{LOGO_SRC}}. If no logo, set to empty string; template should still render.
-    const logoDataUri = "";
+    const logoDataUri =
+        ((): string => {
+            const logoPath = resolveInvoiceLogoPath();
+            if (!logoPath) return "";
+            return logoPathToDataUri(logoPath) ?? "";
+        })();
 
     const html = templateHtml
         .replaceAll("{{LOGO_SRC}}", logoDataUri)

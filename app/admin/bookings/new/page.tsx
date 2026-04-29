@@ -3,6 +3,8 @@
 import { useEffect, useMemo, useState } from "react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
+import { Calendar } from "lucide-react";
+import { useQueryClient } from "@tanstack/react-query";
 import { useAuth } from "@/components/AuthProvider";
 import { getSupabaseClient } from "@/lib/supabase/client";
 import { apartments } from "@/lib/data/apartments";
@@ -11,6 +13,15 @@ import { Card } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { DatePickerCalendar } from "@/components/DatePickerCalendar";
+import { useApartmentAvailability } from "@/hooks/useApartmentAvailability";
+import { buildCheckoutDisabledDates } from "@/lib/booking/checkoutDisabledDates";
+import {
+    formatDateForInput,
+    formatDisplayDate,
+    parseLocalDate,
+} from "@/lib/booking/datePickerDisplay";
+import { computeBookingQuote } from "@/lib/pricing";
 
 type AdminBookingResponse =
     | { ok: true; bookingId: string; reference: string }
@@ -20,9 +31,18 @@ function toIsoDate(input: string) {
     return input;
 }
 
+function formatPrice(price: number) {
+    return new Intl.NumberFormat("en-NG", {
+        style: "currency",
+        currency: "NGN",
+        maximumFractionDigits: 0,
+    }).format(price);
+}
+
 export default function NewManualBookingPage() {
     const { user, isLoading } = useAuth();
     const router = useRouter();
+    const queryClient = useQueryClient();
 
     const [name, setName] = useState("");
     const [email, setEmail] = useState("");
@@ -33,6 +53,7 @@ export default function NewManualBookingPage() {
     const [amountNgn, setAmountNgn] = useState("");
     const [paymentMethod, setPaymentMethod] = useState("cash");
     const [paymentReference, setPaymentReference] = useState("");
+    const [openCalendar, setOpenCalendar] = useState<"checkIn" | "checkOut" | null>(null);
 
     const [submitting, setSubmitting] = useState(false);
     const [error, setError] = useState<string | null>(null);
@@ -49,6 +70,38 @@ export default function NewManualBookingPage() {
     }, [isLoading, user, router]);
 
     const apartmentOptions = useMemo(() => apartments, []);
+    const selectedApartment = useMemo(
+        () => apartmentOptions.find((a) => a.id === apartmentId),
+        [apartmentId, apartmentOptions]
+    );
+    const today = useMemo(() => formatDateForInput(new Date()), []);
+    const { data: availabilityData, isFetching: availabilityLoading } =
+        useApartmentAvailability(apartmentId);
+    const blockedDates = useMemo(
+        () => availabilityData?.blockedDates ?? [],
+        [availabilityData?.blockedDates]
+    );
+    const bookingRanges = useMemo(
+        () => availabilityData?.bookingRanges ?? [],
+        [availabilityData?.bookingRanges]
+    );
+
+    const minCheckOut = checkIn
+        ? (() => {
+            const d = parseLocalDate(checkIn);
+            d.setDate(d.getDate() + 1);
+            return formatDateForInput(d);
+        })()
+        : today;
+
+    const checkoutDisabledDates = useMemo(() => {
+        return buildCheckoutDisabledDates(checkIn, bookingRanges);
+    }, [checkIn, bookingRanges]);
+
+    const suggestedQuote = useMemo(() => {
+        if (!selectedApartment || !checkIn || !checkOut) return null;
+        return computeBookingQuote(selectedApartment.pricePerNight, checkIn, checkOut);
+    }, [selectedApartment, checkIn, checkOut]);
 
     async function submit() {
         setError(null);
@@ -98,6 +151,12 @@ export default function NewManualBookingPage() {
                 } else {
                     setError("Failed to create booking.");
                 }
+                if (res.status === 409 || ("code" in payload && payload.code === "DATE_CONFLICT")) {
+                    void queryClient.invalidateQueries({ queryKey: ["availability", apartmentId] });
+                    setCheckIn("");
+                    setCheckOut("");
+                    setOpenCalendar(null);
+                }
                 return;
             }
             if (!("ok" in payload) || payload.ok !== true) {
@@ -108,6 +167,7 @@ export default function NewManualBookingPage() {
                 bookingId: payload.bookingId,
                 reference: payload.reference,
             });
+            void queryClient.invalidateQueries({ queryKey: ["availability", apartmentId] });
         } catch (e) {
             setError(e instanceof Error ? e.message : "Failed to create booking.");
         } finally {
@@ -182,7 +242,14 @@ export default function NewManualBookingPage() {
                             <Label>Apartment</Label>
                             <Select
                                 value={apartmentId}
-                                onValueChange={(v) => setApartmentId(v)}
+                                onValueChange={(v) => {
+                                    setApartmentId(v);
+                                    setCheckIn("");
+                                    setCheckOut("");
+                                    setOpenCalendar(null);
+                                    setError(null);
+                                    void queryClient.invalidateQueries({ queryKey: ["availability", v] });
+                                }}
                                 disabled={submitting}
                             >
                                 <SelectTrigger>
@@ -199,24 +266,101 @@ export default function NewManualBookingPage() {
                         </div>
 
                         <div>
-                            <Label htmlFor="checkIn">Check-in</Label>
-                            <Input
-                                id="checkIn"
-                                type="date"
-                                value={checkIn}
-                                onChange={(e) => setCheckIn(e.target.value)}
-                                disabled={submitting}
-                            />
+                            <Label className="text-sm font-medium">Check-in</Label>
+                            <div className="relative mt-1">
+                                <button
+                                    type="button"
+                                    onClick={() => setOpenCalendar(openCalendar === "checkIn" ? null : "checkIn")}
+                                    disabled={submitting || !apartmentId}
+                                    className="w-full h-10 px-3 flex items-center justify-between rounded-md border border-input bg-background text-left text-sm hover:border-black/40 transition-colors disabled:cursor-not-allowed disabled:opacity-50"
+                                >
+                                    <span className={checkIn ? "text-gray-900" : "text-gray-500"}>
+                                        {checkIn ? formatDisplayDate(checkIn) : "Select check-in date"}
+                                    </span>
+                                    <Calendar className="h-4 w-4 text-gray-400" aria-hidden="true" />
+                                </button>
+                                <DatePickerCalendar
+                                    open={openCalendar === "checkIn" && Boolean(apartmentId)}
+                                    onClose={() => setOpenCalendar(null)}
+                                    value={checkIn}
+                                    minDate={today}
+                                    disabledDates={blockedDates}
+                                    onSelect={(date) => {
+                                        setCheckIn(date);
+                                        if (checkOut && date >= checkOut) setCheckOut("");
+                                        setError(null);
+                                        setTimeout(() => setOpenCalendar("checkOut"), 150);
+                                    }}
+                                    onClear={() => {
+                                        setCheckIn("");
+                                        setCheckOut("");
+                                    }}
+                                    placement="bottom"
+                                />
+                            </div>
                         </div>
                         <div>
-                            <Label htmlFor="checkOut">Check-out</Label>
-                            <Input
-                                id="checkOut"
-                                type="date"
-                                value={checkOut}
-                                onChange={(e) => setCheckOut(e.target.value)}
-                                disabled={submitting}
-                            />
+                            <Label className="text-sm font-medium">Check-out</Label>
+                            <div className="relative mt-1">
+                                <button
+                                    type="button"
+                                    onClick={() => {
+                                        if (!checkIn) {
+                                            setError("Please select a check-in date first.");
+                                            return;
+                                        }
+                                        setOpenCalendar(openCalendar === "checkOut" ? null : "checkOut");
+                                    }}
+                                    disabled={submitting || !apartmentId}
+                                    className="w-full h-10 px-3 flex items-center justify-between rounded-md border border-input bg-background text-left text-sm hover:border-black/40 transition-colors disabled:cursor-not-allowed disabled:opacity-50"
+                                >
+                                    <span className={checkOut ? "text-gray-900" : "text-gray-500"}>
+                                        {checkOut ? formatDisplayDate(checkOut) : "Select check-out date"}
+                                    </span>
+                                    <Calendar className="h-4 w-4 text-gray-400" aria-hidden="true" />
+                                </button>
+                                <DatePickerCalendar
+                                    open={openCalendar === "checkOut" && Boolean(apartmentId)}
+                                    onClose={() => setOpenCalendar(null)}
+                                    value={checkOut}
+                                    minDate={minCheckOut}
+                                    disabledDates={checkoutDisabledDates}
+                                    onSelect={(date) => {
+                                        setCheckOut(date);
+                                        setError(null);
+                                    }}
+                                    onClear={() => setCheckOut("")}
+                                    placement="bottom"
+                                />
+                            </div>
+                        </div>
+
+                        <div className="sm:col-span-2 -mt-2">
+                            {!apartmentId ? (
+                                <p className="text-xs text-gray-500">
+                                    Select an apartment first to load live availability.
+                                </p>
+                            ) : availabilityLoading ? (
+                                <p className="text-xs text-gray-500">Loading availability…</p>
+                            ) : suggestedQuote ? (
+                                <div className="rounded-lg border border-gray-200 bg-gray-50 p-3 text-sm text-gray-700">
+                                    <p>
+                                        Suggested website total:{" "}
+                                        <span className="font-semibold text-gray-900">
+                                            {formatPrice(suggestedQuote.totalNgn)}
+                                        </span>{" "}
+                                        for {suggestedQuote.nights} night
+                                        {suggestedQuote.nights !== 1 ? "s" : ""}.
+                                    </p>
+                                    <p className="mt-1 text-xs text-gray-500">
+                                        Manual amount is still editable for staff adjustments.
+                                    </p>
+                                </div>
+                            ) : (
+                                <p className="text-xs text-gray-500">
+                                    Availability shown here matches the public booking calendar.
+                                </p>
+                            )}
                         </div>
 
                         <div>

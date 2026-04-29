@@ -5,7 +5,6 @@ import { parseJsonBody } from "@/lib/validation/http";
 import { adminCreateManualBookingBodySchema } from "@/lib/validation/schemas";
 import {
     enqueuePostBookingJobs,
-    processPostBookingJobs,
 } from "@/lib/ops/bookingJobs";
 
 function safeManualReference() {
@@ -87,14 +86,6 @@ export async function POST(request: NextRequest) {
         });
 
         await enqueuePostBookingJobs(booking.id);
-        try {
-            await processPostBookingJobs({ bookingId: booking.id, limit: 2 });
-        } catch (jobErr) {
-            console.error(
-                "admin manual booking post-processing failed:",
-                jobErr,
-            );
-        }
 
         return NextResponse.json({
             ok: true,

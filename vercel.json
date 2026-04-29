@@ -1,0 +1,8 @@
+{
+  "crons": [
+    {
+      "path": "/api/internal/booking-jobs/process",
+      "schedule": "*/5 * * * *"
+    }
+  ]
+}

@@ -7,7 +7,6 @@ import { upsertBookingFromPaystack } from "@/lib/booking";
 import { sendAdminAlertBookingPersistenceFailed } from "@/lib/email/admin-alerts";
 import {
   enqueuePostBookingJobs,
-  processPostBookingJobs,
 } from "@/lib/ops/bookingJobs";
 
 export const metadata: Metadata = {
@@ -34,12 +33,6 @@ export default async function BookingSuccessPage({
         // Backup path: if Paystack webhook is not configured/reachable, still enqueue downstream work.
         // This is idempotent (bookingId+type unique + skipDuplicates).
         await enqueuePostBookingJobs(booking.id);
-        // Best-effort: process this booking immediately so it does not wait for cron.
-        try {
-          await processPostBookingJobs({ bookingId: booking.id, limit: 2 });
-        } catch (jobError) {
-          console.error("Failed to process post-booking jobs:", jobError);
-        }
       } catch (error) {
         try {
           await sendAdminAlertBookingPersistenceFailed({
@@ -84,11 +77,18 @@ export default async function BookingSuccessPage({
         </h1>
         <p className="text-black/70 mb-4">
           {isConfirmed
-            ? "Thank you for your booking. We’re looking forward to hosting you."
+            ? "Thank you for your booking. Your payment is confirmed and your apartment is now booked."
             : "We couldn’t verify and confirm this booking right now. Please contact us and include your payment reference."}
         </p>
         <p className="text-black/60 mb-6">
           Log in with the email you used for this reservation to view your booking details.
+          {isConfirmed && (
+            <>
+              {" "}
+              Your invoice and receipt are being prepared in the background and may take a moment
+              to appear.
+            </>
+          )}
         </p>
         {verifyError && (
           <p className="mt-4 text-sm text-red-700">

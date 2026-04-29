@@ -191,8 +191,8 @@ export default function NewManualBookingPage() {
                             New manual booking
                         </h1>
                         <p className="text-sm text-gray-600 mt-1">
-                            Creates a PAID booking, generates an invoice PDF, and appends the
-                            row to Google Sheets.
+                            Creates a PAID booking immediately. Invoice PDF and Google Sheets
+                            sync run in the background and may take a moment.
                         </p>
                     </div>
                     <div className="flex gap-2 flex-wrap">

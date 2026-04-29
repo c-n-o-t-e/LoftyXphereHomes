@@ -169,6 +169,16 @@ export default function NewManualBookingPage() {
                 bookingId: payload.bookingId,
                 reference: payload.reference,
             });
+            setName("");
+            setEmail("");
+            setPhone("");
+            setApartmentId("");
+            setCheckIn("");
+            setCheckOut("");
+            setAmountNgn("");
+            setPaymentMethod("cash");
+            setPaymentReference("");
+            setOpenCalendar(null);
             void queryClient.invalidateQueries({ queryKey: ["availability", apartmentId] });
         } catch (e) {
             setError(e instanceof Error ? e.message : "Failed to create booking.");

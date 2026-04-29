@@ -163,3 +163,45 @@ export const contactMessageBodySchema = z
     message: data.message.trim(),
     website: data.website?.trim() || "",
   }));
+
+export const adminCreateManualBookingBodySchema = z
+  .object({
+    name: nonEmptyTrimmedString.min(2),
+    email: emailSchema.optional(),
+    phone: nonEmptyTrimmedString.min(5),
+    apartmentId: apartmentIdSchema,
+    checkIn: dateStringSchema,
+    checkOut: dateStringSchema,
+    amountNgn: z.number().finite().int().min(1),
+    paymentMethod: z.string().trim().min(1).max(80).optional(),
+    paymentReference: z.string().trim().min(1).max(200).optional(),
+    notes: z.string().trim().max(1000).optional(),
+  })
+  .strict()
+  .refine(
+    (data) =>
+      new Date(`${data.checkOut}T00:00:00.000Z`) >
+      new Date(`${data.checkIn}T00:00:00.000Z`),
+    {
+      message: "checkOut must be after checkIn",
+      path: ["checkOut"],
+    }
+  )
+  .transform((data) => ({
+    ...data,
+    name: data.name.trim(),
+    phone: data.phone.trim(),
+    paymentMethod: data.paymentMethod?.trim() || undefined,
+    paymentReference: data.paymentReference?.trim() || undefined,
+    notes: data.notes?.trim() || undefined,
+  }));
+
+/** Invoice id or free text containing `LXH-…` (resolved server-side). */
+export const adminCancelBookingBodySchema = z
+  .object({
+    invoiceId: nonEmptyTrimmedString.max(2000),
+  })
+  .strict()
+  .transform((data) => ({
+    invoiceInput: data.invoiceId.trim(),
+  }));

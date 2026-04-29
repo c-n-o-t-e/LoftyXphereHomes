@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useMemo } from "react";
-import { useQuery, useQueryClient } from "@tanstack/react-query";
+import { useQueryClient } from "@tanstack/react-query";
 import { Calendar, Users, Bed, Bath, Loader2, Info } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -9,6 +9,13 @@ import { Label } from "@/components/ui/label";
 import { PAYSTACK_FEE } from "@/lib/constants";
 import { computeBookingQuote } from "@/lib/pricing";
 import { DatePickerCalendar } from "@/components/DatePickerCalendar";
+import {
+  formatDateForInput,
+  formatDisplayDate,
+  parseLocalDate,
+} from "@/lib/booking/datePickerDisplay";
+import { buildCheckoutDisabledDates } from "@/lib/booking/checkoutDisabledDates";
+import { useApartmentAvailability } from "@/hooks/useApartmentAvailability";
 
 function formatPrice(price: number) {
   return new Intl.NumberFormat("en-NG", {
@@ -16,28 +23,6 @@ function formatPrice(price: number) {
     currency: "NGN",
     maximumFractionDigits: 0,
   }).format(price);
-}
-
-function formatDateForInput(d: Date) {
-  const y = d.getFullYear();
-  const m = String(d.getMonth() + 1).padStart(2, "0");
-  const day = String(d.getDate()).padStart(2, "0");
-  return `${y}-${m}-${day}`;
-}
-
-function parseLocalDate(dateStr: string): Date {
-  const [y, m, d] = dateStr.split("-").map(Number);
-  return new Date(y, m - 1, d);
-}
-
-function formatDisplayDate(dateStr: string): string {
-  if (!dateStr) return "";
-  const date = parseLocalDate(dateStr);
-  return date.toLocaleDateString("en-US", {
-    month: "short",
-    day: "numeric",
-    year: "numeric",
-  });
 }
 
 /** API returns `{ error: "Validation failed", details: [...] }` from `parseJsonBody`; surface `details` for users. */
@@ -52,11 +37,6 @@ function messageFromApiError(data: {
       .join(" · ");
   }
   return data.error ?? "Unable to start payment. Please try again.";
-}
-
-interface BookingRange {
-  checkIn: string;
-  checkOut: string;
 }
 
 interface YourReservationCardProps {
@@ -93,28 +73,16 @@ export function YourReservationCard({
   // Calendar popup state
   const [openCalendar, setOpenCalendar] = useState<"checkIn" | "checkOut" | null>(null);
 
-  const { data: availabilityData } = useQuery({
-    queryKey: ["availability", apartmentId],
-    queryFn: async () => {
-      // Availability must reflect newly created bookings quickly.
-      const res = await fetch(
-        `/api/availability?apartmentId=${encodeURIComponent(apartmentId)}`,
-        { cache: "no-store" }
-      );
-      if (!res.ok) throw new Error("Failed to load availability");
-      return res.json() as Promise<{
-        blockedDates?: string[];
-        bookingRanges?: BookingRange[];
-      }>;
-    },
-    // Ensure we refetch whenever user returns to the page.
-    staleTime: 0,
-    refetchOnMount: "always",
-    refetchOnWindowFocus: true,
-  });
+  const { data: availabilityData } = useApartmentAvailability(apartmentId);
 
-  const blockedDates = availabilityData?.blockedDates ?? [];
-  const bookingRanges = availabilityData?.bookingRanges ?? [];
+  const blockedDates = useMemo(
+    () => availabilityData?.blockedDates ?? [],
+    [availabilityData?.blockedDates]
+  );
+  const bookingRanges = useMemo(
+    () => availabilityData?.bookingRanges ?? [],
+    [availabilityData?.bookingRanges]
+  );
 
   const calculation = useMemo(() => {
     if (!checkOut || !checkIn) return null;
@@ -137,53 +105,8 @@ export function YourReservationCard({
       })()
     : today;
 
-  /**
-   * Compute disabled dates for the checkout calendar.
-   * 
-   * Rules (Airbnb-style):
-   * 1. If user selects check-in on 11th and there's a booking starting on 14th,
-   *    user can checkout on 12th, 13th, or 14th (checkout day = new guest check-in day)
-   *    but NOT on 15th or later (would overlap with existing booking)
-   * 
-   * 2. Find the first booking that starts AFTER or ON the selected check-in date
-   * 3. The maximum checkout date is that booking's check-in date
-   * 4. All dates after that are disabled for checkout
-   */
   const checkoutDisabledDates = useMemo(() => {
-    if (!checkIn || bookingRanges.length === 0) return [];
-
-    const checkInDate = parseLocalDate(checkIn);
-    const disabled: string[] = [];
-
-    // Find the first booking that starts after our check-in
-    // (sorted by checkIn from the API)
-    let maxCheckoutDate: Date | null = null;
-    for (const range of bookingRanges) {
-      const rangeCheckIn = parseLocalDate(range.checkIn);
-      // If this booking starts after or on our check-in date
-      if (rangeCheckIn > checkInDate) {
-        // We can checkout up to and including this date (guest leaves morning, new guest arrives)
-        // But we cannot checkout AFTER this date
-        maxCheckoutDate = rangeCheckIn;
-        break;
-      }
-    }
-
-    // If there's a booking after our check-in, disable all dates after that booking's check-in
-    if (maxCheckoutDate) {
-      // Generate disabled dates starting from day after maxCheckoutDate
-      const current = new Date(maxCheckoutDate);
-      current.setDate(current.getDate() + 1);
-      // Generate for next 2 years
-      const twoYearsLater = new Date();
-      twoYearsLater.setFullYear(twoYearsLater.getFullYear() + 2);
-      while (current <= twoYearsLater) {
-        disabled.push(formatDateForInput(current));
-        current.setDate(current.getDate() + 1);
-      }
-    }
-
-    return disabled;
+    return buildCheckoutDisabledDates(checkIn, bookingRanges);
   }, [checkIn, bookingRanges]);
 
   const handlePaystackBook = async () => {

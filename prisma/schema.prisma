@@ -76,6 +76,7 @@ model BookingJob {
   attempts  Int @default(0)
   lastError String?
   nextRunAt DateTime?
+  adminAlertSentAt DateTime?
 
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt

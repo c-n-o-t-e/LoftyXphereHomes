@@ -205,3 +205,18 @@ export const adminCancelBookingBodySchema = z
   .transform((data) => ({
     invoiceInput: data.invoiceId.trim(),
   }));
+
+export const adminStaffRoleSchema = z.enum(["admin", "receptionist"]);
+
+export const adminUpsertStaffUserBodySchema = z
+  .object({
+    email: emailSchema,
+    role: adminStaffRoleSchema,
+  })
+  .strict();
+
+export const adminUpdateStaffRoleBodySchema = z
+  .object({
+    role: adminStaffRoleSchema,
+  })
+  .strict();

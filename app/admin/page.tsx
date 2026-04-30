@@ -41,6 +41,7 @@ export default function AdminHomePage() {
     }
 
     const canCancelBookings = me?.ok === true && me.role === "admin";
+    const canManageStaff = me?.ok === true && me.role === "admin";
 
     return (
         <div className="min-h-screen bg-gray-50 pt-20">
@@ -90,6 +91,13 @@ export default function AdminHomePage() {
                             Signed in as <span className="font-medium">{user?.email}</span>
                             {me?.ok ? ` (${me.role})` : ""}.
                         </p>
+                        {canManageStaff && (
+                            <div className="mt-4 flex flex-wrap gap-2">
+                                <Button variant="outline" asChild>
+                                    <Link href="/admin/users">Manage staff</Link>
+                                </Button>
+                            </div>
+                        )}
                         <Button
                             className="mt-4"
                             variant="outline"

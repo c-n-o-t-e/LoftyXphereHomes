@@ -220,3 +220,35 @@ export const adminUpdateStaffRoleBodySchema = z
     role: adminStaffRoleSchema,
   })
   .strict();
+
+export const adminBookingsViewSchema = z.enum([
+  "current",
+  "upcoming",
+  "past",
+  "cancelled",
+  "all",
+]);
+
+/** GET /api/admin/bookings — staff list/search with pagination */
+export const adminBookingsQuerySchema = z
+  .object({
+    q: z.string().trim().max(200).optional(),
+    view: adminBookingsViewSchema.optional(),
+    status: z.enum(["PENDING", "PAID", "CANCELLED"]).optional(),
+    apartmentId: apartmentIdSchema.optional(),
+    limit: z.string().trim().optional(),
+    cursor: z.string().trim().min(1).optional(),
+  })
+  .strict()
+  .transform((q) => {
+    const parsed = q.limit ? Number.parseInt(q.limit, 10) : 50;
+    const limit = Number.isFinite(parsed) ? Math.min(100, Math.max(1, parsed)) : 50;
+    return {
+      q: q.q?.trim() || undefined,
+      view: q.view ?? "current",
+      status: q.status,
+      apartmentId: q.apartmentId,
+      limit,
+      cursor: q.cursor,
+    };
+  });

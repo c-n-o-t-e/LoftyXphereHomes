@@ -57,6 +57,9 @@ export default function AdminHomePage() {
                         </p>
                     </div>
                     <div className="flex gap-2 flex-wrap">
+                        <Button variant="outline" asChild>
+                            <Link href="/admin/bookings">View bookings</Link>
+                        </Button>
                         <Button asChild>
                             <Link href="/admin/bookings/new">New manual booking</Link>
                         </Button>

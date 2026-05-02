@@ -5,13 +5,24 @@ import {
   useCallback,
   useContext,
   useEffect,
+  useMemo,
   useState,
 } from "react";
+import { usePathname, useRouter } from "next/navigation";
 import { User, Session } from "@supabase/supabase-js";
 import { getSupabaseClient } from "@/lib/supabase/client";
+import {
+  clampNow,
+  computeSessionExpiry,
+  safeParseMs,
+  SESSION_POLICIES,
+  SESSION_STORAGE_KEYS,
+  type SessionPolicyId,
+} from "@/lib/auth/sessionPolicy";
 
 const SESSION_INIT_ERROR =
   "We couldn't verify your sign-in status. Check your connection and try again.";
+const SESSION_EXPIRED_ERROR = "Your session expired. Please sign in again.";
 
 interface AuthContextType {
   user: User | null;
@@ -37,10 +48,97 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   const [session, setSession] = useState<Session | null>(null);
   const [isLoading, setIsLoading] = useState(true);
   const [authError, setAuthError] = useState<string | null>(null);
+  const [policyId, setPolicyId] = useState<SessionPolicyId>("customer");
+  const router = useRouter();
+  const pathname = usePathname();
 
   const clearAuthError = useCallback(() => {
     setAuthError(null);
   }, []);
+
+  const policy = useMemo(() => SESSION_POLICIES[policyId], [policyId]);
+
+  const clearSessionTimeoutStorage = useCallback(() => {
+    try {
+      localStorage.removeItem(SESSION_STORAGE_KEYS.sessionStartMs);
+      localStorage.removeItem(SESSION_STORAGE_KEYS.lastActivityMs);
+      localStorage.removeItem(SESSION_STORAGE_KEYS.policyId);
+      localStorage.removeItem(SESSION_STORAGE_KEYS.userId);
+    } catch {
+      // ignore
+    }
+  }, []);
+
+  const ensureSessionTimeoutStorageInitialized = useCallback(
+    (nextUserId: string) => {
+      const nowMs = Date.now();
+      try {
+        const storedUserId = localStorage.getItem(SESSION_STORAGE_KEYS.userId);
+        if (storedUserId !== nextUserId) {
+          localStorage.setItem(SESSION_STORAGE_KEYS.userId, nextUserId);
+          localStorage.setItem(
+            SESSION_STORAGE_KEYS.sessionStartMs,
+            String(nowMs),
+          );
+          localStorage.setItem(
+            SESSION_STORAGE_KEYS.lastActivityMs,
+            String(nowMs),
+          );
+          localStorage.setItem(SESSION_STORAGE_KEYS.policyId, policyId);
+          return;
+        }
+
+        const startMs = safeParseMs(
+          localStorage.getItem(SESSION_STORAGE_KEYS.sessionStartMs),
+        );
+        const lastMs = safeParseMs(
+          localStorage.getItem(SESSION_STORAGE_KEYS.lastActivityMs),
+        );
+
+        if (!startMs) {
+          localStorage.setItem(SESSION_STORAGE_KEYS.sessionStartMs, String(nowMs));
+        }
+        if (!lastMs) {
+          localStorage.setItem(SESSION_STORAGE_KEYS.lastActivityMs, String(nowMs));
+        }
+      } catch {
+        // ignore
+      }
+    },
+    [policyId],
+  );
+
+  const bumpLastActivity = useCallback(() => {
+    try {
+      localStorage.setItem(SESSION_STORAGE_KEYS.lastActivityMs, String(Date.now()));
+    } catch {
+      // ignore
+    }
+  }, []);
+
+  const signOutInternal = useCallback(
+    async (opts?: { reason?: "expired"; redirectTo?: string }) => {
+      const supabase = getSupabaseClient();
+      try {
+        await supabase.auth.signOut();
+      } catch {
+        // ignore
+      } finally {
+        setUser(null);
+        setSession(null);
+        clearSessionTimeoutStorage();
+      }
+
+      if (opts?.reason === "expired") {
+        setAuthError(SESSION_EXPIRED_ERROR);
+      }
+
+      if (opts?.redirectTo) {
+        router.push(opts.redirectTo);
+      }
+    },
+    [clearSessionTimeoutStorage, router],
+  );
 
   useEffect(() => {
     const supabase = getSupabaseClient();
@@ -56,12 +154,16 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         if (error) throw error;
         setSession(initialSession);
         setUser(initialSession?.user ?? null);
+        if (initialSession?.user?.id) {
+          ensureSessionTimeoutStorageInitialized(initialSession.user.id);
+        }
       } catch (err) {
         if (cancelled) return;
         console.error("AuthProvider: getSession failed", err);
         setAuthError(SESSION_INIT_ERROR);
         setSession(null);
         setUser(null);
+        clearSessionTimeoutStorage();
       } finally {
         if (!cancelled) setIsLoading(false);
       }
@@ -77,13 +179,119 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       setUser(nextSession?.user ?? null);
       setIsLoading(false);
       if (nextSession) setAuthError(null);
+      if (!nextSession?.user?.id) {
+        clearSessionTimeoutStorage();
+      } else {
+        ensureSessionTimeoutStorageInitialized(nextSession.user.id);
+      }
     });
 
     return () => {
       cancelled = true;
       subscription.unsubscribe();
     };
-  }, []);
+  }, [clearSessionTimeoutStorage, ensureSessionTimeoutStorageInitialized]);
+
+  // Track user activity for idle timeout. (Only when logged in.)
+  useEffect(() => {
+    if (!user?.id) return;
+
+    const onActivity = () => bumpLastActivity();
+    const onVisibility = () => {
+      if (!document.hidden) bumpLastActivity();
+    };
+
+    window.addEventListener("click", onActivity, { passive: true });
+    window.addEventListener("keydown", onActivity);
+    window.addEventListener("scroll", onActivity, { passive: true });
+    window.addEventListener("touchstart", onActivity, { passive: true });
+    window.addEventListener("focus", onActivity);
+    document.addEventListener("visibilitychange", onVisibility);
+
+    return () => {
+      window.removeEventListener("click", onActivity);
+      window.removeEventListener("keydown", onActivity);
+      window.removeEventListener("scroll", onActivity);
+      window.removeEventListener("touchstart", onActivity);
+      window.removeEventListener("focus", onActivity);
+      document.removeEventListener("visibilitychange", onVisibility);
+    };
+  }, [bumpLastActivity, user?.id]);
+
+  // Enforce idle + absolute timeouts (best-effort, client-side).
+  useEffect(() => {
+    if (!user?.id || !session?.access_token) return;
+
+    let cancelled = false;
+    const interval = window.setInterval(() => {
+      if (cancelled) return;
+      const nowMs = clampNow(Date.now());
+
+      let sessionStartMs: number | null = null;
+      let lastActivityMs: number | null = null;
+      try {
+        sessionStartMs = safeParseMs(
+          localStorage.getItem(SESSION_STORAGE_KEYS.sessionStartMs),
+        );
+        lastActivityMs = safeParseMs(
+          localStorage.getItem(SESSION_STORAGE_KEYS.lastActivityMs),
+        );
+      } catch {
+        // ignore
+      }
+
+      const expiry = computeSessionExpiry({
+        nowMs,
+        policy,
+        timestamps: { sessionStartMs, lastActivityMs },
+      });
+      if (expiry.expired) {
+        const redirect = `/login?redirect=${encodeURIComponent(
+          pathname || "/",
+        )}`;
+        void signOutInternal({ reason: "expired", redirectTo: redirect });
+      }
+    }, 15_000);
+
+    return () => {
+      cancelled = true;
+      window.clearInterval(interval);
+    };
+  }, [pathname, policy, session?.access_token, signOutInternal, user?.id]);
+
+  // If the user is accessing /admin and is confirmed staff, enforce staff-level timeouts.
+  useEffect(() => {
+    if (!user?.id || !session?.access_token) return;
+    if (!pathname?.startsWith("/admin")) return;
+
+    let cancelled = false;
+    const run = async () => {
+      try {
+        const res = await fetch("/api/admin/me", {
+          headers: { Authorization: `Bearer ${session.access_token}` },
+        });
+        const json = (await res.json()) as
+          | { ok: true; role: "admin" | "receptionist"; email: string }
+          | { ok: false; error: string };
+        if (cancelled) return;
+        if (json && (json as any).ok === true) {
+          setPolicyId("staff");
+          try {
+            localStorage.setItem(SESSION_STORAGE_KEYS.policyId, "staff");
+          } catch {
+            // ignore
+          }
+        }
+      } catch {
+        // ignore (keep customer policy)
+      }
+    };
+
+    void run();
+    return () => {
+      cancelled = true;
+    };
+  }, [pathname, session?.access_token, user?.id]);
 
   // Link bookings to userId after login (best-effort).
   useEffect(() => {
@@ -108,11 +316,8 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   }, [session?.access_token, user?.email, user?.id]);
 
   const signOut = async () => {
-    const supabase = getSupabaseClient();
     clearAuthError();
-    await supabase.auth.signOut();
-    setUser(null);
-    setSession(null);
+    await signOutInternal({ redirectTo: "/" });
   };
 
   return (

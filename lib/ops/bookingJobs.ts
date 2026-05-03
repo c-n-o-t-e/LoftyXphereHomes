@@ -153,6 +153,18 @@ async function sendJobFailureAlertOnce(args: {
         error: args.error,
     });
 
+    if (!sent) {
+        console.error(
+            "[booking-jobs] Admin alert email was not sent (configure RESEND_API_KEY and ADMIN_ALERT_EMAIL).",
+            {
+                jobId: args.jobId,
+                bookingId: args.bookingId,
+                jobType: args.jobType,
+                attempts: args.attempts,
+            },
+        );
+    }
+
     if (sent) {
         await prisma.bookingJob.update({
             where: { id: args.jobId },
@@ -164,17 +176,34 @@ async function sendJobFailureAlertOnce(args: {
 export async function processPostBookingJobs(args?: {
     limit?: number;
     bookingId?: string;
+    /**
+     * When true (default for batch/cron): FAILED rows wait until `nextRunAt` before retrying.
+     * When false (manual “immediate”): FAILED rows are picked up on every run regardless of `nextRunAt`.
+     * If omitted: `bookingId` alone implies false (targeted drain); otherwise true.
+     */
+    respectBackoff?: boolean;
 }): Promise<{ processed: number; succeeded: number; failed: number }> {
     const limit = Math.min(50, Math.max(1, args?.limit ?? 10));
     const now = new Date();
     const { prisma } = await import("@/lib/db");
+
+    const respectBackoff =
+        args?.respectBackoff ?? (args?.bookingId ? false : true);
+
+    const nextRunOr = respectBackoff
+        ? [{ nextRunAt: null }, { nextRunAt: { lte: now } }]
+        : [
+              { status: "FAILED" as const },
+              { nextRunAt: null },
+              { nextRunAt: { lte: now } },
+          ];
 
     const jobs = await prisma.bookingJob.findMany({
         where: {
             ...(args?.bookingId ? { bookingId: args.bookingId } : {}),
             status: { in: ["PENDING", "FAILED"] },
             attempts: { lt: MAX_ATTEMPTS },
-            OR: [{ nextRunAt: null }, { nextRunAt: { lte: now } }],
+            OR: nextRunOr,
         },
         orderBy: [{ nextRunAt: "asc" }, { createdAt: "asc" }],
         take: limit,

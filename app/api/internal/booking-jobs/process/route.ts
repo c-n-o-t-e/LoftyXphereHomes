@@ -14,12 +14,29 @@ function isAuthorized(request: NextRequest): boolean {
     return Boolean(header && allowedSecrets.includes(header));
 }
 
+function wantsImmediateRun(request: NextRequest): boolean {
+    if (request.nextUrl.searchParams.get("immediate") === "1") return true;
+    const h = request.headers.get("x-booking-jobs-immediate");
+    return h === "1" || h?.toLowerCase() === "true";
+}
+
 async function processRequest(request: NextRequest) {
     if (!isAuthorized(request)) {
         return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
     }
-    const result = await processPostBookingJobs({ limit: 20 });
-    return NextResponse.json({ ok: true, ...result });
+    // Vercel Cron: omit `immediate` → respect backoff on FAILED rows (nextRunAt).
+    // Manual re-drive: `?immediate=1` or header `X-Booking-Jobs-Immediate: 1`.
+    const immediate = wantsImmediateRun(request);
+    const result = await processPostBookingJobs({
+        limit: 20,
+        respectBackoff: !immediate,
+    });
+    return NextResponse.json({
+        ok: true,
+        respectBackoff: !immediate,
+        immediate,
+        ...result,
+    });
 }
 
 export async function GET(request: NextRequest) {

@@ -9,6 +9,50 @@ export function formatMonthTabTitle(date: Date): string {
     }).format(date);
 }
 
+/** Google Sheets sheet name max length. */
+export const GOOGLE_SHEETS_TAB_TITLE_MAX_LENGTH = 100;
+
+/**
+ * Strip characters invalid in Google Sheet tab names: \ / * ? : [ ]
+ * @see https://developers.google.com/sheets/api/guides/concepts#sheet_names
+ */
+export function sanitizeSheetTitleApartmentSegment(raw: string): string {
+    return String(raw ?? "")
+        .trim()
+        .replace(/[\\/*?:[\]]/g, "-")
+        .replace(/-+/g, "-")
+        .replace(/\s+/g, " ")
+        .replace(/^[-\s]+|[-\s]+$/g, "")
+        .trim();
+}
+
+const MONTH_APARTMENT_TAB_SEP = " — ";
+
+/**
+ * One tab per calendar month and apartment (e.g. "May 2026 — lofty-wuye-01").
+ */
+export function formatMonthApartmentTabTitle(
+    monthDate: Date,
+    apartmentKeyRaw: string,
+): string {
+    const monthTitle = formatMonthTabTitle(monthDate);
+    let apt = sanitizeSheetTitleApartmentSegment(apartmentKeyRaw);
+    if (!apt) apt = "unknown";
+
+    const maxAptLen =
+        GOOGLE_SHEETS_TAB_TITLE_MAX_LENGTH -
+        monthTitle.length -
+        MONTH_APARTMENT_TAB_SEP.length;
+    if (maxAptLen < 1) {
+        return monthTitle.slice(0, GOOGLE_SHEETS_TAB_TITLE_MAX_LENGTH);
+    }
+    if (apt.length > maxAptLen) {
+        apt = apt.slice(0, maxAptLen).replace(/[-\s]+$/g, "").trimEnd() || "?";
+    }
+
+    return `${monthTitle}${MONTH_APARTMENT_TAB_SEP}${apt}`;
+}
+
 export function formatNightsLabel(checkInIso: string, checkOutIso: string): string {
     const inDate = new Date(checkInIso);
     const outDate = new Date(checkOutIso);

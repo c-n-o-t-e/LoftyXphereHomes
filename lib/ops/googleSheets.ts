@@ -1,5 +1,9 @@
 import { google, sheets_v4 } from "googleapis";
-import { formatMonthTabTitle, sheetMonthDateForBooking } from "./dates";
+import {
+    formatMonthApartmentTabTitle,
+    formatMonthTabTitle,
+    sheetMonthDateForBooking,
+} from "./dates";
 import { parseDateFromInvoiceId } from "./invoiceId";
 
 export type SheetsBookingRow = {
@@ -595,12 +599,12 @@ async function applyMonthSheetBranding(
     });
 }
 
-async function ensureMonthSheet(
+async function ensureBookingSheet(
     sheets: sheets_v4.Sheets,
-    monthTitle: string,
+    tabTitle: string,
 ): Promise<string> {
     const titles = await listSheetTitles(sheets);
-    const existing = findTitleCaseInsensitive(titles, monthTitle);
+    const existing = findTitleCaseInsensitive(titles, tabTitle);
     if (existing) return existing;
 
     try {
@@ -611,7 +615,7 @@ async function ensureMonthSheet(
                     {
                         addSheet: {
                             properties: {
-                                title: monthTitle,
+                                title: tabTitle,
                                 gridProperties: {
                                     rowCount: 2000,
                                     columnCount: 26,
@@ -626,25 +630,25 @@ async function ensureMonthSheet(
         const msg = String((e as Error)?.message || e);
         const raceExisting = findTitleCaseInsensitive(
             await listSheetTitles(sheets),
-            monthTitle,
+            tabTitle,
         );
         if (raceExisting) return raceExisting;
         if (!/already exists|duplicate/i.test(msg)) throw e;
         const afterDup = findTitleCaseInsensitive(
             await listSheetTitles(sheets),
-            monthTitle,
+            tabTitle,
         );
         if (afterDup) return afterDup;
         throw e;
     }
 
-    const q = quoteSheetNameForRange(monthTitle);
+    const q = quoteSheetNameForRange(tabTitle);
     await sheets.spreadsheets.values.update({
         spreadsheetId: requireSpreadsheetId(),
         range: `${q}!B1:B2`,
         valueInputOption: "USER_ENTERED",
         requestBody: {
-            values: [["LOFTY XPHERE HOMES"], [`${monthTitle} — Bookings`]],
+            values: [["LOFTY XPHERE HOMES"], [`${tabTitle} — Bookings`]],
         },
     });
 
@@ -664,9 +668,9 @@ async function ensureMonthSheet(
         },
     });
 
-    await applyMonthSheetBranding(sheets, monthTitle);
+    await applyMonthSheetBranding(sheets, tabTitle);
 
-    return monthTitle;
+    return tabTitle;
 }
 
 async function findInvoiceRowInTab(
@@ -703,8 +707,8 @@ export async function appendBookingRowToSheet(row: SheetsBookingRow) {
     const sheets = await createSheetsClient();
 
     const sheetMonthDate = sheetMonthDateForBooking(row.checkIn, row.bookingDate);
-    const monthTitle = formatMonthTabTitle(sheetMonthDate);
-    const targetTitle = await ensureMonthSheet(sheets, monthTitle);
+    const tabTitle = formatMonthApartmentTabTitle(sheetMonthDate, row.apartment);
+    const targetTitle = await ensureBookingSheet(sheets, tabTitle);
 
     const existingAnywhere = await findInvoiceRowAcrossAllTabs(sheets, row.invoiceId);
     if (existingAnywhere != null) {

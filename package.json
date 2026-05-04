@@ -11,7 +11,8 @@
     "test": "jest",
     "test:watch": "jest --watch",
     "test:coverage": "jest --coverage",
-    "grant-admin": "node scripts/grant-admin-access.mjs"
+    "grant-admin": "node scripts/grant-admin-access.mjs",
+    "process-booking-jobs": "node scripts/process-booking-jobs.mjs"
   },
   "dependencies": {
     "@hookform/resolvers": "^5.2.2",

@@ -1,3 +1,4 @@
+/* eslint-disable @typescript-eslint/no-require-imports */
 import type { NextRequest } from "next/server";
 
 jest.mock("next/server", () => ({
@@ -92,6 +93,29 @@ describe("POST /api/admin/bookings/cancel", () => {
         });
     });
 
+    it("forbids receptionist users from cancelling bookings", async () => {
+        (prisma.adminUser.findFirst as jest.Mock).mockResolvedValueOnce({
+            supabaseUserId: "reception_user_1",
+            email: "reception@example.com",
+            role: "receptionist",
+        });
+        const request = makeNextRequest("http://localhost/api/admin/bookings/cancel", {
+            method: "POST",
+            headers: {
+                authorization: "Bearer token",
+                "content-type": "application/json",
+            },
+            body: JSON.stringify({ invoiceId: "LXH-260101-ABCDEF" }),
+        });
+
+        const res = await postAdminCancel(request);
+        const json = await res.json();
+
+        expect(res.status).toBe(403);
+        expect(json.error).toBe("Forbidden");
+        expect(prisma.booking.findFirst).not.toHaveBeenCalled();
+    });
+
     it("returns 400 when invoice id cannot be parsed", async () => {
         const request = makeNextRequest("http://localhost/api/admin/bookings/cancel", {
             method: "POST",
@@ -182,7 +206,7 @@ describe("POST /api/admin/bookings/cancel", () => {
             invoiceId: "LXH-260101-ABCDEF",
         });
         const err = new Error("Invoice ID not found in Google Sheet");
-        (err as any).statusCode = 404;
+        (err as { statusCode?: number }).statusCode = 404;
         (setStayedByInvoiceId as jest.Mock).mockRejectedValueOnce(err);
         const request = makeNextRequest("http://localhost/api/admin/bookings/cancel", {
             method: "POST",

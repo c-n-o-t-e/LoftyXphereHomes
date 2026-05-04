@@ -39,3 +39,21 @@ export function normalizeInternalRedirect(
   }
 }
 
+/**
+ * Builds the redirect URL Supabase should send users to after email magic links.
+ * Using one fixed path (/auth/callback) keeps dashboard URLs working even when only
+ * `https://your-domain/auth/callback` is added to Supabase "Redirect URLs".
+ * The post-login destination is passed as `next` (validated again on the callback page).
+ */
+export function buildAuthEmailRedirectUrl(
+  siteBaseUrl: string,
+  nextPath?: string | null,
+): string {
+  const trimmed = siteBaseUrl.trim().replace(/\/$/, "");
+  const base = trimmed || "http://localhost:3000";
+  const next = normalizeInternalRedirect(nextPath, "/my-bookings");
+  const url = new URL(`${base}/auth/callback`);
+  url.searchParams.set("next", next);
+  return url.toString();
+}
+

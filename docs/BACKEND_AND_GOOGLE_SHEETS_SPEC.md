@@ -2,10 +2,16 @@
 
 This documents the **Next.js** implementation (see [`lib/ops/googleSheets.ts`](../lib/ops/googleSheets.ts), [`lib/ops/bookingJobs.ts`](../lib/ops/bookingJobs.ts), [`app/api/admin/bookings/cancel/route.ts`](../app/api/admin/bookings/cancel/route.ts)).
 
-## Monthly tabs
+## Booking tabs (month + apartment)
 
-- Tab titles: **`{Month} {Year}`** in English (e.g. `August 2026`) via `formatMonthTabTitle` in [`lib/ops/dates.ts`](../lib/ops/dates.ts).
-- **Which tab receives a new row:** calendar month of **check-in** (with legacy-style `deriveStayStartDate` for year-less strings), else booking `createdAt` month — `sheetMonthDateForBooking`.
+Google Sheets does not support nested or grouped tabs. Each logical “month bucket” is split into **one tab per apartment**: compound titles like **`May 2026 — lofty-wuye-01`**.
+
+- **Month segment:** `{Month} {Year}` in English (same as `formatMonthTabTitle`) from the calendar month of **check-in** (with legacy-style `deriveStayStartDate` for year-less strings), else booking `createdAt` month — `sheetMonthDateForBooking` in [`lib/ops/dates.ts`](../lib/ops/dates.ts).
+- **Apartment segment:** booking `apartmentId` (same value as column **Room Code**), passed through `sanitizeSheetTitleApartmentSegment` (removes characters invalid in sheet names) and truncated so the full title stays within **100** characters — `formatMonthApartmentTabTitle`.
+
+**Legacy tabs:** Older spreadsheets may still have single tabs named only `August 2026` (all units mixed). Those are **not** migrated automatically; new bookings create new per-apartment tabs. Staff can move historical rows manually if they want one convention.
+
+**Cancel / stayed updates:** Still locate the row by scanning **all** tabs for `invoiceId` in column **J** (unchanged).
 
 ## Layout (new tabs only)
 

@@ -22,6 +22,8 @@ interface Booking {
   status: string;
   bookerName: string | null;
   createdAt: string;
+  invoiceId?: string | null;
+  invoiceReady?: boolean;
 }
 
 function formatDate(dateStr: string): string {
@@ -348,6 +350,45 @@ function BookingCard({ booking, isPast = false }: { booking: Booking; isPast?: b
     return null;
   }
 
+  async function downloadInvoice() {
+    const supabase = getSupabaseClient();
+    const {
+      data: { session },
+    } = await supabase.auth.getSession();
+
+    if (!session?.access_token) {
+      window.location.href = "/login?redirect=/my-bookings";
+      return;
+    }
+
+    const res = await fetch(`/api/my-bookings/${booking.id}/invoice`, {
+      headers: { Authorization: `Bearer ${session.access_token}` },
+    });
+
+    if (!res.ok) {
+      // Keep it simple: fall back to a readable message.
+      let msg = "Could not download invoice. Please try again shortly.";
+      try {
+        const json = await res.json();
+        if (typeof json?.error === "string") msg = json.error;
+      } catch {
+        // ignore
+      }
+      alert(msg);
+      return;
+    }
+
+    const blob = await res.blob();
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement("a");
+    a.href = url;
+    a.download = booking.invoiceId ? `invoice_${booking.invoiceId}.pdf` : `invoice_${booking.id}.pdf`;
+    document.body.appendChild(a);
+    a.click();
+    a.remove();
+    URL.revokeObjectURL(url);
+  }
+
   return (
     <div
       className={`bg-white rounded-xl shadow-sm overflow-hidden border border-gray-100 ${
@@ -356,7 +397,7 @@ function BookingCard({ booking, isPast = false }: { booking: Booking; isPast?: b
     >
       <div className="flex flex-col md:flex-row">
         {/* Image */}
-        <div className="relative w-full md:w-48 h-40 md:h-auto flex-shrink-0">
+        <div className="relative w-full md:w-48 h-40 md:h-auto shrink-0">
           <Image
             src={apartment.images[0]}
             alt={apartment.name}
@@ -409,13 +450,25 @@ function BookingCard({ booking, isPast = false }: { booking: Booking; isPast?: b
             <p className="text-xs text-gray-400">
               Ref: {booking.reference}
             </p>
-            <Link
-              href={`/apartments/${booking.apartmentId}`}
-              className="text-amber-600 hover:text-amber-700 text-sm font-medium flex items-center gap-1"
-            >
-              View Apartment
-              <ChevronRight className="h-4 w-4" />
-            </Link>
+            <div className="flex items-center gap-2">
+              {booking.invoiceReady && (
+                <Button
+                  type="button"
+                  variant="outline"
+                  size="sm"
+                  onClick={() => void downloadInvoice()}
+                >
+                  Download invoice
+                </Button>
+              )}
+              <Link
+                href={`/apartments/${booking.apartmentId}`}
+                className="text-amber-600 hover:text-amber-700 text-sm font-medium flex items-center gap-1"
+              >
+                View Apartment
+                <ChevronRight className="h-4 w-4" />
+              </Link>
+            </div>
           </div>
         </div>
       </div>

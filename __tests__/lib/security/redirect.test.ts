@@ -1,4 +1,7 @@
-import { normalizeInternalRedirect } from "@/lib/security/redirect";
+import {
+  buildAuthEmailRedirectUrl,
+  normalizeInternalRedirect,
+} from "@/lib/security/redirect";
 
 describe("normalizeInternalRedirect", () => {
   it("returns fallback for empty input", () => {
@@ -31,6 +34,26 @@ describe("normalizeInternalRedirect", () => {
   it("collapses repeated slashes", () => {
     expect(normalizeInternalRedirect("/foo//bar///baz", "/safe")).toBe(
       "/foo/bar/baz"
+    );
+  });
+});
+
+describe("buildAuthEmailRedirectUrl", () => {
+  it("builds callback URL with validated next param", () => {
+    expect(buildAuthEmailRedirectUrl("https://example.com", "/my-bookings")).toBe(
+      "https://example.com/auth/callback?next=%2Fmy-bookings",
+    );
+  });
+
+  it("strips trailing slash from site base", () => {
+    expect(buildAuthEmailRedirectUrl("https://example.com/", "/admin")).toBe(
+      "https://example.com/auth/callback?next=%2Fadmin",
+    );
+  });
+
+  it("uses fallback path when next is unsafe", () => {
+    expect(buildAuthEmailRedirectUrl("https://example.com", "//evil")).toBe(
+      "https://example.com/auth/callback?next=%2Fmy-bookings",
     );
   });
 });

@@ -5,7 +5,10 @@ import { useRouter, useSearchParams } from "next/navigation";
 import Link from "next/link";
 import { useAuth } from "@/components/AuthProvider";
 import { getSupabaseClient } from "@/lib/supabase/client";
-import { normalizeInternalRedirect } from "@/lib/security/redirect";
+import {
+  buildAuthEmailRedirectUrl,
+  normalizeInternalRedirect,
+} from "@/lib/security/redirect";
 import { Mail, Loader2, CheckCircle, ArrowLeft } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -42,7 +45,10 @@ function LoginForm() {
       const { error } = await supabase.auth.signInWithOtp({
         email: email.trim(),
         options: {
-          emailRedirectTo: `${window.location.origin}${redirect}`,
+          emailRedirectTo: buildAuthEmailRedirectUrl(
+            window.location.origin,
+            redirect,
+          ),
         },
       });
 

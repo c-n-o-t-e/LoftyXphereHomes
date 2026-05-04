@@ -310,7 +310,7 @@ describe("API validation integration", () => {
     expectValidation400(json);
   });
 
-  it("enqueues then processes the current booking from a successful webhook", async () => {
+  it("enqueues post-booking jobs from a successful webhook (async processing)", async () => {
     (verifyWebhookSignature as jest.Mock).mockReturnValue(true);
     (verifyTransaction as jest.Mock).mockResolvedValue({
       status: true,
@@ -352,15 +352,7 @@ describe("API validation integration", () => {
     expect(response.status).toBe(200);
     expect(json).toEqual(expect.objectContaining({ received: true }));
     expect(enqueuePostBookingJobs).toHaveBeenCalledWith("booking_website_1");
-    expect(processPostBookingJobs).toHaveBeenCalledWith({
-      bookingId: "booking_website_1",
-      limit: 2,
-    });
-    expect(
-      (enqueuePostBookingJobs as jest.Mock).mock.invocationCallOrder[0]
-    ).toBeLessThan(
-      (processPostBookingJobs as jest.Mock).mock.invocationCallOrder[0]
-    );
+    expect(processPostBookingJobs).not.toHaveBeenCalled();
   });
 
   it("sends admin alert when webhook booking persistence fails", async () => {
@@ -409,7 +401,7 @@ describe("API validation integration", () => {
     );
   });
 
-  it("processes post-booking jobs after a manual admin booking is created", async () => {
+  it("enqueues post-booking jobs after a manual admin booking is created (async processing)", async () => {
     process.env.NEXT_PUBLIC_SUPABASE_URL = "https://example.supabase.co";
     process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY = "anon_key";
 
@@ -458,9 +450,6 @@ describe("API validation integration", () => {
       expect.objectContaining({ ok: true, bookingId: "booking_1" })
     );
     expect(enqueuePostBookingJobs).toHaveBeenCalledWith("booking_1");
-    expect(processPostBookingJobs).toHaveBeenCalledWith({
-      bookingId: "booking_1",
-      limit: 2,
-    });
+    expect(processPostBookingJobs).not.toHaveBeenCalled();
   });
 });

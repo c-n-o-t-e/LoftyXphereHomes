@@ -15,6 +15,7 @@ import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { DatePickerCalendar } from "@/components/DatePickerCalendar";
 import { useApartmentAvailability } from "@/hooks/useApartmentAvailability";
+import { useAdminMe } from "@/hooks/useAdminMe";
 import { buildCheckoutDisabledDates } from "@/lib/booking/checkoutDisabledDates";
 import {
     formatDateForInput,
@@ -43,6 +44,9 @@ export default function NewManualBookingPage() {
     const { user, isLoading } = useAuth();
     const router = useRouter();
     const queryClient = useQueryClient();
+    const { data: me } = useAdminMe(Boolean(user) && !isLoading);
+
+    const [formResetKey, setFormResetKey] = useState(0);
 
     const [name, setName] = useState("");
     const [email, setEmail] = useState("");
@@ -68,6 +72,34 @@ export default function NewManualBookingPage() {
             router.push("/login?redirect=/admin/bookings/new");
         }
     }, [isLoading, user, router]);
+
+    if (!isLoading && user && me && !me.ok) {
+        return (
+            <div className="min-h-screen bg-gray-50 pt-20">
+                <div className="max-w-3xl mx-auto px-4 py-10">
+                    <Card className="p-6">
+                        <h1 className="text-xl font-bold text-gray-900">
+                            Admin access required
+                        </h1>
+                        <p className="mt-2 text-sm text-gray-600">
+                            Your account doesn’t have access to create manual bookings.
+                        </p>
+                        <div className="mt-4 flex flex-wrap gap-2">
+                            <Button variant="outline" asChild>
+                                <Link href="/">Back to website</Link>
+                            </Button>
+                            <Button
+                                variant="outline"
+                                onClick={() => router.push("/login?redirect=/admin/bookings/new")}
+                            >
+                                Sign in with a staff account
+                            </Button>
+                        </div>
+                    </Card>
+                </div>
+            </div>
+        );
+    }
 
     const apartmentOptions = useMemo(() => apartments, []);
     const selectedApartment = useMemo(
@@ -167,6 +199,17 @@ export default function NewManualBookingPage() {
                 bookingId: payload.bookingId,
                 reference: payload.reference,
             });
+            setName("");
+            setEmail("");
+            setPhone("");
+            setApartmentId("");
+            setCheckIn("");
+            setCheckOut("");
+            setAmountNgn("");
+            setPaymentMethod("cash");
+            setPaymentReference("");
+            setOpenCalendar(null);
+            setFormResetKey((k) => k + 1);
             void queryClient.invalidateQueries({ queryKey: ["availability", apartmentId] });
         } catch (e) {
             setError(e instanceof Error ? e.message : "Failed to create booking.");
@@ -178,6 +221,8 @@ export default function NewManualBookingPage() {
     if (isLoading) return null;
     if (!user) return null;
 
+    const canCancelBookings = me?.ok === true && me.role === "admin";
+
     return (
         <div className="min-h-screen bg-gray-50 pt-20">
             <div className="max-w-3xl mx-auto px-4 py-10">
@@ -187,21 +232,23 @@ export default function NewManualBookingPage() {
                             New manual booking
                         </h1>
                         <p className="text-sm text-gray-600 mt-1">
-                            Creates a PAID booking, generates an invoice PDF, and appends the
-                            row to Google Sheets.
+                            Creates a PAID booking immediately. Invoice PDF and Google Sheets
+                            sync run in the background and may take a moment.
                         </p>
                     </div>
                     <div className="flex gap-2 flex-wrap">
-                        <Button variant="outline" asChild>
-                            <Link href="/admin/bookings/cancel">Cancel booking</Link>
-                        </Button>
+                        {canCancelBookings && (
+                            <Button variant="outline" asChild>
+                                <Link href="/admin/bookings/cancel">Cancel booking</Link>
+                            </Button>
+                        )}
                         <Button variant="outline" asChild>
                             <Link href="/admin">Back</Link>
                         </Button>
                     </div>
                 </div>
 
-                <Card className="p-6 mt-6">
+                <Card key={formResetKey} className="p-6 mt-6">
                     <div className="grid gap-4 sm:grid-cols-2">
                         <div className="sm:col-span-2">
                             <Label htmlFor="name">Full name</Label>

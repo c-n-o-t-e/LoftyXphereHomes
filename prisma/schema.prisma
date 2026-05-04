@@ -49,6 +49,9 @@ model Booking {
   @@index([reference])
   @@index([apartmentId])
   @@index([bookerEmail])
+  @@index([bookerName])
+  @@index([bookerPhone])
+  @@index([invoiceId])
   @@index([userId])
   @@index([checkIn, checkOut])
   // Overlap queries: WHERE status IN (...) AND checkIn < ? AND checkOut > ?
@@ -76,6 +79,7 @@ model BookingJob {
   attempts  Int @default(0)
   lastError String?
   nextRunAt DateTime?
+  adminAlertSentAt DateTime?
 
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt

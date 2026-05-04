@@ -5,13 +5,18 @@ import { resolveInvoiceIdFromFormInput } from "@/lib/ops/invoiceId";
 import { parseJsonBody } from "@/lib/validation/http";
 import { adminCancelBookingBodySchema } from "@/lib/validation/schemas";
 
+type RouteError = {
+    httpResponse?: Response;
+    statusCode?: number;
+};
+
 export async function POST(request: NextRequest) {
     try {
-        await requireAdmin(request, ["admin", "receptionist"]);
+        await requireAdmin(request, ["admin"]);
     } catch (err) {
-        const httpResponse = (err as any)?.httpResponse;
+        const { httpResponse, statusCode } = err as RouteError;
         if (httpResponse) return httpResponse;
-        const status = (err as any)?.statusCode ?? 401;
+        const status = statusCode ?? 401;
         return NextResponse.json(
             { error: status === 403 ? "Forbidden" : "Unauthorized" },
             { status },
@@ -82,7 +87,7 @@ export async function POST(request: NextRequest) {
                 rowNumber: sheet.rowNumber,
             });
         } catch (sheetErr: unknown) {
-            const statusCode = (sheetErr as any)?.statusCode;
+            const statusCode = (sheetErr as { statusCode?: number }).statusCode;
             if (statusCode === 404) {
                 return NextResponse.json({
                     ok: true,

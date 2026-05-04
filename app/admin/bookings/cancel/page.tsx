@@ -5,6 +5,7 @@ import { useRouter } from "next/navigation";
 import Link from "next/link";
 import { useAuth } from "@/components/AuthProvider";
 import { getSupabaseClient } from "@/lib/supabase/client";
+import { useAdminMe } from "@/hooks/useAdminMe";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
@@ -26,6 +27,7 @@ type CancelResponse =
 export default function AdminCancelBookingPage() {
     const { user, isLoading } = useAuth();
     const router = useRouter();
+    const { data: me, isLoading: isRoleLoading } = useAdminMe(Boolean(user) && !isLoading);
 
     const [invoiceInput, setInvoiceInput] = useState("");
     const [submitting, setSubmitting] = useState(false);
@@ -85,6 +87,29 @@ export default function AdminCancelBookingPage() {
 
     if (isLoading) return null;
     if (!user) return null;
+
+    if (isRoleLoading || !me) return null;
+
+    if (!me.ok || me.role !== "admin") {
+        return (
+            <div className="min-h-screen bg-gray-50 pt-20">
+                <div className="max-w-3xl mx-auto px-4 py-10">
+                    <Card className="p-6">
+                        <h1 className="text-xl font-bold text-gray-900">
+                            Admin access required
+                        </h1>
+                        <p className="mt-2 text-sm text-gray-600">
+                            Only admins can cancel bookings. Receptionist accounts can create
+                            manual bookings, but cannot cancel existing ones.
+                        </p>
+                        <Button className="mt-4" variant="outline" asChild>
+                            <Link href="/admin">Back to dashboard</Link>
+                        </Button>
+                    </Card>
+                </div>
+            </div>
+        );
+    }
 
     return (
         <div className="min-h-screen bg-gray-50 pt-20">

@@ -7,7 +7,6 @@ import { paystackWebhookPayloadSchema } from "@/lib/validation/schemas";
 import { sendAdminAlertBookingPersistenceFailed } from "@/lib/email/admin-alerts";
 import {
     enqueuePostBookingJobs,
-    processPostBookingJobs,
 } from "@/lib/ops/bookingJobs";
 
 /**
@@ -74,13 +73,6 @@ export async function POST(request: NextRequest) {
         const booking = await upsertBookingFromPaystack(result.data);
         // Enqueue downstream artifacts (invoice + Google Sheets)
         await enqueuePostBookingJobs(booking.id);
-        // Best-effort: process this booking immediately so it does not wait for cron.
-        // Safe to call repeatedly (jobs are deduped; Sheets append checks invoiceId).
-        try {
-            await processPostBookingJobs({ bookingId: booking.id, limit: 2 });
-        } catch (err) {
-            console.error("Failed to process post-booking jobs:", err);
-        }
 
         // Send magic link to create/login user account
         // This runs async and doesn't block the webhook response

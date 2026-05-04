@@ -1,4 +1,5 @@
 import { createClient } from "@supabase/supabase-js";
+import { buildAuthEmailRedirectUrl } from "@/lib/security/redirect";
 
 /**
  * Server-side Supabase client with service role key.
@@ -25,17 +26,17 @@ export function createServerSupabaseClient() {
  * Send a magic link to the user's email.
  * This will create the user if they don't exist, or log them in if they do.
  */
-export async function sendMagicLink(email: string, redirectTo?: string) {
+export async function sendMagicLink(email: string, nextPath?: string | null) {
     const supabase = createServerSupabaseClient();
 
     const baseUrl = process.env.NEXT_PUBLIC_SITE_URL || "http://localhost:3000";
-    const redirect = redirectTo || `${baseUrl}/my-bookings`;
+    const redirectUrl = buildAuthEmailRedirectUrl(baseUrl, nextPath ?? "/my-bookings");
 
     const { data, error } = await supabase.auth.admin.generateLink({
         type: "magiclink",
         email,
         options: {
-            redirectTo: redirect,
+            redirectTo: redirectUrl,
         },
     });
 
@@ -67,21 +68,21 @@ export async function getUserByEmail(email: string) {
  * Create or get user by email.
  * If user doesn't exist, invites them (sends magic link).
  */
-export async function inviteUserByEmail(email: string, redirectTo?: string) {
+export async function inviteUserByEmail(email: string, nextPath?: string | null) {
     const supabase = createServerSupabaseClient();
 
     const baseUrl = process.env.NEXT_PUBLIC_SITE_URL || "http://localhost:3000";
-    const redirect = redirectTo || `${baseUrl}/my-bookings`;
+    const redirectUrl = buildAuthEmailRedirectUrl(baseUrl, nextPath ?? "/my-bookings");
 
     // Try to invite the user (creates account if doesn't exist)
     const { data, error } = await supabase.auth.admin.inviteUserByEmail(email, {
-        redirectTo: redirect,
+        redirectTo: redirectUrl,
     });
 
     if (error) {
         // If user already exists, send magic link instead
         if (error.message?.includes("already been registered")) {
-            return sendMagicLink(email, redirectTo);
+            return sendMagicLink(email, nextPath ?? "/my-bookings");
         }
         console.error("Error inviting user:", error);
         throw error;

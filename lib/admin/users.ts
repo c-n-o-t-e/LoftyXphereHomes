@@ -1,4 +1,5 @@
 import type { AdminRole } from "@/lib/admin/auth";
+import { buildAuthEmailRedirectUrl } from "@/lib/security/redirect";
 import { createServerSupabaseClient } from "@/lib/supabase/server";
 
 type SupabaseAuthUser = {
@@ -30,7 +31,7 @@ async function inviteSupabaseUserByEmail(
     const supabase = createServerSupabaseClient();
     const baseUrl = process.env.NEXT_PUBLIC_SITE_URL || "http://localhost:3000";
     const { data, error } = await supabase.auth.admin.inviteUserByEmail(email, {
-        redirectTo: `${baseUrl}/admin`,
+        redirectTo: buildAuthEmailRedirectUrl(baseUrl, "/admin"),
     });
     if (error) throw new Error(`Supabase inviteUserByEmail failed: ${error.message}`);
     if (!data?.user?.id) {

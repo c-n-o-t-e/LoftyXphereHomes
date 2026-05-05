@@ -24,6 +24,25 @@ type CancelResponse =
       }
     | { error: string; code?: string };
 
+async function readCancelResponse(res: Response): Promise<CancelResponse> {
+    const contentType = res.headers.get("content-type") || "";
+    if (contentType.includes("application/json")) {
+        return (await res.json()) as CancelResponse;
+    }
+
+    const text = await res.text();
+    if (res.ok) {
+        return { error: "Unexpected server response." };
+    }
+
+    return {
+        error:
+            text && !text.trimStart().startsWith("<")
+                ? text
+                : "Server returned an HTML error page instead of JSON. Check the server logs for the cancellation failure.",
+    };
+}
+
 export default function AdminCancelBookingPage() {
     const { user, isLoading } = useAuth();
     const router = useRouter();
@@ -64,7 +83,7 @@ export default function AdminCancelBookingPage() {
                 body: JSON.stringify({ invoiceId: invoiceInput.trim() }),
             });
 
-            const payload = (await res.json()) as CancelResponse;
+            const payload = await readCancelResponse(res);
             if (!res.ok) {
                 if ("error" in payload && typeof payload.error === "string") {
                     setError(payload.error);

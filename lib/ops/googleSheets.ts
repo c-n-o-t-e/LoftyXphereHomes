@@ -66,6 +66,35 @@ async function listSheetTitles(sheets: sheets_v4.Sheets): Promise<string[]> {
         .filter((t): t is string => Boolean(t));
 }
 
+function createSheetTitleCache(sheets: sheets_v4.Sheets) {
+    let titlesPromise: Promise<string[]> | null = null;
+
+    const get = async (): Promise<string[]> => {
+        if (!titlesPromise) {
+            titlesPromise = listSheetTitles(sheets);
+        }
+        return titlesPromise;
+    };
+
+    return {
+        get,
+        async refresh(): Promise<string[]> {
+            titlesPromise = listSheetTitles(sheets);
+            return titlesPromise;
+        },
+        add(title: string): void {
+            const nextTitle = String(title || "").trim();
+            if (!nextTitle) return;
+            titlesPromise = (async () => {
+                const titles = await get();
+                return findTitleCaseInsensitive(titles, nextTitle)
+                    ? titles
+                    : [...titles, nextTitle];
+            })();
+        },
+    };
+}
+
 function quoteSheetNameForRange(title: string): string {
     return `'${String(title).replace(/'/g, "''")}'`;
 }
@@ -602,8 +631,9 @@ async function applyMonthSheetBranding(
 async function ensureBookingSheet(
     sheets: sheets_v4.Sheets,
     tabTitle: string,
+    titleCache = createSheetTitleCache(sheets),
 ): Promise<string> {
-    const titles = await listSheetTitles(sheets);
+    const titles = await titleCache.get();
     const existing = findTitleCaseInsensitive(titles, tabTitle);
     if (existing) return existing;
 
@@ -629,13 +659,13 @@ async function ensureBookingSheet(
     } catch (e) {
         const msg = String((e as Error)?.message || e);
         const raceExisting = findTitleCaseInsensitive(
-            await listSheetTitles(sheets),
+            await titleCache.refresh(),
             tabTitle,
         );
         if (raceExisting) return raceExisting;
         if (!/already exists|duplicate/i.test(msg)) throw e;
         const afterDup = findTitleCaseInsensitive(
-            await listSheetTitles(sheets),
+            await titleCache.refresh(),
             tabTitle,
         );
         if (afterDup) return afterDup;
@@ -670,6 +700,7 @@ async function ensureBookingSheet(
 
     await applyMonthSheetBranding(sheets, tabTitle);
 
+    titleCache.add(tabTitle);
     return tabTitle;
 }
 
@@ -694,23 +725,81 @@ async function findInvoiceRowInTab(
 async function findInvoiceRowAcrossAllTabs(
     sheets: sheets_v4.Sheets,
     invoiceId: string,
+    titles: string[],
+    preferredTitles: string[] = [],
 ): Promise<{ sheetTitle: string; rowNumber: number } | null> {
-    const titles = await listSheetTitles(sheets);
-    for (const sheetTitle of titles) {
+    const orderedTitles = orderSheetTitlesForLookup(titles, preferredTitles);
+    for (const sheetTitle of orderedTitles) {
         const rowNumber = await findInvoiceRowInTab(sheets, sheetTitle, invoiceId);
         if (rowNumber != null) return { sheetTitle, rowNumber };
     }
     return null;
 }
 
+function findMonthTitles(titles: string[], monthTitle: string): string[] {
+    const lower = monthTitle.toLowerCase();
+    const compoundPrefix = `${lower} — `;
+    return titles.filter((title) => {
+        const normalized = title.toLowerCase();
+        return normalized === lower || normalized.startsWith(compoundPrefix);
+    });
+}
+
+function preferredInvoiceLookupTitles(
+    titles: string[],
+    invoiceId: string,
+    extraPreferredTitles: string[] = [],
+): string[] {
+    const preferred: string[] = [];
+
+    const fromId = parseDateFromInvoiceId(invoiceId);
+    if (fromId) {
+        preferred.push(...findMonthTitles(titles, formatMonthTabTitle(fromId)));
+    }
+
+    for (const title of extraPreferredTitles) {
+        const canonical = findTitleCaseInsensitive(titles, title);
+        if (canonical) preferred.push(canonical);
+    }
+
+    return preferred;
+}
+
+function orderSheetTitlesForLookup(
+    titles: string[],
+    preferredTitles: string[],
+): string[] {
+    const seen = new Set<string>();
+    const ordered: string[] = [];
+
+    for (const title of [...preferredTitles, ...titles]) {
+        const key = title.toLowerCase();
+        if (seen.has(key)) continue;
+        seen.add(key);
+        ordered.push(title);
+    }
+
+    return ordered;
+}
+
 export async function appendBookingRowToSheet(row: SheetsBookingRow) {
     const sheets = await createSheetsClient();
+    const titleCache = createSheetTitleCache(sheets);
 
     const sheetMonthDate = sheetMonthDateForBooking(row.checkIn, row.bookingDate);
     const tabTitle = formatMonthApartmentTabTitle(sheetMonthDate, row.apartment);
-    const targetTitle = await ensureBookingSheet(sheets, tabTitle);
+    const targetTitle = await ensureBookingSheet(sheets, tabTitle, titleCache);
 
-    const existingAnywhere = await findInvoiceRowAcrossAllTabs(sheets, row.invoiceId);
+    const titles = await titleCache.get();
+    const preferredTitles = preferredInvoiceLookupTitles(titles, row.invoiceId, [
+        targetTitle,
+    ]);
+    const existingAnywhere = await findInvoiceRowAcrossAllTabs(
+        sheets,
+        row.invoiceId,
+        titles,
+        preferredTitles,
+    );
     if (existingAnywhere != null) {
         return;
     }
@@ -748,30 +837,13 @@ export async function setStayedByInvoiceId(args: {
     stayed: boolean;
 }) {
     const sheets = await createSheetsClient();
+    const titleCache = createSheetTitleCache(sheets);
     const id = String(args.invoiceId).trim();
 
-    const titles = await listSheetTitles(sheets);
+    const titles = await titleCache.get();
+    const preferredTitles = preferredInvoiceLookupTitles(titles, id);
 
-    const fromId = parseDateFromInvoiceId(id);
-    if (fromId) {
-        const preferred = formatMonthTabTitle(fromId);
-        const canonical = findTitleCaseInsensitive(titles, preferred);
-        if (canonical) {
-            const rowNumber = await findInvoiceRowInTab(sheets, canonical, id);
-            if (rowNumber != null) {
-                const q = quoteSheetNameForRange(canonical);
-                await sheets.spreadsheets.values.update({
-                    spreadsheetId: requireSpreadsheetId(),
-                    range: `${q}!I${rowNumber}`,
-                    valueInputOption: "USER_ENTERED",
-                    requestBody: { values: [[args.stayed]] },
-                });
-                return { sheetTitle: canonical, rowNumber };
-            }
-        }
-    }
-
-    for (const sheetTitle of titles) {
+    for (const sheetTitle of orderSheetTitlesForLookup(titles, preferredTitles)) {
         const rowNumber = await findInvoiceRowInTab(sheets, sheetTitle, id);
         if (rowNumber == null) continue;
         const q = quoteSheetNameForRange(sheetTitle);
@@ -785,6 +857,6 @@ export async function setStayedByInvoiceId(args: {
     }
 
     const err = new Error("Invoice ID not found in Google Sheet");
-    (err as any).statusCode = 404;
+    (err as Error & { statusCode?: number }).statusCode = 404;
     throw err;
 }

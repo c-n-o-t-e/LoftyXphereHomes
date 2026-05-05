@@ -11,7 +11,7 @@ Google Sheets does not support nested or grouped tabs. Each logical “month buc
 
 **Legacy tabs:** Older spreadsheets may still have single tabs named only `August 2026` (all units mixed). Those are **not** migrated automatically; new bookings create new per-apartment tabs. Staff can move historical rows manually if they want one convention.
 
-**Cancel / stayed updates:** Still locate the row by scanning **all** tabs for `invoiceId` in column **J** (unchanged).
+**Cancel / stayed updates:** Use the `invoiceId` date to check matching month tabs first (including per-apartment tabs like `August 2026 — lofty-wuye-01`), then scan the remaining tabs for `invoiceId` in column **J** as a fallback.
 
 ## Layout (new tabs only)
 
@@ -22,7 +22,7 @@ Google Sheets does not support nested or grouped tabs. Each logical “month buc
 ## Create booking
 
 - Website and manual flows enqueue `INVOICE_PDF` then `GOOGLE_SHEETS` jobs.
-- Append is **idempotent** on `invoiceId` (scans all tabs for column **J** before inserting).
+- Append is **idempotent** on `invoiceId` (checks likely invoice-month tabs first, then scans remaining tabs for column **J** before inserting).
 
 ## Cancel booking
 

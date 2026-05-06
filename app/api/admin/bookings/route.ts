@@ -1,5 +1,5 @@
 import { randomBytes } from "crypto";
-import { NextRequest, NextResponse } from "next/server";
+import { NextRequest, NextResponse, after } from "next/server";
 import { requireAdmin } from "@/lib/admin/auth";
 import { parseJsonBody, parseSearchParams } from "@/lib/validation/http";
 import {
@@ -8,6 +8,7 @@ import {
 } from "@/lib/validation/schemas";
 import {
     enqueuePostBookingJobs,
+    flushPostBookingJobsForBooking,
 } from "@/lib/ops/bookingJobs";
 import { resolveInvoiceIdFromFormInput } from "@/lib/ops/invoiceId";
 
@@ -273,6 +274,9 @@ export async function POST(request: NextRequest) {
         });
 
         await enqueuePostBookingJobs(booking.id);
+        after(() => {
+            void flushPostBookingJobsForBooking(booking.id);
+        });
 
         return NextResponse.json({
             ok: true,

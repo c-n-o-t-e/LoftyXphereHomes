@@ -276,3 +276,23 @@ export async function processPostBookingJobs(args?: {
     return { processed: jobs.length, succeeded, failed };
 }
 
+/**
+ * Run invoice + sheet jobs for one booking (two job types max).
+ * Safe to call from multiple triggers (webhook + success page): jobs are idempotent at row level.
+ * Swallows errors so callers (e.g. Paystack webhook `after()`) never throw.
+ */
+export async function flushPostBookingJobsForBooking(bookingId: string): Promise<void> {
+    try {
+        await processPostBookingJobs({
+            bookingId,
+            limit: 2,
+            respectBackoff: false,
+        });
+    } catch (err) {
+        console.error(
+            "[booking-jobs] flushPostBookingJobsForBooking failed:",
+            bookingId,
+            err,
+        );
+    }
+}

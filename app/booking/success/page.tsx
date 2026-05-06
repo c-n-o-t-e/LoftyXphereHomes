@@ -1,5 +1,6 @@
 import { Metadata } from "next";
 import Link from "next/link";
+import { after } from "next/server";
 import { CheckCircle, XCircle, ArrowRight, ShieldCheck, FileText } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { verifyTransaction } from "@/lib/paystack";
@@ -7,6 +8,7 @@ import { upsertBookingFromPaystack } from "@/lib/booking";
 import { sendAdminAlertBookingPersistenceFailed } from "@/lib/email/admin-alerts";
 import {
   enqueuePostBookingJobs,
+  flushPostBookingJobsForBooking,
 } from "@/lib/ops/bookingJobs";
 
 export const metadata: Metadata = {
@@ -33,6 +35,9 @@ export default async function BookingSuccessPage({
         // Backup path: if Paystack webhook is not configured/reachable, still enqueue downstream work.
         // This is idempotent (bookingId+type unique + skipDuplicates).
         await enqueuePostBookingJobs(booking.id);
+        after(() => {
+          void flushPostBookingJobsForBooking(booking.id);
+        });
       } catch (error) {
         try {
           await sendAdminAlertBookingPersistenceFailed({

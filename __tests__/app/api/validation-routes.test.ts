@@ -9,6 +9,9 @@ jest.mock("next/server", () => ({
       },
     }),
   },
+  after: jest.fn((fn: () => void | Promise<void>) => {
+    if (typeof fn === "function") fn();
+  }),
 }));
 
 function expectValidation400(payload: any) {
@@ -56,6 +59,7 @@ jest.mock("@/lib/supabase/server", () => ({
 jest.mock("@/lib/ops/bookingJobs", () => ({
   enqueuePostBookingJobs: jest.fn(),
   processPostBookingJobs: jest.fn(),
+  flushPostBookingJobsForBooking: jest.fn(),
 }));
 
 jest.mock("@/lib/email/admin-alerts", () => ({
@@ -84,7 +88,11 @@ const { verifyTransaction, verifyWebhookSignature } = require("@/lib/paystack");
 const { sendAdminAlertBookingPersistenceFailed } = require("@/lib/email/admin-alerts");
 const { getOverlappingBookings } = require("@/lib/cache/availability-data");
 const { createClient } = require("@supabase/supabase-js");
-const { enqueuePostBookingJobs, processPostBookingJobs } = require("@/lib/ops/bookingJobs");
+const {
+  enqueuePostBookingJobs,
+  processPostBookingJobs,
+  flushPostBookingJobsForBooking,
+} = require("@/lib/ops/bookingJobs");
 
 type HeaderBag = {
   get: (name: string) => string | null;
@@ -352,6 +360,9 @@ describe("API validation integration", () => {
     expect(response.status).toBe(200);
     expect(json).toEqual(expect.objectContaining({ received: true }));
     expect(enqueuePostBookingJobs).toHaveBeenCalledWith("booking_website_1");
+    expect(flushPostBookingJobsForBooking).toHaveBeenCalledWith(
+      "booking_website_1",
+    );
     expect(processPostBookingJobs).not.toHaveBeenCalled();
   });
 
@@ -450,6 +461,7 @@ describe("API validation integration", () => {
       expect.objectContaining({ ok: true, bookingId: "booking_1" })
     );
     expect(enqueuePostBookingJobs).toHaveBeenCalledWith("booking_1");
+    expect(flushPostBookingJobsForBooking).toHaveBeenCalledWith("booking_1");
     expect(processPostBookingJobs).not.toHaveBeenCalled();
   });
 });

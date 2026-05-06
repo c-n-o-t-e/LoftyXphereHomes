@@ -27,14 +27,18 @@ async function processRequest(request: NextRequest) {
     // Vercel Cron: omit `immediate` → respect backoff on FAILED rows (nextRunAt).
     // Manual re-drive: `?immediate=1` or header `X-Booking-Jobs-Immediate: 1`.
     const immediate = wantsImmediateRun(request);
+    const bookingId =
+        request.nextUrl.searchParams.get("bookingId")?.trim() || undefined;
     const result = await processPostBookingJobs({
-        limit: 20,
+        limit: bookingId ? 2 : 20,
+        bookingId,
         respectBackoff: !immediate,
     });
     return NextResponse.json({
         ok: true,
         respectBackoff: !immediate,
         immediate,
+        bookingId: bookingId ?? null,
         ...result,
     });
 }

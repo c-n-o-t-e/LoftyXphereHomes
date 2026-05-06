@@ -1,4 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
+import { after } from "next/server";
 import { verifyTransaction, verifyWebhookSignature } from "@/lib/paystack";
 import { upsertBookingFromPaystack } from "@/lib/booking";
 import { inviteUserByEmail } from "@/lib/supabase/server";
@@ -7,7 +8,11 @@ import { paystackWebhookPayloadSchema } from "@/lib/validation/schemas";
 import { sendAdminAlertBookingPersistenceFailed } from "@/lib/email/admin-alerts";
 import {
     enqueuePostBookingJobs,
+    flushPostBookingJobsForBooking,
 } from "@/lib/ops/bookingJobs";
+
+/** Hobby max is 60s; invoice + Sheets run after response via `after()`. */
+export const maxDuration = 60;
 
 /**
  * POST /api/paystack/webhook
@@ -73,6 +78,9 @@ export async function POST(request: NextRequest) {
         const booking = await upsertBookingFromPaystack(result.data);
         // Enqueue downstream artifacts (invoice + Google Sheets)
         await enqueuePostBookingJobs(booking.id);
+        after(() => {
+            void flushPostBookingJobsForBooking(booking.id);
+        });
 
         // Send magic link to create/login user account
         // This runs async and doesn't block the webhook response

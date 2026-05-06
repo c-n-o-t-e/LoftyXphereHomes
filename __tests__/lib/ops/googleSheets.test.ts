@@ -25,7 +25,11 @@ jest.mock("googleapis", () => ({
     },
 }));
 
-import { appendBookingRowToSheet, setStayedByInvoiceId } from "@/lib/ops/googleSheets";
+import {
+    appendBookingRowToSheet,
+    setStayedByInvoiceId,
+} from "@/lib/ops/googleSheets";
+import { google } from "googleapis";
 
 function sheetTitleResponse(titles: string[]) {
     return {
@@ -50,6 +54,10 @@ const baseBookingRow = {
 describe("googleSheets invoice lookup", () => {
     beforeEach(() => {
         jest.clearAllMocks();
+        delete process.env.GOOGLE_SHEETS_SERVICE_ACCOUNT_JSON;
+        delete process.env.GOOGLE_SERVICE_ACCOUNT_JSON;
+        delete process.env.GOOGLE_APPLICATION_CREDENTIALS;
+        delete process.env.GOOGLE_SHEETS_CREDENTIALS_PATH;
         process.env.GOOGLE_SHEETS_SPREADSHEET_ID = "spreadsheet_123";
         mockBatchUpdate.mockResolvedValue({});
         mockValuesUpdate.mockResolvedValue({});
@@ -129,5 +137,55 @@ describe("googleSheets invoice lookup", () => {
             sheetTitle: "January 2026 — lofty-wuye-01",
             rowNumber: 2,
         });
+    });
+
+    it("uses service account JSON env credentials in production-style environments", async () => {
+        process.env.GOOGLE_SHEETS_SERVICE_ACCOUNT_JSON = JSON.stringify({
+            client_email: "sheets-writer@example.iam.gserviceaccount.com",
+            private_key: "-----BEGIN PRIVATE KEY-----\\nabc\\n-----END PRIVATE KEY-----\\n",
+        });
+        mockSpreadsheetsGet.mockResolvedValueOnce(
+            sheetTitleResponse(["February 2026 — lofty-wuye-01"]),
+        );
+        mockValuesGet.mockResolvedValue({ data: { values: [] } });
+
+        await appendBookingRowToSheet(baseBookingRow);
+
+        expect(google.auth.GoogleAuth).toHaveBeenCalledWith(
+            expect.objectContaining({
+                credentials: expect.objectContaining({
+                    client_email: "sheets-writer@example.iam.gserviceaccount.com",
+                    private_key:
+                        "-----BEGIN PRIVATE KEY-----\nabc\n-----END PRIVATE KEY-----\n",
+                }),
+                scopes: ["https://www.googleapis.com/auth/spreadsheets"],
+            }),
+        );
+        expect(google.auth.GoogleAuth).toHaveBeenCalledWith(
+            expect.not.objectContaining({ keyFile: expect.any(String) }),
+        );
+    });
+
+    it("parses JSON accidentally placed in file-path credential env vars", async () => {
+        process.env.GOOGLE_APPLICATION_CREDENTIALS = JSON.stringify({
+            client_email: "fallback@example.iam.gserviceaccount.com",
+            private_key: "-----BEGIN PRIVATE KEY-----\\nxyz\\n-----END PRIVATE KEY-----\\n",
+        });
+        mockSpreadsheetsGet.mockResolvedValueOnce(
+            sheetTitleResponse(["February 2026 — lofty-wuye-01"]),
+        );
+        mockValuesGet.mockResolvedValue({ data: { values: [] } });
+
+        await appendBookingRowToSheet(baseBookingRow);
+
+        expect(google.auth.GoogleAuth).toHaveBeenCalledWith(
+            expect.objectContaining({
+                credentials: expect.objectContaining({
+                    client_email: "fallback@example.iam.gserviceaccount.com",
+                    private_key:
+                        "-----BEGIN PRIVATE KEY-----\nxyz\n-----END PRIVATE KEY-----\n",
+                }),
+            }),
+        );
     });
 });

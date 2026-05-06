@@ -33,4 +33,4 @@ Google Sheets does not support nested or grouped tabs. Each logical “month buc
 ## Environment
 
 - Spreadsheet: `GOOGLE_SHEETS_SPREADSHEET_ID` or `SHEET_ID`.
-- Credentials: `GOOGLE_APPLICATION_CREDENTIALS` or `GOOGLE_SHEETS_CREDENTIALS_PATH` (or `credentials.json` fallback).
+- Credentials: `GOOGLE_SHEETS_SERVICE_ACCOUNT_JSON` / `GOOGLE_SERVICE_ACCOUNT_JSON` for production, or `GOOGLE_APPLICATION_CREDENTIALS` / `GOOGLE_SHEETS_CREDENTIALS_PATH` (or `credentials.json` fallback) for local file-based auth.

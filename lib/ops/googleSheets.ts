@@ -30,6 +30,11 @@ const HEADER_ROW = [
     "Invoice ID",
 ];
 
+type GoogleServiceAccountCredentials = {
+    private_key?: string;
+    [key: string]: unknown;
+};
+
 function requireSpreadsheetId(): string {
     const id = process.env.GOOGLE_SHEETS_SPREADSHEET_ID || process.env.SHEET_ID;
     if (!id) {
@@ -48,9 +53,43 @@ function getCredentialsPath(): string {
     );
 }
 
+function parseServiceAccountJson(
+    raw: string,
+    envName: string,
+): GoogleServiceAccountCredentials {
+    const parsed = JSON.parse(raw) as unknown;
+    if (!parsed || typeof parsed !== "object" || Array.isArray(parsed)) {
+        throw new Error(`${envName} must be a JSON object.`);
+    }
+
+    const credentials = parsed as GoogleServiceAccountCredentials;
+    if (typeof credentials.private_key === "string") {
+        credentials.private_key = credentials.private_key.replace(/\\n/g, "\n");
+    }
+    return credentials;
+}
+
+function getServiceAccountCredentialsFromEnv(): GoogleServiceAccountCredentials | null {
+    const candidates = [
+        ["GOOGLE_SHEETS_SERVICE_ACCOUNT_JSON", process.env.GOOGLE_SHEETS_SERVICE_ACCOUNT_JSON],
+        ["GOOGLE_SERVICE_ACCOUNT_JSON", process.env.GOOGLE_SERVICE_ACCOUNT_JSON],
+        ["GOOGLE_APPLICATION_CREDENTIALS", process.env.GOOGLE_APPLICATION_CREDENTIALS],
+        ["GOOGLE_SHEETS_CREDENTIALS_PATH", process.env.GOOGLE_SHEETS_CREDENTIALS_PATH],
+    ] as const;
+
+    for (const [envName, raw] of candidates) {
+        const value = String(raw || "").trim();
+        if (!value.startsWith("{")) continue;
+        return parseServiceAccountJson(value, envName);
+    }
+
+    return null;
+}
+
 async function createSheetsClient(): Promise<sheets_v4.Sheets> {
+    const credentials = getServiceAccountCredentialsFromEnv();
     const auth = new google.auth.GoogleAuth({
-        keyFile: getCredentialsPath(),
+        ...(credentials ? { credentials } : { keyFile: getCredentialsPath() }),
         scopes: ["https://www.googleapis.com/auth/spreadsheets"],
     });
     return google.sheets({ version: "v4", auth });
@@ -99,7 +138,10 @@ function quoteSheetNameForRange(title: string): string {
     return `'${String(title).replace(/'/g, "''")}'`;
 }
 
-function findTitleCaseInsensitive(titles: string[], desired: string): string | null {
+function findTitleCaseInsensitive(
+    titles: string[],
+    desired: string,
+): string | null {
     const lower = desired.toLowerCase();
     return titles.find((t) => t.toLowerCase() === lower) ?? null;
 }
@@ -694,7 +736,11 @@ async function ensureBookingSheet(
         range: `${q}!K1:K3`,
         valueInputOption: "USER_ENTERED",
         requestBody: {
-            values: [["Monthly total (Stayed=TRUE)"], ["=SUMIFS(G:G,I:I,TRUE)"], [""]],
+            values: [
+                ["Monthly total (Stayed=TRUE)"],
+                ["=SUMIFS(G:G,I:I,TRUE)"],
+                [""],
+            ],
         },
     });
 
@@ -730,7 +776,11 @@ async function findInvoiceRowAcrossAllTabs(
 ): Promise<{ sheetTitle: string; rowNumber: number } | null> {
     const orderedTitles = orderSheetTitlesForLookup(titles, preferredTitles);
     for (const sheetTitle of orderedTitles) {
-        const rowNumber = await findInvoiceRowInTab(sheets, sheetTitle, invoiceId);
+        const rowNumber = await findInvoiceRowInTab(
+            sheets,
+            sheetTitle,
+            invoiceId,
+        );
         if (rowNumber != null) return { sheetTitle, rowNumber };
     }
     return null;
@@ -786,14 +836,22 @@ export async function appendBookingRowToSheet(row: SheetsBookingRow) {
     const sheets = await createSheetsClient();
     const titleCache = createSheetTitleCache(sheets);
 
-    const sheetMonthDate = sheetMonthDateForBooking(row.checkIn, row.bookingDate);
-    const tabTitle = formatMonthApartmentTabTitle(sheetMonthDate, row.apartment);
+    const sheetMonthDate = sheetMonthDateForBooking(
+        row.checkIn,
+        row.bookingDate,
+    );
+    const tabTitle = formatMonthApartmentTabTitle(
+        sheetMonthDate,
+        row.apartment,
+    );
     const targetTitle = await ensureBookingSheet(sheets, tabTitle, titleCache);
 
     const titles = await titleCache.get();
-    const preferredTitles = preferredInvoiceLookupTitles(titles, row.invoiceId, [
-        targetTitle,
-    ]);
+    const preferredTitles = preferredInvoiceLookupTitles(
+        titles,
+        row.invoiceId,
+        [targetTitle],
+    );
     const existingAnywhere = await findInvoiceRowAcrossAllTabs(
         sheets,
         row.invoiceId,
@@ -806,7 +864,8 @@ export async function appendBookingRowToSheet(row: SheetsBookingRow) {
 
     const q = quoteSheetNameForRange(targetTitle);
     const bookingDateDisplay =
-        row.bookingDate instanceof Date && !Number.isNaN(row.bookingDate.getTime())
+        row.bookingDate instanceof Date &&
+        !Number.isNaN(row.bookingDate.getTime())
             ? row.bookingDate.toLocaleString()
             : new Date().toLocaleString();
 
@@ -843,7 +902,10 @@ export async function setStayedByInvoiceId(args: {
     const titles = await titleCache.get();
     const preferredTitles = preferredInvoiceLookupTitles(titles, id);
 
-    for (const sheetTitle of orderSheetTitlesForLookup(titles, preferredTitles)) {
+    for (const sheetTitle of orderSheetTitlesForLookup(
+        titles,
+        preferredTitles,
+    )) {
         const rowNumber = await findInvoiceRowInTab(sheets, sheetTitle, id);
         if (rowNumber == null) continue;
         const q = quoteSheetNameForRange(sheetTitle);

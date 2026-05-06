@@ -1,4 +1,8 @@
-import { processPostBookingJobs, enqueuePostBookingJobs } from "@/lib/ops/bookingJobs";
+import {
+    processPostBookingJobs,
+    enqueuePostBookingJobs,
+    flushPostBookingJobsForBooking,
+} from "@/lib/ops/bookingJobs";
 
 jest.mock("@/lib/db", () => ({
     prisma: {
@@ -400,6 +404,32 @@ describe("bookingJobs", () => {
         );
         expect(prisma.bookingJob.update).toHaveBeenCalledTimes(1);
         errSpy.mockRestore();
+    });
+
+    describe("flushPostBookingJobsForBooking", () => {
+        it("scopes job drain to the booking id with limit 2", async () => {
+            const { prisma } = await import("@/lib/db");
+            (prisma.bookingJob.findMany as jest.Mock).mockResolvedValueOnce([]);
+            await flushPostBookingJobsForBooking("target-booking");
+            expect(prisma.bookingJob.findMany).toHaveBeenCalledWith(
+                expect.objectContaining({
+                    where: expect.objectContaining({
+                        bookingId: "target-booking",
+                    }),
+                    take: 2,
+                }),
+            );
+        });
+
+        it("does not throw when processPostBookingJobs fails", async () => {
+            const { prisma } = await import("@/lib/db");
+            (prisma.bookingJob.findMany as jest.Mock).mockRejectedValueOnce(
+                new Error("db unavailable"),
+            );
+            await expect(
+                flushPostBookingJobsForBooking("target-booking"),
+            ).resolves.toBeUndefined();
+        });
     });
 });
 

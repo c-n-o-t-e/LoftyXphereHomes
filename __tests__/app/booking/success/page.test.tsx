@@ -3,7 +3,17 @@ import { render, screen } from '@testing-library/react'
 import * as paystack from '@/lib/paystack'
 import * as booking from '@/lib/booking'
 import * as alerts from '@/lib/email/admin-alerts'
+import {
+  enqueuePostBookingJobs,
+  flushPostBookingJobsForBooking,
+} from '@/lib/ops/bookingJobs'
 import BookingSuccessPage from '@/app/booking/success/page'
+
+jest.mock('next/server', () => ({
+  after: jest.fn((fn: () => void | Promise<void>) => {
+    if (typeof fn === 'function') fn();
+  }),
+}))
 
 jest.mock('@/lib/paystack', () => ({
   verifyTransaction: jest.fn(),
@@ -15,6 +25,11 @@ jest.mock('@/lib/booking', () => ({
 
 jest.mock('@/lib/email/admin-alerts', () => ({
   sendAdminAlertBookingPersistenceFailed: jest.fn(),
+}))
+
+jest.mock('@/lib/ops/bookingJobs', () => ({
+  enqueuePostBookingJobs: jest.fn().mockResolvedValue(undefined),
+  flushPostBookingJobsForBooking: jest.fn().mockResolvedValue(undefined),
 }))
 
 jest.mock('next/link', () => {
@@ -48,13 +63,21 @@ describe('Booking Success Page', () => {
       status: true,
       data: { status: 'success', reference: 'ref_123', amount: 100_00 },
     })
-    upsertBookingFromPaystack.mockResolvedValueOnce({} as never)
+    upsertBookingFromPaystack.mockResolvedValueOnce({
+      id: 'booking_success_1',
+    } as never)
 
     await renderSuccessPage({ reference: 'ref_123' })
     expect(
       screen.getByRole('heading', { name: /your stay is confirmed/i })
     ).toBeInTheDocument()
     expect(upsertBookingFromPaystack).toHaveBeenCalled()
+    expect(jest.mocked(enqueuePostBookingJobs)).toHaveBeenCalledWith(
+      'booking_success_1',
+    )
+    expect(jest.mocked(flushPostBookingJobsForBooking)).toHaveBeenCalledWith(
+      'booking_success_1',
+    )
   })
 
   it('renders login prompt for booking details', async () => {
@@ -81,7 +104,9 @@ describe('Booking Success Page', () => {
       status: true,
       data: { status: 'success', reference: 'ref_123', amount: 100_00 },
     })
-    upsertBookingFromPaystack.mockResolvedValueOnce({} as never)
+    upsertBookingFromPaystack.mockResolvedValueOnce({
+      id: 'booking_success_1',
+    } as never)
     await renderSuccessPage({ reference: 'ref_123' })
     expect(verifyTransaction).toHaveBeenCalledWith('ref_123')
   })
@@ -100,7 +125,9 @@ describe('Booking Success Page', () => {
       status: true,
       data: { status: 'success', reference: 'ref_123', amount: 100_00 },
     })
-    upsertBookingFromPaystack.mockResolvedValueOnce({} as never)
+    upsertBookingFromPaystack.mockResolvedValueOnce({
+      id: 'booking_success_1',
+    } as never)
 
     await renderSuccessPage({ reference: 'ref_123' })
     expect(screen.getByRole('heading', { name: /your stay is confirmed/i })).toBeInTheDocument()

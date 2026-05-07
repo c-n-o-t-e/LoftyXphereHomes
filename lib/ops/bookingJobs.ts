@@ -2,6 +2,9 @@ import { generateInvoicePdf } from "./invoicePdf";
 import { appendBookingRowToSheet } from "./googleSheets";
 import { sendAdminAlertBookingJobFailed } from "@/lib/email/admin-alerts";
 
+const INVOICE_STORAGE_BUCKET =
+    process.env.INVOICE_STORAGE_BUCKET?.trim() || "Invoices";
+
 const MAX_ATTEMPTS = 5;
 const ADMIN_ALERT_ATTEMPT_THRESHOLD = 2;
 
@@ -29,6 +32,34 @@ export async function enqueuePostBookingJobs(bookingId: string) {
     });
 }
 
+async function uploadInvoicePdfToStorage(args: {
+    bookingId: string;
+    invoiceId: string;
+    localPdfPath: string;
+}): Promise<{ storageKey: string }> {
+    const { createServerSupabaseClient } =
+        await import("@/lib/supabase/server");
+    const fs = await import("fs/promises");
+
+    const storageKey = `booking/${args.bookingId}/${args.invoiceId}.pdf`;
+    const pdfBytes = await fs.readFile(args.localPdfPath);
+
+    const supabase = createServerSupabaseClient();
+    const { error } = await supabase.storage
+        .from(INVOICE_STORAGE_BUCKET)
+        .upload(storageKey, pdfBytes, {
+            contentType: "application/pdf",
+            upsert: true,
+        });
+
+    if (error) throw error;
+
+    // Best-effort cleanup (Vercel FS is ephemeral, but keep it tidy in dev/cron runs).
+    fs.unlink(args.localPdfPath).catch(() => {});
+
+    return { storageKey };
+}
+
 async function runInvoiceJob(bookingId: string) {
     const { prisma } = await import("@/lib/db");
     const booking = await prisma.booking.findUnique({
@@ -50,7 +81,10 @@ async function runInvoiceJob(bookingId: string) {
     if (!booking) throw new Error("Booking not found");
 
     if (booking.invoiceId && booking.invoicePdfPath) {
-        return { invoiceId: booking.invoiceId, pdfPath: booking.invoicePdfPath };
+        return {
+            invoiceId: booking.invoiceId,
+            pdfPath: booking.invoicePdfPath,
+        };
     }
 
     const checkIn = booking.checkIn.toISOString().slice(0, 10);
@@ -66,12 +100,22 @@ async function runInvoiceJob(bookingId: string) {
         invoiceId: booking.invoiceId ?? undefined,
     });
 
-    await prisma.booking.update({
-        where: { id: booking.id },
-        data: { invoiceId: invoice.invoiceId, invoicePdfPath: invoice.pdfPath },
+    const uploaded = await uploadInvoicePdfToStorage({
+        bookingId: booking.id,
+        invoiceId: invoice.invoiceId,
+        localPdfPath: invoice.pdfPath,
     });
 
-    return invoice;
+    await prisma.booking.update({
+        where: { id: booking.id },
+        data: {
+            invoiceId: invoice.invoiceId,
+            // Persist the storage object key (NOT a local filesystem path).
+            invoicePdfPath: uploaded.storageKey,
+        },
+    });
+
+    return { invoiceId: invoice.invoiceId, pdfPath: uploaded.storageKey };
 }
 
 async function runSheetsJob(bookingId: string) {
@@ -240,7 +284,8 @@ export async function processPostBookingJobs(args?: {
             succeeded++;
         } catch (err) {
             const nextAttempts = job.attempts + 1;
-            const errorMessage = err instanceof Error ? err.message : String(err);
+            const errorMessage =
+                err instanceof Error ? err.message : String(err);
             await prisma.bookingJob.update({
                 where: { id: job.id },
                 data: {
@@ -265,7 +310,10 @@ export async function processPostBookingJobs(args?: {
                         error: err,
                     });
                 } catch (alertErr) {
-                    console.error("Failed to send booking job admin alert:", alertErr);
+                    console.error(
+                        "Failed to send booking job admin alert:",
+                        alertErr,
+                    );
                 }
             }
 
@@ -281,7 +329,9 @@ export async function processPostBookingJobs(args?: {
  * Safe to call from multiple triggers (webhook + success page): jobs are idempotent at row level.
  * Swallows errors so callers (e.g. Paystack webhook `after()`) never throw.
  */
-export async function flushPostBookingJobsForBooking(bookingId: string): Promise<void> {
+export async function flushPostBookingJobsForBooking(
+    bookingId: string,
+): Promise<void> {
     try {
         await processPostBookingJobs({
             bookingId,

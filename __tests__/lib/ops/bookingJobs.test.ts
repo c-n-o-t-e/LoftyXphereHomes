@@ -4,6 +4,21 @@ import {
     flushPostBookingJobsForBooking,
 } from "@/lib/ops/bookingJobs";
 
+jest.mock("fs/promises", () => ({
+    readFile: jest.fn().mockResolvedValue(Buffer.from("pdf")),
+    unlink: jest.fn().mockResolvedValue(undefined),
+}));
+
+jest.mock("@/lib/supabase/server", () => ({
+    createServerSupabaseClient: jest.fn(() => ({
+        storage: {
+            from: jest.fn(() => ({
+                upload: jest.fn().mockResolvedValue({ error: null }),
+            })),
+        },
+    })),
+}));
+
 jest.mock("@/lib/db", () => ({
     prisma: {
         bookingJob: {

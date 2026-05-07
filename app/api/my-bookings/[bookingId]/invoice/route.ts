@@ -1,15 +1,10 @@
-import fs from "fs/promises";
-import path from "path";
 import { NextRequest, NextResponse } from "next/server";
 import { createClient } from "@supabase/supabase-js";
 import { parseHeaders } from "@/lib/validation/http";
 import { bearerAuthHeaderSchema } from "@/lib/validation/schemas";
 
-function getInvoicesDir(): string {
-    return (
-        process.env.INVOICES_DIR?.trim() || path.join(process.cwd(), "private", "invoices")
-    );
-}
+const INVOICE_STORAGE_BUCKET =
+    process.env.INVOICE_STORAGE_BUCKET?.trim() || "invoices";
 
 export async function GET(
     request: NextRequest,
@@ -66,33 +61,36 @@ export async function GET(
         );
     }
 
-    const invoicesDir = path.resolve(getInvoicesDir());
-    const pdfPath = path.resolve(String(booking.invoicePdfPath));
-    if (!pdfPath.startsWith(invoicesDir + path.sep) && pdfPath !== invoicesDir) {
-        return NextResponse.json({ error: "Forbidden" }, { status: 403 });
+    const storageKey = String(booking.invoicePdfPath);
+
+    // Legacy rows may contain a local filesystem path; those are not retrievable on Vercel.
+    if (storageKey.startsWith("/") || storageKey.includes("private/invoices")) {
+        return NextResponse.json(
+            {
+                error: "Invoice storage needs to be regenerated. Please try again shortly.",
+                code: "INVOICE_STORAGE_MIGRATION_REQUIRED",
+            },
+            { status: 409 },
+        );
     }
 
-    let pdf: Buffer;
-    try {
-        pdf = await fs.readFile(pdfPath);
-    } catch {
+    const { createServerSupabaseClient } = await import("@/lib/supabase/server");
+    const adminSupabase = createServerSupabaseClient();
+    const { data, error } = await adminSupabase.storage
+        .from(INVOICE_STORAGE_BUCKET)
+        .createSignedUrl(storageKey, 60);
+
+    if (error || !data?.signedUrl) {
         return NextResponse.json(
             { error: "Invoice file not found" },
             { status: 404 },
         );
     }
 
-    const fileName = booking.invoiceId
-        ? `invoice_${booking.invoiceId}.pdf`
-        : `invoice_${booking.id}.pdf`;
-
-    // NextResponse expects a web BodyInit; convert Node Buffer -> Uint8Array
-    const body = new Uint8Array(pdf);
-    return new NextResponse(body, {
-        status: 200,
+    // Redirect to a short-lived signed URL so downloads work reliably on Vercel.
+    return NextResponse.redirect(data.signedUrl, {
+        status: 302,
         headers: {
-            "Content-Type": "application/pdf",
-            "Content-Disposition": `attachment; filename="${fileName}"`,
             "Cache-Control": "private, no-store",
         },
     });

@@ -101,3 +101,23 @@ jest.mock("framer-motion", () => {
         useAnimation: () => ({ start: jest.fn(), stop: jest.fn() }),
     };
 });
+
+// @react-pdf/renderer is ESM; Jest config here doesn't transform it.
+// Mock it so tests can import invoice generation modules.
+jest.mock("@react-pdf/renderer", () => {
+    const React = require("react");
+    return {
+        __esModule: true,
+        Document: ({ children }) =>
+            React.createElement(React.Fragment, null, children),
+        Page: ({ children }) =>
+            React.createElement(React.Fragment, null, children),
+        View: ({ children }) =>
+            React.createElement(React.Fragment, null, children),
+        Text: ({ children }) =>
+            React.createElement(React.Fragment, null, children),
+        Image: () => null,
+        StyleSheet: { create: (x) => x },
+        renderToBuffer: jest.fn(async () => Buffer.from("pdf")),
+    };
+});

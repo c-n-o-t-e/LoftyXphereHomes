@@ -4,11 +4,6 @@ import {
     flushPostBookingJobsForBooking,
 } from "@/lib/ops/bookingJobs";
 
-jest.mock("fs/promises", () => ({
-    readFile: jest.fn().mockResolvedValue(Buffer.from("pdf")),
-    unlink: jest.fn().mockResolvedValue(undefined),
-}));
-
 jest.mock("@/lib/supabase/server", () => ({
     createServerSupabaseClient: jest.fn(() => ({
         storage: {
@@ -106,7 +101,7 @@ describe("bookingJobs", () => {
 
         (generateInvoicePdf as jest.Mock).mockResolvedValueOnce({
             invoiceId: "LXH-260101-ABCDEF",
-            pdfPath: "/tmp/inv.pdf",
+            pdfBytes: Buffer.from("pdf"),
         });
 
         const result = await processPostBookingJobs({ limit: 10 });
@@ -166,7 +161,7 @@ describe("bookingJobs", () => {
 
         (generateInvoicePdf as jest.Mock).mockResolvedValueOnce({
             invoiceId: "LXH-260101-ABCDEF",
-            pdfPath: "/tmp/inv.pdf",
+            pdfBytes: Buffer.from("pdf"),
         });
 
         await processPostBookingJobs({ limit: 10 });

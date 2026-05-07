@@ -35,27 +35,22 @@ export async function enqueuePostBookingJobs(bookingId: string) {
 async function uploadInvoicePdfToStorage(args: {
     bookingId: string;
     invoiceId: string;
-    localPdfPath: string;
+    pdfBytes: Buffer;
 }): Promise<{ storageKey: string }> {
     const { createServerSupabaseClient } =
         await import("@/lib/supabase/server");
-    const fs = await import("fs/promises");
 
     const storageKey = `booking/${args.bookingId}/${args.invoiceId}.pdf`;
-    const pdfBytes = await fs.readFile(args.localPdfPath);
 
     const supabase = createServerSupabaseClient();
     const { error } = await supabase.storage
         .from(INVOICE_STORAGE_BUCKET)
-        .upload(storageKey, pdfBytes, {
+        .upload(storageKey, args.pdfBytes, {
             contentType: "application/pdf",
             upsert: true,
         });
 
     if (error) throw error;
-
-    // Best-effort cleanup (Vercel FS is ephemeral, but keep it tidy in dev/cron runs).
-    fs.unlink(args.localPdfPath).catch(() => {});
 
     return { storageKey };
 }
@@ -103,7 +98,7 @@ async function runInvoiceJob(bookingId: string) {
     const uploaded = await uploadInvoicePdfToStorage({
         bookingId: booking.id,
         invoiceId: invoice.invoiceId,
-        localPdfPath: invoice.pdfPath,
+        pdfBytes: invoice.pdfBytes,
     });
 
     await prisma.booking.update({

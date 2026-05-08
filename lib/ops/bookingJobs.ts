@@ -48,7 +48,7 @@ export async function enqueuePostBookingJobs(bookingId: string) {
         hypothesisId: "H1",
         location: "lib/ops/bookingJobs.ts:35",
         message: "post-booking jobs enqueue completed",
-        data: { bookingId, createdCount: result.count },
+        data: { bookingId, createdCount: result?.count ?? null },
     });
 }
 
@@ -435,12 +435,30 @@ export async function flushPostBookingJobsForBooking(
             message: "flushPostBookingJobsForBooking invoked",
             data: { bookingId },
         });
-        await processPostBookingJobs({
+        const result = await processPostBookingJobs({
             bookingId,
             limit: 2,
             respectBackoff: false,
         });
+        agentDebugLog({
+            runId: "post-fix",
+            hypothesisId: "H2",
+            location: "lib/ops/bookingJobs.ts:443",
+            message: "flushPostBookingJobsForBooking completed",
+            data: { bookingId, ...result },
+        });
     } catch (err) {
+        agentDebugLog({
+            runId: "post-fix",
+            hypothesisId: "H2",
+            location: "lib/ops/bookingJobs.ts:453",
+            message: "flushPostBookingJobsForBooking caught error",
+            data: {
+                bookingId,
+                errorName: err instanceof Error ? err.name : typeof err,
+                errorMessage: err instanceof Error ? err.message : String(err),
+            },
+        });
         console.error(
             "[booking-jobs] flushPostBookingJobsForBooking failed:",
             bookingId,

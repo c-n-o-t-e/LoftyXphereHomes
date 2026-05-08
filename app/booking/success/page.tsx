@@ -55,7 +55,7 @@ export default async function BookingSuccessPage({
           message: "success page enqueued jobs before scheduling flush",
           data: { bookingId: booking.id, status: booking.status },
         });
-        after(() => {
+        after(async () => {
           agentDebugLog({
             runId: "initial",
             hypothesisId: "H2",
@@ -63,7 +63,7 @@ export default async function BookingSuccessPage({
             message: "success page after callback entered",
             data: { bookingId: booking.id },
           });
-          void flushPostBookingJobsForBooking(booking.id);
+          await flushPostBookingJobsForBooking(booking.id);
         });
       } catch (error) {
         try {

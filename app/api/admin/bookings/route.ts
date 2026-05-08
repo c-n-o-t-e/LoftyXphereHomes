@@ -274,8 +274,8 @@ export async function POST(request: NextRequest) {
         });
 
         await enqueuePostBookingJobs(booking.id);
-        after(() => {
-            void flushPostBookingJobsForBooking(booking.id);
+        after(async () => {
+            await flushPostBookingJobsForBooking(booking.id);
         });
 
         return NextResponse.json({

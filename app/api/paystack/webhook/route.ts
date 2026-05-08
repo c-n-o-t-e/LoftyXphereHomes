@@ -98,7 +98,7 @@ export async function POST(request: NextRequest) {
             message: "webhook enqueued jobs before scheduling flush",
             data: { bookingId: booking.id, status: booking.status },
         });
-        after(() => {
+        after(async () => {
             agentDebugLog({
                 runId: "initial",
                 hypothesisId: "H2",
@@ -106,7 +106,7 @@ export async function POST(request: NextRequest) {
                 message: "webhook after callback entered",
                 data: { bookingId: booking.id },
             });
-            void flushPostBookingJobsForBooking(booking.id);
+            await flushPostBookingJobsForBooking(booking.id);
         });
 
         // Send magic link to create/login user account

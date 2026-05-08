@@ -10,19 +10,6 @@ const ADMIN_ALERT_ATTEMPT_THRESHOLD = 2;
 
 type BookingJobType = "INVOICE_PDF" | "GOOGLE_SHEETS";
 
-function agentDebugLog(args: {
-    runId: string;
-    hypothesisId: string;
-    location: string;
-    message: string;
-    data: Record<string, unknown>;
-}) {
-    console.info("[agent-debug-5a4661]", args);
-    // #region agent log
-    void fetch('http://127.0.0.1:7247/ingest/25c7c84e-0b66-4375-9cb5-a5fca9d48dbc',{method:'POST',headers:{'Content-Type':'application/json','X-Debug-Session-Id':'5a4661'},body:JSON.stringify({sessionId:'5a4661',runId:args.runId,hypothesisId:args.hypothesisId,location:args.location,message:args.message,data:args.data,timestamp:Date.now()})}).catch(()=>{});
-    // #endregion
-}
-
 const JOB_TYPE_PRIORITY: Record<BookingJobType, number> = {
     INVOICE_PDF: 0,
     GOOGLE_SHEETS: 1,
@@ -36,19 +23,12 @@ function computeNextRunAt(attempts: number): Date {
 
 export async function enqueuePostBookingJobs(bookingId: string) {
     const { prisma } = await import("@/lib/db");
-    const result = await prisma.bookingJob.createMany({
+    await prisma.bookingJob.createMany({
         data: [
             { bookingId, type: "INVOICE_PDF", status: "PENDING" },
             { bookingId, type: "GOOGLE_SHEETS", status: "PENDING" },
         ],
         skipDuplicates: true,
-    });
-    agentDebugLog({
-        runId: "initial",
-        hypothesisId: "H1",
-        location: "lib/ops/bookingJobs.ts:35",
-        message: "post-booking jobs enqueue completed",
-        data: { bookingId, createdCount: result?.count ?? null },
     });
 }
 
@@ -115,19 +95,6 @@ async function runInvoiceJob(bookingId: string) {
         invoiceId: booking.invoiceId ?? undefined,
     });
 
-    agentDebugLog({
-        runId: "initial",
-        hypothesisId: "H4",
-        location: "lib/ops/bookingJobs.ts:112",
-        message: "invoice pdf generated before storage upload",
-        data: {
-            bookingId: booking.id,
-            invoiceId: invoice.invoiceId,
-            pdfByteLength: invoice.pdfBytes.length,
-            bucket: INVOICE_STORAGE_BUCKET,
-        },
-    });
-
     const uploaded = await uploadInvoicePdfToStorage({
         bookingId: booking.id,
         invoiceId: invoice.invoiceId,
@@ -168,29 +135,6 @@ async function runSheetsJob(bookingId: string) {
     if (!booking.invoiceId) {
         throw new Error("Missing invoiceId (invoice job must run first)");
     }
-
-    agentDebugLog({
-        runId: "initial",
-        hypothesisId: "H5",
-        location: "lib/ops/bookingJobs.ts:160",
-        message: "google sheets job starting",
-        data: {
-            bookingId: booking.id,
-            invoiceId: booking.invoiceId,
-            hasSpreadsheetId: Boolean(
-                process.env.GOOGLE_SHEETS_SPREADSHEET_ID ||
-                    process.env.SHEET_ID,
-            ),
-            hasInlineServiceJson: Boolean(
-                process.env.GOOGLE_SHEETS_SERVICE_ACCOUNT_JSON ||
-                    process.env.GOOGLE_SERVICE_ACCOUNT_JSON,
-            ),
-            hasCredentialsPath: Boolean(
-                process.env.GOOGLE_APPLICATION_CREDENTIALS ||
-                    process.env.GOOGLE_SHEETS_CREDENTIALS_PATH,
-            ),
-        },
-    });
 
     const checkIn = booking.checkIn.toISOString().slice(0, 10);
     const checkOut = booking.checkOut.toISOString().slice(0, 10);
@@ -311,25 +255,6 @@ export async function processPostBookingJobs(args?: {
         },
     });
 
-    agentDebugLog({
-        runId: "initial",
-        hypothesisId: "H2,H3",
-        location: "lib/ops/bookingJobs.ts:290",
-        message: "post-booking job query completed",
-        data: {
-            bookingId: args?.bookingId ?? null,
-            limit,
-            respectBackoff,
-            jobCount: jobs.length,
-            jobs: jobs.map((job) => ({
-                id: job.id,
-                bookingId: job.bookingId,
-                type: job.type,
-                attempts: job.attempts,
-            })),
-        },
-    });
-
     let succeeded = 0;
     let failed = 0;
 
@@ -351,17 +276,6 @@ export async function processPostBookingJobs(args?: {
                     updatedAt: new Date(),
                 },
             });
-            agentDebugLog({
-                runId: "initial",
-                hypothesisId: "H4,H5",
-                location: "lib/ops/bookingJobs.ts:326",
-                message: "post-booking job succeeded",
-                data: {
-                    bookingId: job.bookingId,
-                    jobId: job.id,
-                    type: job.type,
-                },
-            });
             succeeded++;
         } catch (err) {
             const nextAttempts = job.attempts + 1;
@@ -375,20 +289,6 @@ export async function processPostBookingJobs(args?: {
                     lastError: errorMessage,
                     nextRunAt: computeNextRunAt(nextAttempts),
                     updatedAt: new Date(),
-                },
-            });
-            agentDebugLog({
-                runId: "initial",
-                hypothesisId: "H4,H5",
-                location: "lib/ops/bookingJobs.ts:349",
-                message: "post-booking job failed",
-                data: {
-                    bookingId: job.bookingId,
-                    jobId: job.id,
-                    type: job.type,
-                    nextAttempts,
-                    errorName: err instanceof Error ? err.name : typeof err,
-                    errorMessage,
                 },
             });
 
@@ -428,37 +328,12 @@ export async function flushPostBookingJobsForBooking(
     bookingId: string,
 ): Promise<void> {
     try {
-        agentDebugLog({
-            runId: "initial",
-            hypothesisId: "H2",
-            location: "lib/ops/bookingJobs.ts:393",
-            message: "flushPostBookingJobsForBooking invoked",
-            data: { bookingId },
-        });
-        const result = await processPostBookingJobs({
+        await processPostBookingJobs({
             bookingId,
             limit: 2,
             respectBackoff: false,
         });
-        agentDebugLog({
-            runId: "post-fix",
-            hypothesisId: "H2",
-            location: "lib/ops/bookingJobs.ts:443",
-            message: "flushPostBookingJobsForBooking completed",
-            data: { bookingId, ...result },
-        });
     } catch (err) {
-        agentDebugLog({
-            runId: "post-fix",
-            hypothesisId: "H2",
-            location: "lib/ops/bookingJobs.ts:453",
-            message: "flushPostBookingJobsForBooking caught error",
-            data: {
-                bookingId,
-                errorName: err instanceof Error ? err.name : typeof err,
-                errorMessage: err instanceof Error ? err.message : String(err),
-            },
-        });
         console.error(
             "[booking-jobs] flushPostBookingJobsForBooking failed:",
             bookingId,

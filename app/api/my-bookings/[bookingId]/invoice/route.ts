@@ -4,7 +4,7 @@ import { parseHeaders } from "@/lib/validation/http";
 import { bearerAuthHeaderSchema } from "@/lib/validation/schemas";
 
 const INVOICE_STORAGE_BUCKET =
-    process.env.INVOICE_STORAGE_BUCKET?.trim() || "invoices";
+    process.env.INVOICE_STORAGE_BUCKET?.trim() || "Invoices";
 
 export async function GET(
     request: NextRequest,
@@ -15,7 +15,10 @@ export async function GET(
 
     const { bookingId } = await ctx.params;
     if (!bookingId || typeof bookingId !== "string") {
-        return NextResponse.json({ error: "Invalid booking id" }, { status: 400 });
+        return NextResponse.json(
+            { error: "Invalid booking id" },
+            { status: 400 },
+        );
     }
 
     const token = parsedHeaders.data.authorization.replace(/^Bearer\s+/i, "");
@@ -74,7 +77,8 @@ export async function GET(
         );
     }
 
-    const { createServerSupabaseClient } = await import("@/lib/supabase/server");
+    const { createServerSupabaseClient } =
+        await import("@/lib/supabase/server");
     const adminSupabase = createServerSupabaseClient();
     const { data, error } = await adminSupabase.storage
         .from(INVOICE_STORAGE_BUCKET)
@@ -95,4 +99,3 @@ export async function GET(
         },
     });
 }
-

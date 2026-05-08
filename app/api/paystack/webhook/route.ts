@@ -11,6 +11,19 @@ import {
     flushPostBookingJobsForBooking,
 } from "@/lib/ops/bookingJobs";
 
+function agentDebugLog(args: {
+    runId: string;
+    hypothesisId: string;
+    location: string;
+    message: string;
+    data: Record<string, unknown>;
+}) {
+    console.info("[agent-debug-5a4661]", args);
+    // #region agent log
+    void fetch('http://127.0.0.1:7247/ingest/25c7c84e-0b66-4375-9cb5-a5fca9d48dbc',{method:'POST',headers:{'Content-Type':'application/json','X-Debug-Session-Id':'5a4661'},body:JSON.stringify({sessionId:'5a4661',runId:args.runId,hypothesisId:args.hypothesisId,location:args.location,message:args.message,data:args.data,timestamp:Date.now()})}).catch(()=>{});
+    // #endregion
+}
+
 /** Hobby max is 60s; invoice + Sheets run after response via `after()`. */
 export const maxDuration = 60;
 
@@ -78,7 +91,21 @@ export async function POST(request: NextRequest) {
         const booking = await upsertBookingFromPaystack(result.data);
         // Enqueue downstream artifacts (invoice + Google Sheets)
         await enqueuePostBookingJobs(booking.id);
+        agentDebugLog({
+            runId: "initial",
+            hypothesisId: "H1,H2",
+            location: "app/api/paystack/webhook/route.ts:95",
+            message: "webhook enqueued jobs before scheduling flush",
+            data: { bookingId: booking.id, status: booking.status },
+        });
         after(() => {
+            agentDebugLog({
+                runId: "initial",
+                hypothesisId: "H2",
+                location: "app/api/paystack/webhook/route.ts:101",
+                message: "webhook after callback entered",
+                data: { bookingId: booking.id },
+            });
             void flushPostBookingJobsForBooking(booking.id);
         });
 

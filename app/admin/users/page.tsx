@@ -64,7 +64,10 @@ export default function AdminUsersPage() {
     const { user, isLoading } = useAuth();
     const router = useRouter();
     const queryClient = useQueryClient();
-    const { data: me, isLoading: roleLoading } = useAdminMe(Boolean(user) && !isLoading);
+    const { data: me, isLoading: roleLoading } = useAdminMe(
+        Boolean(user) && !isLoading,
+        user?.id,
+    );
 
     const [email, setEmail] = useState("");
     const [role, setRole] = useState<StaffRole>("receptionist");

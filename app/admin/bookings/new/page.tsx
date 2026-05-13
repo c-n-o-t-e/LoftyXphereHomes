@@ -44,7 +44,10 @@ export default function NewManualBookingPage() {
     const { user, isLoading } = useAuth();
     const router = useRouter();
     const queryClient = useQueryClient();
-    const { data: me } = useAdminMe(Boolean(user) && !isLoading);
+    const {
+        data: me,
+        isLoading: isMeLoading,
+    } = useAdminMe(Boolean(user) && !isLoading, user?.id);
 
     const [formResetKey, setFormResetKey] = useState(0);
 
@@ -72,34 +75,6 @@ export default function NewManualBookingPage() {
             router.push("/login?redirect=/admin/bookings/new");
         }
     }, [isLoading, user, router]);
-
-    if (!isLoading && user && me && !me.ok) {
-        return (
-            <div className="min-h-screen bg-gray-50 pt-20">
-                <div className="max-w-3xl mx-auto px-4 py-10">
-                    <Card className="p-6">
-                        <h1 className="text-xl font-bold text-gray-900">
-                            Admin access required
-                        </h1>
-                        <p className="mt-2 text-sm text-gray-600">
-                            Your account doesn’t have access to create manual bookings.
-                        </p>
-                        <div className="mt-4 flex flex-wrap gap-2">
-                            <Button variant="outline" asChild>
-                                <Link href="/">Back to website</Link>
-                            </Button>
-                            <Button
-                                variant="outline"
-                                onClick={() => router.push("/login?redirect=/admin/bookings/new")}
-                            >
-                                Sign in with a staff account
-                            </Button>
-                        </div>
-                    </Card>
-                </div>
-            </div>
-        );
-    }
 
     const apartmentOptions = useMemo(() => apartments, []);
     const selectedApartment = useMemo(
@@ -220,8 +195,37 @@ export default function NewManualBookingPage() {
 
     if (isLoading) return null;
     if (!user) return null;
+    if (isMeLoading || me === undefined) return null;
 
-    const canCancelBookings = me?.ok === true && me.role === "admin";
+    if (!me.ok) {
+        return (
+            <div className="min-h-screen bg-gray-50 pt-20">
+                <div className="max-w-3xl mx-auto px-4 py-10">
+                    <Card className="p-6">
+                        <h1 className="text-xl font-bold text-gray-900">
+                            Admin access required
+                        </h1>
+                        <p className="mt-2 text-sm text-gray-600">
+                            Your account doesn’t have access to create manual bookings.
+                        </p>
+                        <div className="mt-4 flex flex-wrap gap-2">
+                            <Button variant="outline" asChild>
+                                <Link href="/">Back to website</Link>
+                            </Button>
+                            <Button
+                                variant="outline"
+                                onClick={() => router.push("/login?redirect=/admin/bookings/new")}
+                            >
+                                Sign in with a staff account
+                            </Button>
+                        </div>
+                    </Card>
+                </div>
+            </div>
+        );
+    }
+
+    const canCancelBookings = me.role === "admin";
 
     return (
         <div className="min-h-screen bg-gray-50 pt-20">

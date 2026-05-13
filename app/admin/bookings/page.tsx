@@ -92,7 +92,10 @@ export default function AdminBookingsPage() {
     const { user, isLoading } = useAuth();
     const router = useRouter();
     const params = useSearchParams();
-    const { data: me } = useAdminMe(Boolean(user) && !isLoading);
+    const {
+        data: me,
+        isLoading: isMeLoading,
+    } = useAdminMe(Boolean(user) && !isLoading, user?.id);
 
     const initialView = (params.get("view") as AdminBookingsView | null) ?? "current";
     const [view, setView] = useState<AdminBookingsView>(initialView);
@@ -167,8 +170,10 @@ export default function AdminBookingsPage() {
     }, [view, q]);
 
     if (isLoading) return null;
+    if (!user) return null;
+    if (isMeLoading || me === undefined) return null;
 
-    if (me && !me.ok) {
+    if (!me.ok) {
         return (
             <div className="min-h-screen bg-gray-50 pt-20">
                 <div className="max-w-4xl mx-auto px-4 py-10">

@@ -46,7 +46,10 @@ async function readCancelResponse(res: Response): Promise<CancelResponse> {
 export default function AdminCancelBookingPage() {
     const { user, isLoading } = useAuth();
     const router = useRouter();
-    const { data: me, isLoading: isRoleLoading } = useAdminMe(Boolean(user) && !isLoading);
+    const { data: me, isLoading: isRoleLoading } = useAdminMe(
+        Boolean(user) && !isLoading,
+        user?.id,
+    );
 
     const [invoiceInput, setInvoiceInput] = useState("");
     const [submitting, setSubmitting] = useState(false);

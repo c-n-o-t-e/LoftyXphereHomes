@@ -11,7 +11,10 @@ import { Card } from "@/components/ui/card";
 export default function AdminHomePage() {
     const { user, isLoading } = useAuth();
     const router = useRouter();
-    const { data: me } = useAdminMe(Boolean(user) && !isLoading);
+    const {
+        data: me,
+        isLoading: isMeLoading,
+    } = useAdminMe(Boolean(user) && !isLoading, user?.id);
 
     useEffect(() => {
         if (isLoading) return;
@@ -22,8 +25,10 @@ export default function AdminHomePage() {
     }, [isLoading, user, router]);
 
     if (isLoading) return null;
+    if (!user) return null;
+    if (isMeLoading || me === undefined) return null;
 
-    if (me && !me.ok) {
+    if (!me.ok) {
         return (
             <div className="min-h-screen bg-gray-50 pt-20">
                 <div className="max-w-3xl mx-auto px-4 py-10">
@@ -40,8 +45,8 @@ export default function AdminHomePage() {
         );
     }
 
-    const canCancelBookings = me?.ok === true && me.role === "admin";
-    const canManageStaff = me?.ok === true && me.role === "admin";
+    const canCancelBookings = me.role === "admin";
+    const canManageStaff = me.role === "admin";
 
     return (
         <div className="min-h-screen bg-gray-50 pt-20">
@@ -92,7 +97,7 @@ export default function AdminHomePage() {
                         <h2 className="font-semibold text-gray-900">Access</h2>
                         <p className="text-sm text-gray-600 mt-1">
                             Signed in as <span className="font-medium">{user?.email}</span>
-                            {me?.ok ? ` (${me.role})` : ""}.
+                            {` (${me.role})`}.
                         </p>
                         {canManageStaff && (
                             <div className="mt-4 flex flex-wrap gap-2">

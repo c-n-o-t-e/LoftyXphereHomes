@@ -1,5 +1,5 @@
 // Prisma schema for LoftyXphereHomes
-// Database: Supabase (PostgreSQL). Set DATABASE_URL in .env to your Supabase connection string.
+// Database: Supabase (PostgreSQL). Set DIRECT_URL in .env (see prisma.config.ts and .env.example).
 
 generator client {
   provider = "prisma-client"
@@ -91,6 +91,7 @@ model BookingJob {
 
 enum BookingJobType {
   INVOICE_PDF
+  GUEST_BOOKING_EMAIL
   GOOGLE_SHEETS
 }
 

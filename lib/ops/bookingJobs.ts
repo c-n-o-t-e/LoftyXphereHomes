@@ -8,11 +8,15 @@ const INVOICE_STORAGE_BUCKET =
 const MAX_ATTEMPTS = 5;
 const ADMIN_ALERT_ATTEMPT_THRESHOLD = 2;
 
-type BookingJobType = "INVOICE_PDF" | "GOOGLE_SHEETS";
+type BookingJobType =
+    | "INVOICE_PDF"
+    | "GUEST_BOOKING_EMAIL"
+    | "GOOGLE_SHEETS";
 
 const JOB_TYPE_PRIORITY: Record<BookingJobType, number> = {
     INVOICE_PDF: 0,
-    GOOGLE_SHEETS: 1,
+    GUEST_BOOKING_EMAIL: 1,
+    GOOGLE_SHEETS: 2,
 };
 
 function computeNextRunAt(attempts: number): Date {
@@ -26,6 +30,7 @@ export async function enqueuePostBookingJobs(bookingId: string) {
     await prisma.bookingJob.createMany({
         data: [
             { bookingId, type: "INVOICE_PDF", status: "PENDING" },
+            { bookingId, type: "GUEST_BOOKING_EMAIL", status: "PENDING" },
             { bookingId, type: "GOOGLE_SHEETS", status: "PENDING" },
         ],
         skipDuplicates: true,
@@ -53,6 +58,22 @@ async function uploadInvoicePdfToStorage(args: {
     if (error) throw error;
 
     return { storageKey };
+}
+
+async function downloadInvoicePdfFromStorage(storageKey: string): Promise<Buffer> {
+    const { createServerSupabaseClient } =
+        await import("@/lib/supabase/server");
+
+    const supabase = createServerSupabaseClient();
+    const { data, error } = await supabase.storage
+        .from(INVOICE_STORAGE_BUCKET)
+        .download(storageKey);
+
+    if (error) throw error;
+    if (!data) throw new Error("Invoice download returned empty body");
+
+    const arrayBuffer = await data.arrayBuffer();
+    return Buffer.from(arrayBuffer);
 }
 
 async function runInvoiceJob(bookingId: string) {
@@ -113,6 +134,73 @@ async function runInvoiceJob(bookingId: string) {
     return { invoiceId: invoice.invoiceId, pdfPath: uploaded.storageKey };
 }
 
+async function runGuestBookingEmailJob(bookingId: string) {
+    const { prisma } = await import("@/lib/db");
+    const booking = await prisma.booking.findUnique({
+        where: { id: bookingId },
+        select: {
+            id: true,
+            status: true,
+            apartmentId: true,
+            bookerName: true,
+            bookerEmail: true,
+            checkIn: true,
+            checkOut: true,
+            amountPaid: true,
+            invoiceId: true,
+            invoicePdfPath: true,
+        },
+    });
+    if (!booking) throw new Error("Booking not found");
+
+    if (booking.status !== "PAID") {
+        console.warn("[booking-jobs] skip guest email: booking not PAID", {
+            bookingId,
+        });
+        return;
+    }
+
+    const email = booking.bookerEmail?.trim();
+    if (!email) {
+        console.warn("[booking-jobs] skip guest email: no bookerEmail", {
+            bookingId,
+        });
+        return;
+    }
+
+    if (!booking.invoiceId || !booking.invoicePdfPath) {
+        throw new Error(
+            "Guest booking email requires invoiceId and invoicePdfPath",
+        );
+    }
+
+    const storageKey = String(booking.invoicePdfPath);
+    if (storageKey.startsWith("/") || storageKey.includes("private/invoices")) {
+        throw new Error(
+            "Invoice PDF is not in Supabase storage; cannot attach for guest email",
+        );
+    }
+
+    const pdfBuffer = await downloadInvoicePdfFromStorage(storageKey);
+    const { sendGuestBookingReceiptEmail } =
+        await import("@/lib/email/guest-booking-email");
+
+    const ok = await sendGuestBookingReceiptEmail({
+        toEmail: email,
+        guestName: booking.bookerName ?? email,
+        invoiceId: booking.invoiceId,
+        apartmentId: booking.apartmentId,
+        checkIn: booking.checkIn.toISOString().slice(0, 10),
+        checkOut: booking.checkOut.toISOString().slice(0, 10),
+        amountPaidNgn: booking.amountPaid,
+        pdfBuffer,
+    });
+
+    if (!ok) {
+        throw new Error("Failed to send guest booking receipt email");
+    }
+}
+
 async function runSheetsJob(bookingId: string) {
     const { prisma } = await import("@/lib/db");
     const booking = await prisma.booking.findUnique({
@@ -154,6 +242,7 @@ async function runSheetsJob(bookingId: string) {
 
 async function runJob(bookingId: string, type: BookingJobType) {
     if (type === "INVOICE_PDF") return runInvoiceJob(bookingId);
+    if (type === "GUEST_BOOKING_EMAIL") return runGuestBookingEmailJob(bookingId);
     if (type === "GOOGLE_SHEETS") return runSheetsJob(bookingId);
     const neverType: never = type;
     throw new Error("Unknown job type: " + neverType);
@@ -320,7 +409,7 @@ export async function processPostBookingJobs(args?: {
 }
 
 /**
- * Run invoice + sheet jobs for one booking (two job types max).
+ * Run invoice, guest email, and sheet jobs for one booking (three job types max).
  * Safe to call from multiple triggers (webhook + success page): jobs are idempotent at row level.
  * Swallows errors so callers (e.g. Paystack webhook `after()`) never throw.
  */
@@ -330,7 +419,7 @@ export async function flushPostBookingJobsForBooking(
     try {
         await processPostBookingJobs({
             bookingId,
-            limit: 2,
+            limit: 3,
             respectBackoff: false,
         });
     } catch (err) {

@@ -1,4 +1,4 @@
-import { NextRequest, NextResponse } from "next/server";
+import { NextRequest, NextResponse, after } from "next/server";
 import { parseJsonBody } from "@/lib/validation/http";
 import { contactMessageBodySchema } from "@/lib/validation/schemas";
 import { prisma } from "@/lib/db";
@@ -83,6 +83,22 @@ export async function POST(request: NextRequest) {
                 ip: ip === "unknown" ? null : ip,
                 userAgent,
             },
+        });
+
+        after(async () => {
+            const { sendContactFormEmails } =
+                await import("@/lib/email/contact-notifications");
+            try {
+                await sendContactFormEmails({
+                    name: data.name,
+                    email: data.email,
+                    phone: data.phone,
+                    category: data.category,
+                    message: data.message,
+                });
+            } catch (err) {
+                console.error("contact: notification email task failed", err);
+            }
         });
 
         return NextResponse.json({ ok: true }, { status: 200 });

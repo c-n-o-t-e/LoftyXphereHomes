@@ -167,7 +167,7 @@ export const contactMessageBodySchema = z
 export const adminCreateManualBookingBodySchema = z
   .object({
     name: nonEmptyTrimmedString.min(2),
-    email: emailSchema.optional(),
+    email: emailSchema,
     phone: nonEmptyTrimmedString.min(5),
     apartmentId: apartmentIdSchema,
     checkIn: dateStringSchema,

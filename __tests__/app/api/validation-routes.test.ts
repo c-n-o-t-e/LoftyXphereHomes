@@ -444,6 +444,7 @@ describe("API validation integration", () => {
       },
       body: JSON.stringify({
         name: "Manual Guest",
+        email: "guest@example.com",
         phone: "08000000000",
         apartmentId: "lofty-wuye-01",
         checkIn: "2026-05-01",

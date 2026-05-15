@@ -130,6 +130,12 @@ export default function NewManualBookingPage() {
                 return;
             }
 
+            const trimmedEmail = email.trim();
+            if (!trimmedEmail) {
+                setError("Guest email is required.");
+                return;
+            }
+
             const res = await fetch("/api/admin/bookings", {
                 method: "POST",
                 headers: {
@@ -138,7 +144,7 @@ export default function NewManualBookingPage() {
                 },
                 body: JSON.stringify({
                     name,
-                    email: email.trim() ? email.trim() : undefined,
+                    email: trimmedEmail,
                     phone,
                     apartmentId,
                     checkIn: toIsoDate(checkIn),
@@ -266,7 +272,7 @@ export default function NewManualBookingPage() {
                             />
                         </div>
                         <div>
-                            <Label htmlFor="email">Email (optional)</Label>
+                            <Label htmlFor="email">Email</Label>
                             <Input
                                 id="email"
                                 value={email}
@@ -275,6 +281,8 @@ export default function NewManualBookingPage() {
                                 placeholder="you@example.com"
                                 disabled={submitting}
                                 type="email"
+                                required
+                                aria-required="true"
                             />
                         </div>
                         <div>
@@ -475,6 +483,7 @@ export default function NewManualBookingPage() {
                             disabled={
                                 submitting ||
                                 !name.trim() ||
+                                !email.trim() ||
                                 !phone.trim() ||
                                 !apartmentId ||
                                 !checkIn ||

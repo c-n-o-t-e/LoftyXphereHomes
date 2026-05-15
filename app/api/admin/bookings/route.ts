@@ -265,7 +265,7 @@ export async function POST(request: NextRequest) {
                 amountPaid: body.amountNgn,
                 status: "PAID",
                 source: "MANUAL",
-                bookerEmail: body.email ?? null,
+                bookerEmail: body.email,
                 bookerName: body.name,
                 bookerPhone: body.phone,
                 manualPaymentMethod: body.paymentMethod ?? null,

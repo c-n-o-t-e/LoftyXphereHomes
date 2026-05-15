@@ -4,11 +4,23 @@ import {
     flushPostBookingJobsForBooking,
 } from "@/lib/ops/bookingJobs";
 
+jest.mock("@/lib/email/guest-booking-email", () => ({
+    sendGuestBookingReceiptEmail: jest.fn().mockResolvedValue(true),
+}));
+
 jest.mock("@/lib/supabase/server", () => ({
     createServerSupabaseClient: jest.fn(() => ({
         storage: {
             from: jest.fn(() => ({
                 upload: jest.fn().mockResolvedValue({ error: null }),
+                download: jest.fn().mockResolvedValue({
+                    data: {
+                        async arrayBuffer() {
+                            return new Uint8Array([112, 100, 102]).buffer;
+                        },
+                    },
+                    error: null,
+                }),
             })),
         },
     })),
@@ -45,15 +57,25 @@ describe("bookingJobs", () => {
         jest.clearAllMocks();
     });
 
-    it("enqueues invoice + sheets jobs (deduped)", async () => {
+    it("enqueues invoice + guest email + sheets jobs (deduped)", async () => {
         const { prisma } = await import("@/lib/db");
         await enqueuePostBookingJobs("b1");
         expect(prisma.bookingJob.createMany).toHaveBeenCalledWith(
             expect.objectContaining({
                 skipDuplicates: true,
                 data: expect.arrayContaining([
-                    expect.objectContaining({ bookingId: "b1", type: "INVOICE_PDF" }),
-                    expect.objectContaining({ bookingId: "b1", type: "GOOGLE_SHEETS" }),
+                    expect.objectContaining({
+                        bookingId: "b1",
+                        type: "INVOICE_PDF",
+                    }),
+                    expect.objectContaining({
+                        bookingId: "b1",
+                        type: "GUEST_BOOKING_EMAIL",
+                    }),
+                    expect.objectContaining({
+                        bookingId: "b1",
+                        type: "GOOGLE_SHEETS",
+                    }),
                 ]),
             }),
         );
@@ -63,9 +85,18 @@ describe("bookingJobs", () => {
         const { prisma } = await import("@/lib/db");
         const { generateInvoicePdf } = await import("@/lib/ops/invoicePdf");
         const { appendBookingRowToSheet } = await import("@/lib/ops/googleSheets");
+        const { sendGuestBookingReceiptEmail } = await import(
+            "@/lib/email/guest-booking-email"
+        );
 
         (prisma.bookingJob.findMany as jest.Mock).mockResolvedValueOnce([
-            { id: "j2", bookingId: "b1", type: "GOOGLE_SHEETS", attempts: 0 },
+            { id: "j3", bookingId: "b1", type: "GOOGLE_SHEETS", attempts: 0 },
+            {
+                id: "j2",
+                bookingId: "b1",
+                type: "GUEST_BOOKING_EMAIL",
+                attempts: 0,
+            },
             { id: "j1", bookingId: "b1", type: "INVOICE_PDF", attempts: 0 },
         ]);
 
@@ -83,6 +114,19 @@ describe("bookingJobs", () => {
                 invoiceId: null,
                 invoicePdfPath: null,
                 createdAt: new Date("2026-01-01T12:00:00.000Z"),
+            })
+            // guest email job booking fetch
+            .mockResolvedValueOnce({
+                id: "b1",
+                status: "PAID",
+                apartmentId: "lofty-wuye-01",
+                bookerName: "Jane",
+                bookerEmail: "jane@example.com",
+                checkIn: new Date("2026-01-01T00:00:00.000Z"),
+                checkOut: new Date("2026-01-02T00:00:00.000Z"),
+                amountPaid: 1000,
+                invoiceId: "LXH-260101-ABCDEF",
+                invoicePdfPath: "booking/b1/LXH-260101-ABCDEF.pdf",
             })
             // sheets job booking fetch
             .mockResolvedValueOnce({
@@ -107,9 +151,15 @@ describe("bookingJobs", () => {
         const result = await processPostBookingJobs({ limit: 10 });
 
         expect(result).toEqual(
-            expect.objectContaining({ processed: 2, succeeded: 2, failed: 0 }),
+            expect.objectContaining({ processed: 3, succeeded: 3, failed: 0 }),
         );
         expect(prisma.booking.update).toHaveBeenCalled();
+        expect(sendGuestBookingReceiptEmail).toHaveBeenCalledWith(
+            expect.objectContaining({
+                toEmail: "jane@example.com",
+                invoiceId: "LXH-260101-ABCDEF",
+            }),
+        );
         expect(appendBookingRowToSheet).toHaveBeenCalledWith(
             expect.objectContaining({
                 checkIn: "2026-01-01",
@@ -118,16 +168,25 @@ describe("bookingJobs", () => {
                 stayed: true,
             }),
         );
-        expect(prisma.bookingJob.update).toHaveBeenCalledTimes(2);
+        expect(prisma.bookingJob.update).toHaveBeenCalledTimes(3);
     });
 
     it("passes stayed false when booking is CANCELLED", async () => {
         const { prisma } = await import("@/lib/db");
         const { generateInvoicePdf } = await import("@/lib/ops/invoicePdf");
         const { appendBookingRowToSheet } = await import("@/lib/ops/googleSheets");
+        const { sendGuestBookingReceiptEmail } = await import(
+            "@/lib/email/guest-booking-email"
+        );
 
         (prisma.bookingJob.findMany as jest.Mock).mockResolvedValueOnce([
-            { id: "j2", bookingId: "b1", type: "GOOGLE_SHEETS", attempts: 0 },
+            { id: "j3", bookingId: "b1", type: "GOOGLE_SHEETS", attempts: 0 },
+            {
+                id: "j2",
+                bookingId: "b1",
+                type: "GUEST_BOOKING_EMAIL",
+                attempts: 0,
+            },
             { id: "j1", bookingId: "b1", type: "INVOICE_PDF", attempts: 0 },
         ]);
 
@@ -144,6 +203,18 @@ describe("bookingJobs", () => {
                 invoiceId: null,
                 invoicePdfPath: null,
                 createdAt: new Date("2026-01-01T12:00:00.000Z"),
+            })
+            .mockResolvedValueOnce({
+                id: "b1",
+                status: "CANCELLED",
+                apartmentId: "lofty-wuye-01",
+                bookerName: "Jane",
+                bookerEmail: "jane@example.com",
+                checkIn: new Date("2026-06-01T00:00:00.000Z"),
+                checkOut: new Date("2026-06-03T00:00:00.000Z"),
+                amountPaid: 2000,
+                invoiceId: "LXH-260101-ABCDEF",
+                invoicePdfPath: "booking/b1/LXH-260101-ABCDEF.pdf",
             })
             .mockResolvedValueOnce({
                 id: "b1",
@@ -166,6 +237,7 @@ describe("bookingJobs", () => {
 
         await processPostBookingJobs({ limit: 10 });
 
+        expect(sendGuestBookingReceiptEmail).not.toHaveBeenCalled();
         expect(appendBookingRowToSheet).toHaveBeenCalledWith(
             expect.objectContaining({
                 stayed: false,
@@ -179,7 +251,7 @@ describe("bookingJobs", () => {
 
         (prisma.bookingJob.findMany as jest.Mock).mockResolvedValueOnce([]);
 
-        await processPostBookingJobs({ bookingId: "b1", limit: 2 });
+        await processPostBookingJobs({ bookingId: "b1", limit: 3 });
 
         expect(prisma.bookingJob.findMany).toHaveBeenCalledWith(
             expect.objectContaining({
@@ -187,7 +259,7 @@ describe("bookingJobs", () => {
                     bookingId: "b1",
                     OR: expect.arrayContaining([{ status: "FAILED" }]),
                 }),
-                take: 2,
+                take: 3,
             }),
         );
     });
@@ -417,7 +489,7 @@ describe("bookingJobs", () => {
     });
 
     describe("flushPostBookingJobsForBooking", () => {
-        it("scopes job drain to the booking id with limit 2", async () => {
+        it("scopes job drain to the booking id with limit 3", async () => {
             const { prisma } = await import("@/lib/db");
             (prisma.bookingJob.findMany as jest.Mock).mockResolvedValueOnce([]);
             await flushPostBookingJobsForBooking("target-booking");
@@ -426,7 +498,7 @@ describe("bookingJobs", () => {
                     where: expect.objectContaining({
                         bookingId: "target-booking",
                     }),
-                    take: 2,
+                    take: 3,
                 }),
             );
         });

@@ -9,6 +9,13 @@ jest.mock("next/server", () => ({
       },
     }),
   },
+  after: (fn: () => Promise<void>) => {
+    void fn();
+  },
+}));
+
+jest.mock("@/lib/email/contact-notifications", () => ({
+  sendContactFormEmails: jest.fn().mockResolvedValue(undefined),
 }));
 
 jest.mock("@/lib/db", () => ({
@@ -21,6 +28,9 @@ jest.mock("@/lib/db", () => ({
 
 const { POST } = require("@/app/api/contact/route");
 const { prisma } = require("@/lib/db");
+const {
+  sendContactFormEmails,
+} = require("@/lib/email/contact-notifications");
 
 function makeReq(body: unknown, headers?: Record<string, string>): NextRequest {
   const hdrs = new Map(Object.entries(headers ?? {}).map(([k, v]) => [k.toLowerCase(), v]));
@@ -61,6 +71,15 @@ describe("POST /api/contact", () => {
     expect(res.status).toBe(200);
     expect(json).toEqual({ ok: true });
     expect(prisma.contactMessage.create).toHaveBeenCalled();
+    await Promise.resolve();
+    await Promise.resolve();
+    expect(sendContactFormEmails).toHaveBeenCalledWith({
+      name: "Jane Doe",
+      email: "jane@example.com",
+      phone: "+2348161122328",
+      category: "booking",
+      message: "Hello, I need help with a booking.",
+    });
   });
 
   it("treats honeypot submissions as success without persisting", async () => {
@@ -78,6 +97,7 @@ describe("POST /api/contact", () => {
     expect(res.status).toBe(200);
     expect(json).toEqual({ ok: true });
     expect(prisma.contactMessage.create).not.toHaveBeenCalled();
+    expect(sendContactFormEmails).not.toHaveBeenCalled();
   });
 });
 

@@ -8,10 +8,7 @@ const INVOICE_STORAGE_BUCKET =
 const MAX_ATTEMPTS = 5;
 const ADMIN_ALERT_ATTEMPT_THRESHOLD = 2;
 
-type BookingJobType =
-    | "INVOICE_PDF"
-    | "GUEST_BOOKING_EMAIL"
-    | "GOOGLE_SHEETS";
+type BookingJobType = "INVOICE_PDF" | "GUEST_BOOKING_EMAIL" | "GOOGLE_SHEETS";
 
 const JOB_TYPE_PRIORITY: Record<BookingJobType, number> = {
     INVOICE_PDF: 0,
@@ -60,7 +57,9 @@ async function uploadInvoicePdfToStorage(args: {
     return { storageKey };
 }
 
-async function downloadInvoicePdfFromStorage(storageKey: string): Promise<Buffer> {
+async function downloadInvoicePdfFromStorage(
+    storageKey: string,
+): Promise<Buffer> {
     const { createServerSupabaseClient } =
         await import("@/lib/supabase/server");
 
@@ -242,7 +241,8 @@ async function runSheetsJob(bookingId: string) {
 
 async function runJob(bookingId: string, type: BookingJobType) {
     if (type === "INVOICE_PDF") return runInvoiceJob(bookingId);
-    if (type === "GUEST_BOOKING_EMAIL") return runGuestBookingEmailJob(bookingId);
+    if (type === "GUEST_BOOKING_EMAIL")
+        return runGuestBookingEmailJob(bookingId);
     if (type === "GOOGLE_SHEETS") return runSheetsJob(bookingId);
     const neverType: never = type;
     throw new Error("Unknown job type: " + neverType);

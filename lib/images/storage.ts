@@ -8,6 +8,10 @@ export function buildStorageKeyBase(apartmentId: string, imageId: string) {
     return `apartments/${apartmentId}/${imageId}`;
 }
 
+export function buildRawUploadKey(apartmentId: string, imageId: string) {
+    return `${buildStorageKeyBase(apartmentId, imageId)}/raw-upload`;
+}
+
 export function buildPublicStorageUrl(storageKey: string): string {
     const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL?.replace(/\/$/, "");
     if (!supabaseUrl) {
@@ -107,5 +111,59 @@ export async function deleteStoredApartmentImage(
 
     if (error) {
         throw new Error(`Failed to delete storage objects: ${error.message}`);
+    }
+}
+
+export async function createRawUploadSignedUrl(
+    apartmentId: string,
+    imageId: string,
+) {
+    await ensureApartmentImagesBucket();
+    const supabase = createServerSupabaseClient();
+    const path = buildRawUploadKey(apartmentId, imageId);
+    const { data, error } = await supabase.storage
+        .from(APARTMENT_IMAGES_BUCKET)
+        .createSignedUploadUrl(path);
+
+    if (error || !data) {
+        throw new Error(
+            `Failed to create upload URL: ${error?.message ?? "unknown error"}`,
+        );
+    }
+
+    return {
+        path: data.path,
+        token: data.token,
+    };
+}
+
+export async function downloadRawUpload(
+    apartmentId: string,
+    imageId: string,
+): Promise<Buffer> {
+    const supabase = createServerSupabaseClient();
+    const path = buildRawUploadKey(apartmentId, imageId);
+    const { data, error } = await supabase.storage
+        .from(APARTMENT_IMAGES_BUCKET)
+        .download(path);
+
+    if (error || !data) {
+        throw new Error(
+            `Uploaded file not found in storage: ${error?.message ?? "missing object"}`,
+        );
+    }
+
+    return Buffer.from(await data.arrayBuffer());
+}
+
+export async function deleteRawUpload(apartmentId: string, imageId: string) {
+    const supabase = createServerSupabaseClient();
+    const path = buildRawUploadKey(apartmentId, imageId);
+    const { error } = await supabase.storage
+        .from(APARTMENT_IMAGES_BUCKET)
+        .remove([path]);
+
+    if (error) {
+        throw new Error(`Failed to delete temporary upload: ${error.message}`);
     }
 }

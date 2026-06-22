@@ -3,9 +3,17 @@ import { getApartmentById } from "@/lib/data/apartments";
 import { prisma } from "@/lib/db";
 import { processApartmentImage, validateImageInput } from "@/lib/images/process";
 import {
+    createRawUploadSignedUrl,
+    deleteRawUpload,
     deleteStoredApartmentImage,
+    downloadRawUpload,
     uploadImageVariants,
 } from "@/lib/images/storage";
+import {
+    APARTMENT_IMAGES_BUCKET,
+    APARTMENT_IMAGE_MAX_BYTES,
+    ALLOWED_IMAGE_MIME_TYPES,
+} from "@/lib/images/constants";
 import type { ApartmentImageUrls } from "@/lib/images/types";
 
 type ApartmentImageRow = {
@@ -45,6 +53,153 @@ function assertApartmentExists(apartmentId: string) {
     }
 }
 
+function validateUploadMeta(args: { mimeType: string; fileSize: number }) {
+    const mimeType = args.mimeType.toLowerCase().split(";")[0]?.trim() ?? "";
+    if (!ALLOWED_IMAGE_MIME_TYPES.has(mimeType)) {
+        throw Object.assign(
+            new Error("Unsupported file type. Upload JPEG, PNG, WebP, or HEIC."),
+            { statusCode: 400 },
+        );
+    }
+    if (args.fileSize > APARTMENT_IMAGE_MAX_BYTES) {
+        throw Object.assign(
+            new Error(
+                `File exceeds maximum size of ${Math.round(APARTMENT_IMAGE_MAX_BYTES / (1024 * 1024))}MB.`,
+            ),
+            { statusCode: 400 },
+        );
+    }
+    return mimeType;
+}
+
+async function persistProcessedImage(args: {
+    apartmentId: string;
+    imageId: string;
+    buffer: Buffer;
+    altText?: string | null;
+    mode: "create" | "replace";
+}) {
+    const processed = await processApartmentImage(args.buffer);
+    const urls = await uploadImageVariants({
+        apartmentId: args.apartmentId,
+        imageId: args.imageId,
+        variants: {
+            original: processed.original.buffer,
+            thumbnail: processed.thumbnail.buffer,
+            medium: processed.medium.buffer,
+            large: processed.large.buffer,
+        },
+    });
+
+    if (args.mode === "create") {
+        const maxOrder = await prisma.apartmentImage.aggregate({
+            where: { apartmentId: args.apartmentId },
+            _max: { displayOrder: true },
+        });
+        const displayOrder = (maxOrder._max.displayOrder ?? -1) + 1;
+
+        return prisma.apartmentImage.create({
+            data: {
+                id: args.imageId,
+                apartmentId: args.apartmentId,
+                originalUrl: urls.originalUrl,
+                thumbnailUrl: urls.thumbnailUrl,
+                mediumUrl: urls.mediumUrl,
+                largeUrl: urls.largeUrl,
+                blurDataUrl: processed.blurDataUrl,
+                altText: args.altText?.trim() || null,
+                displayOrder,
+            },
+        });
+    }
+
+    const existing = await prisma.apartmentImage.findFirst({
+        where: { id: args.imageId, apartmentId: args.apartmentId },
+    });
+    if (!existing) {
+        throw Object.assign(new Error("Image not found"), { statusCode: 404 });
+    }
+
+    return prisma.apartmentImage.update({
+        where: { id: args.imageId },
+        data: {
+            originalUrl: urls.originalUrl,
+            thumbnailUrl: urls.thumbnailUrl,
+            mediumUrl: urls.mediumUrl,
+            largeUrl: urls.largeUrl,
+            blurDataUrl: processed.blurDataUrl,
+            altText:
+                args.altText !== undefined
+                    ? args.altText?.trim() || null
+                    : existing.altText,
+        },
+    });
+}
+
+export async function initApartmentImageDirectUpload(args: {
+    apartmentId: string;
+    mimeType: string;
+    fileSize: number;
+    replaceImageId?: string;
+}) {
+    assertApartmentExists(args.apartmentId);
+    validateUploadMeta(args);
+
+    const imageId = args.replaceImageId ?? randomUUID();
+    if (args.replaceImageId) {
+        const existing = await prisma.apartmentImage.findFirst({
+            where: { id: args.replaceImageId, apartmentId: args.apartmentId },
+        });
+        if (!existing) {
+            throw Object.assign(new Error("Image not found"), { statusCode: 404 });
+        }
+    }
+
+    const signed = await createRawUploadSignedUrl(args.apartmentId, imageId);
+    return {
+        imageId,
+        bucket: APARTMENT_IMAGES_BUCKET,
+        path: signed.path,
+        token: signed.token,
+        mode: args.replaceImageId ? ("replace" as const) : ("create" as const),
+    };
+}
+
+export async function completeApartmentImageDirectUpload(args: {
+    apartmentId: string;
+    imageId: string;
+    mimeType: string;
+    altText?: string | null;
+    mode: "create" | "replace";
+}) {
+    assertApartmentExists(args.apartmentId);
+
+    try {
+        const buffer = await downloadRawUpload(args.apartmentId, args.imageId);
+        const validation = validateImageInput({
+            buffer,
+            mimeType: args.mimeType,
+        });
+        if (!validation.ok) {
+            throw Object.assign(new Error(validation.error), { statusCode: 400 });
+        }
+
+        return await persistProcessedImage({
+            apartmentId: args.apartmentId,
+            imageId: args.imageId,
+            buffer,
+            altText: args.altText,
+            mode: args.mode,
+        });
+    } finally {
+        try {
+            await deleteRawUpload(args.apartmentId, args.imageId);
+        } catch (cleanupError) {
+            console.warn("Failed to delete temporary raw upload:", cleanupError);
+        }
+    }
+}
+
 export async function uploadApartmentImageFile(args: {
     apartmentId: string;
     buffer: Buffer;
@@ -64,39 +219,13 @@ export async function uploadApartmentImageFile(args: {
     }
 
     const imageId = randomUUID();
-    const processed = await processApartmentImage(args.buffer);
-    const urls = await uploadImageVariants({
+    return persistProcessedImage({
         apartmentId: args.apartmentId,
         imageId,
-        variants: {
-            original: processed.original.buffer,
-            thumbnail: processed.thumbnail.buffer,
-            medium: processed.medium.buffer,
-            large: processed.large.buffer,
-        },
+        buffer: args.buffer,
+        altText: args.altText,
+        mode: "create",
     });
-
-    const maxOrder = await prisma.apartmentImage.aggregate({
-        where: { apartmentId: args.apartmentId },
-        _max: { displayOrder: true },
-    });
-    const displayOrder = (maxOrder._max.displayOrder ?? -1) + 1;
-
-    const row = await prisma.apartmentImage.create({
-        data: {
-            id: imageId,
-            apartmentId: args.apartmentId,
-            originalUrl: urls.originalUrl,
-            thumbnailUrl: urls.thumbnailUrl,
-            mediumUrl: urls.mediumUrl,
-            largeUrl: urls.largeUrl,
-            blurDataUrl: processed.blurDataUrl,
-            altText: args.altText?.trim() || null,
-            displayOrder,
-        },
-    });
-
-    return row;
 }
 
 export async function replaceApartmentImageFile(args: {
@@ -123,31 +252,12 @@ export async function replaceApartmentImageFile(args: {
         throw Object.assign(new Error(validation.error), { statusCode: 400 });
     }
 
-    const processed = await processApartmentImage(args.buffer);
-    const urls = await uploadImageVariants({
+    return persistProcessedImage({
         apartmentId: args.apartmentId,
         imageId: args.imageId,
-        variants: {
-            original: processed.original.buffer,
-            thumbnail: processed.thumbnail.buffer,
-            medium: processed.medium.buffer,
-            large: processed.large.buffer,
-        },
-    });
-
-    return prisma.apartmentImage.update({
-        where: { id: args.imageId },
-        data: {
-            originalUrl: urls.originalUrl,
-            thumbnailUrl: urls.thumbnailUrl,
-            mediumUrl: urls.mediumUrl,
-            largeUrl: urls.largeUrl,
-            blurDataUrl: processed.blurDataUrl,
-            altText:
-                args.altText !== undefined
-                    ? args.altText?.trim() || null
-                    : existing.altText,
-        },
+        buffer: args.buffer,
+        altText: args.altText,
+        mode: "replace",
     });
 }
 

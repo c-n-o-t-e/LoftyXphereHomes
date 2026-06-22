@@ -11,6 +11,7 @@ import {
 } from "lucide-react";
 import { toast } from "sonner";
 import { getSupabaseClient } from "@/lib/supabase/client";
+import { uploadApartmentImageDirect } from "@/lib/images/directUploadClient";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
@@ -38,10 +39,27 @@ type PendingUpload = {
 };
 
 async function parseJsonResponse<T>(res: Response): Promise<T> {
-    const data = (await res.json()) as T & { error?: string };
-    if (!res.ok) {
-        throw new Error(data.error ?? "Request failed");
+    const text = await res.text();
+    let data: (T & { error?: string }) | null = null;
+
+    if (text) {
+        try {
+            data = JSON.parse(text) as T & { error?: string };
+        } catch {
+            throw new Error(
+                text.length > 180 ? `${text.slice(0, 180)}…` : text,
+            );
+        }
     }
+
+    if (!res.ok) {
+        throw new Error(data?.error ?? (text || "Request failed"));
+    }
+
+    if (!data) {
+        throw new Error("Empty response from server");
+    }
+
     return data;
 }
 
@@ -66,13 +84,13 @@ function SortableImageCard({
     return (
         <Card className="overflow-hidden">
             <div className="relative aspect-[4/3] bg-gray-100">
-                <Image
+                {/* eslint-disable-next-line @next/next/no-img-element */}
+                <img
                     src={image.thumbnailUrl}
                     alt={image.altText ?? "Apartment image"}
-                    fill
-                    className="object-cover"
-                    sizes="200px"
-                    unoptimized
+                    className="absolute inset-0 h-full w-full object-cover"
+                    loading="lazy"
+                    decoding="async"
                 />
                 <div className="absolute top-2 left-2 rounded bg-black/60 px-2 py-1 text-xs text-white">
                     #{image.displayOrder + 1}
@@ -205,30 +223,41 @@ export function ApartmentImageManager({
     const uploadPending = async () => {
         if (pendingUploads.length === 0) return;
         setIsUploading(true);
+        const uploaded: AdminApartmentImage[] = [];
+        const errors: { fileName: string; error: string }[] = [];
+
         try {
             const headers = await getAuthHeaders();
-            const formData = new FormData();
-            pendingUploads.forEach((item) => formData.append("files", item.file));
 
-            const res = await fetch(`/api/admin/apartments/${apartmentId}/images`, {
-                method: "POST",
-                headers,
-                body: formData,
-            });
-            const data = await parseJsonResponse<{
-                images: AdminApartmentImage[];
-                errors?: { fileName: string; error: string }[];
-            }>(res);
+            for (const item of pendingUploads) {
+                try {
+                    const image = await uploadApartmentImageDirect({
+                        apartmentId,
+                        file: item.file,
+                        authHeaders: headers,
+                    });
+                    uploaded.push(image);
+                } catch (err) {
+                    errors.push({
+                        fileName: item.file.name,
+                        error: err instanceof Error ? err.message : "Upload failed",
+                    });
+                }
+            }
 
-            setImages((current) => [...current, ...data.images]);
+            if (uploaded.length === 0) {
+                throw new Error(errors[0]?.error ?? "All uploads failed");
+            }
+
+            setImages((current) => [...current, ...uploaded]);
             clearPendingUploads();
 
-            if (data.errors?.length) {
+            if (errors.length > 0) {
                 toast.error(
-                    `${data.errors.length} file(s) failed: ${data.errors[0]?.error}`,
+                    `${errors.length} file(s) failed: ${errors[0]?.error}`,
                 );
             } else {
-                toast.success(`Uploaded ${data.images.length} image(s)`);
+                toast.success(`Uploaded ${uploaded.length} image(s)`);
             }
         } catch (err) {
             toast.error(err instanceof Error ? err.message : "Upload failed");
@@ -259,17 +288,14 @@ export function ApartmentImageManager({
         setReplacingId(imageId);
         try {
             const headers = await getAuthHeaders();
-            const formData = new FormData();
-            formData.append("file", file);
-            const res = await fetch(
-                `/api/admin/apartments/${apartmentId}/images/${imageId}`,
-                { method: "PUT", headers, body: formData },
-            );
-            const data = await parseJsonResponse<{ image: AdminApartmentImage }>(res);
+            const image = await uploadApartmentImageDirect({
+                apartmentId,
+                file,
+                authHeaders: headers,
+                replaceImageId: imageId,
+            });
             setImages((current) =>
-                current.map((image) =>
-                    image.id === imageId ? data.image : image,
-                ),
+                current.map((row) => (row.id === imageId ? image : row)),
             );
             toast.success("Image replaced");
         } catch (err) {

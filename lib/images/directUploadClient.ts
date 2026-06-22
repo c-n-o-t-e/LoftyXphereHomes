@@ -23,7 +23,7 @@ async function parseApiResponse<T>(res: Response): Promise<T> {
     }
 
     if (!res.ok) {
-        throw new Error(data?.error ?? text || "Request failed");
+        throw new Error(data?.error ?? (text || "Request failed"));
     }
 
     if (!data) {

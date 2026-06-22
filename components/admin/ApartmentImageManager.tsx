@@ -16,6 +16,7 @@ import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import { StorageImage } from "@/components/StorageImage";
 
 type AdminApartmentImage = {
     id: string;
@@ -83,14 +84,11 @@ function SortableImageCard({
 
     return (
         <Card className="overflow-hidden">
-            <div className="relative aspect-[4/3] bg-gray-100">
-                {/* eslint-disable-next-line @next/next/no-img-element */}
-                <img
-                    src={image.thumbnailUrl}
+            <div className="relative aspect-[4/3] bg-gray-100 overflow-hidden">
+                <StorageImage
+                    urls={[image.mediumUrl, image.thumbnailUrl, image.largeUrl]}
                     alt={image.altText ?? "Apartment image"}
                     className="absolute inset-0 h-full w-full object-cover"
-                    loading="lazy"
-                    decoding="async"
                 />
                 <div className="absolute top-2 left-2 rounded bg-black/60 px-2 py-1 text-xs text-white">
                     #{image.displayOrder + 1}

@@ -7,6 +7,7 @@ import {
 } from "@/lib/admin/apartmentImages";
 import { getApartmentById } from "@/lib/data/apartments";
 import { prisma } from "@/lib/db";
+import { ensureApartmentImagesBucket } from "@/lib/images/bucket";
 import { APARTMENT_IMAGE_MAX_BYTES } from "@/lib/images/constants";
 
 type RouteError = {
@@ -44,6 +45,7 @@ export async function GET(request: NextRequest, context: RouteContext) {
     }
 
     try {
+        await ensureApartmentImagesBucket();
         const images = await prisma.apartmentImage.findMany({
             where: { apartmentId },
             orderBy: { displayOrder: "asc" },

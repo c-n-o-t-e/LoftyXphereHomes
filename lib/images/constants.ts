@@ -14,6 +14,19 @@ export const ALLOWED_IMAGE_MIME_TYPES = new Set([
     "image/heif",
 ]);
 
+/** MIME types allowed on the Supabase Storage bucket (raw uploads + processed variants). */
+export const APARTMENT_STORAGE_MIME_TYPES = [
+    "image/jpeg",
+    "image/png",
+    "image/webp",
+    "image/heic",
+    "image/heif",
+    "application/octet-stream",
+    "video/mp4",
+    "video/webm",
+    "video/quicktime",
+] as const;
+
 export const IMAGE_VARIANTS = {
     thumbnail: { width: 300, minBytes: 30 * 1024, maxBytes: 50 * 1024 },
     medium: { width: 800, minBytes: 100 * 1024, maxBytes: 150 * 1024 },

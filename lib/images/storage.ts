@@ -3,6 +3,9 @@ import {
     APARTMENT_IMAGES_BUCKET,
     APARTMENT_IMAGE_MAX_BYTES,
 } from "./constants";
+import { ensureApartmentImagesBucket } from "./bucket";
+
+export { ensureApartmentImagesBucket };
 
 export function buildStorageKeyBase(apartmentId: string, imageId: string) {
     return `apartments/${apartmentId}/${imageId}`;
@@ -18,35 +21,6 @@ export function buildPublicStorageUrl(storageKey: string): string {
         throw new Error("Missing NEXT_PUBLIC_SUPABASE_URL");
     }
     return `${supabaseUrl}/storage/v1/object/public/${APARTMENT_IMAGES_BUCKET}/${storageKey}`;
-}
-
-export async function ensureApartmentImagesBucket() {
-    const supabase = createServerSupabaseClient();
-    const { data: existing, error: getError } = await supabase.storage.getBucket(
-        APARTMENT_IMAGES_BUCKET,
-    );
-
-    if (getError && !getError.message.toLowerCase().includes("not found")) {
-        throw new Error(
-            `Could not verify storage bucket "${APARTMENT_IMAGES_BUCKET}": ${getError.message}`,
-        );
-    }
-
-    if (existing) return;
-
-    const { error: createError } = await supabase.storage.createBucket(
-        APARTMENT_IMAGES_BUCKET,
-        {
-            public: true,
-            fileSizeLimit: APARTMENT_IMAGE_MAX_BYTES,
-        },
-    );
-
-    if (createError && !createError.message.toLowerCase().includes("already exists")) {
-        throw new Error(
-            `Failed to create storage bucket "${APARTMENT_IMAGES_BUCKET}": ${createError.message}`,
-        );
-    }
 }
 
 export async function uploadImageVariants(args: {

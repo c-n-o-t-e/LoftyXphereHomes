@@ -72,6 +72,7 @@ function SortableImageCard({
                     fill
                     className="object-cover"
                     sizes="200px"
+                    unoptimized
                 />
                 <div className="absolute top-2 left-2 rounded bg-black/60 px-2 py-1 text-xs text-white">
                     #{image.displayOrder + 1}

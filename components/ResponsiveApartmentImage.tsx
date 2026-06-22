@@ -80,6 +80,7 @@ export function ResponsiveApartmentImage({
             fill={fill}
             className={className}
             priority={priority}
+            unoptimized={src.includes(".supabase.co/storage/")}
             sizes={
                 sizes ??
                 "(max-width: 768px) 100vw, (max-width: 1280px) 50vw, 33vw"

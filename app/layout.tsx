@@ -6,6 +6,7 @@ import Footer from "@/components/Footer";
 import WhatsAppFloatButton from "@/components/WhatsAppFloatButton";
 import { AuthProvider } from "@/components/AuthProvider";
 import { QueryProvider } from "@/components/providers/QueryProvider";
+import { Toaster } from "sonner";
 import { SITE_NAME, SITE_DESCRIPTION, SITE_URL } from "@/lib/constants";
 
 const inter = Inter({
@@ -79,6 +80,7 @@ export default function RootLayout({
             <main className="min-h-screen">{children}</main>
             <Footer />
             <WhatsAppFloatButton />
+            <Toaster richColors position="top-center" />
           </AuthProvider>
         </QueryProvider>
       </body>

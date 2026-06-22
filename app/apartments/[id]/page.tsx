@@ -1,6 +1,7 @@
 import { Metadata } from "next";
 import { notFound } from "next/navigation";
 import { getApartmentById } from "@/lib/data/apartments";
+import { getApartmentImageSets } from "@/lib/data/getApartmentImages";
 import { MapPin, Star, Check } from "lucide-react";
 import { YourReservationCard } from "@/components/YourReservationCard";
 import { ApartmentImageGallery } from "@/components/ApartmentImageGallery";
@@ -20,13 +21,16 @@ export async function generateMetadata({ params }: PageProps): Promise<Metadata>
     };
   }
 
+  const imageSets = await getApartmentImageSets(id);
+  const ogImages = imageSets.map((set) => set.large || set.medium).filter(Boolean);
+
   return {
     title: apartment.name,
     description: apartment.shortDescription,
     openGraph: {
       title: apartment.name,
       description: apartment.shortDescription,
-      images: apartment.images,
+      images: ogImages.length > 0 ? ogImages : apartment.images,
     },
   };
 }
@@ -38,6 +42,8 @@ export default async function ApartmentDetailPage({ params }: PageProps) {
   if (!apartment) {
     notFound();
   }
+
+  const imageSets = await getApartmentImageSets(id);
 
   return (
     <div className="pt-20 pb-12 sm:pb-16 md:pb-24 bg-white min-h-screen">
@@ -62,7 +68,7 @@ export default async function ApartmentDetailPage({ params }: PageProps) {
 
         {/* Image Gallery */}
         <ApartmentImageGallery
-          images={apartment.images}
+          images={imageSets}
           name={apartment.name}
         />
 

@@ -7,6 +7,7 @@ import { useQuery } from "@tanstack/react-query";
 import { apartments } from "@/lib/data/apartments";
 import ApartmentCard from "@/components/ApartmentCard";
 import { filterApartments, SearchFilters, calculateNights } from "@/lib/utils/search";
+import type { ApartmentImageSet } from "@/lib/images/types";
 import { Info, Loader2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 
@@ -25,6 +26,19 @@ function ApartmentsContent() {
 
   const guestsCount = filters.guests || 1;
   const availabilityEnabled = !!(filters.checkIn && filters.checkOut);
+
+  const {
+    data: imageSetsByApartment,
+  } = useQuery({
+    queryKey: ["apartment-images"],
+    queryFn: async (): Promise<Record<string, ApartmentImageSet[]>> => {
+      const res = await fetch("/api/apartments/images");
+      const data = await res.json().catch(() => ({}));
+      if (!res.ok) return {};
+      return data.images ?? {};
+    },
+    staleTime: 300_000,
+  });
 
   const {
     data: availabilityIds,
@@ -201,6 +215,7 @@ function ApartmentsContent() {
                 key={apartment.id}
                 apartment={apartment}
                 index={index}
+                imageSets={imageSetsByApartment?.[apartment.id]}
               />
             ))}
           </div>

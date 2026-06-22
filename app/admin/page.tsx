@@ -104,6 +104,9 @@ export default function AdminHomePage() {
                                 <Button variant="outline" asChild>
                                     <Link href="/admin/users">Manage staff</Link>
                                 </Button>
+                                <Button variant="outline" asChild>
+                                    <Link href="/admin/apartments">Manage apartment images</Link>
+                                </Button>
                             </div>
                         )}
                         <Button

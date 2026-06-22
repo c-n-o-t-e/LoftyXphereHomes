@@ -67,6 +67,23 @@ CREATE TABLE "AdminUser" (
 );
 
 -- CreateTable
+CREATE TABLE "ApartmentImage" (
+    "id" TEXT NOT NULL,
+    "apartmentId" TEXT NOT NULL,
+    "originalUrl" TEXT NOT NULL,
+    "thumbnailUrl" TEXT NOT NULL,
+    "mediumUrl" TEXT NOT NULL,
+    "largeUrl" TEXT NOT NULL,
+    "blurDataUrl" TEXT,
+    "altText" TEXT,
+    "displayOrder" INTEGER NOT NULL DEFAULT 0,
+    "createdAt" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    "updatedAt" TIMESTAMP(3) NOT NULL,
+
+    CONSTRAINT "ApartmentImage_pkey" PRIMARY KEY ("id")
+);
+
+-- CreateTable
 CREATE TABLE "ContactMessage" (
     "id" TEXT NOT NULL,
     "name" TEXT NOT NULL,
@@ -128,6 +145,9 @@ CREATE UNIQUE INDEX "AdminUser_email_key" ON "AdminUser"("email");
 
 -- CreateIndex
 CREATE INDEX "AdminUser_role_idx" ON "AdminUser"("role");
+
+-- CreateIndex
+CREATE INDEX "ApartmentImage_apartmentId_displayOrder_idx" ON "ApartmentImage"("apartmentId", "displayOrder");
 
 -- CreateIndex
 CREATE INDEX "ContactMessage_createdAt_idx" ON "ContactMessage"("createdAt");

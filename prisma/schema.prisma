@@ -116,6 +116,24 @@ enum AdminRole {
   receptionist
 }
 
+// --- Apartment images (production uploads via Supabase Storage) ---
+
+model ApartmentImage {
+  id           String   @id @default(cuid())
+  apartmentId  String
+  originalUrl  String
+  thumbnailUrl String
+  mediumUrl    String
+  largeUrl     String
+  blurDataUrl  String?
+  altText      String?
+  displayOrder Int      @default(0)
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
+
+  @@index([apartmentId, displayOrder])
+}
+
 // --- Contact messages (public contact form submissions) ---
 model ContactMessage {
   id        String   @id @default(cuid())

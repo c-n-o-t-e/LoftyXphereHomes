@@ -2,35 +2,44 @@
 
 import { useState } from "react";
 import Link from "next/link";
-import Image from "next/image";
+import { ResponsiveApartmentImage } from "@/components/ResponsiveApartmentImage";
+import { legacyUrlsToImageSets } from "@/lib/images/urls";
 import { motion, AnimatePresence } from "framer-motion";
 import { ChevronLeft, ChevronRight, MapPin, Users, Bed, Bath, Star } from "lucide-react";
 import { Apartment } from "@/lib/types";
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 
+import type { ApartmentImageSet } from "@/lib/images/types";
+
 const FALLBACK_IMAGE = "https://images.unsplash.com/photo-1522708323590-d24dbb6b0267?w=800&q=80";
 
 interface ApartmentCardProps {
   apartment: Apartment;
   index?: number;
+  imageSets?: ApartmentImageSet[];
 }
 
-export default function ApartmentCard({ apartment, index = 0 }: ApartmentCardProps) {
+export default function ApartmentCard({ apartment, index = 0, imageSets }: ApartmentCardProps) {
   const [imageIndex, setImageIndex] = useState(0);
-  const images = apartment.images?.length ? apartment.images : [FALLBACK_IMAGE];
-  const hasMultipleImages = images.length > 1;
+  const sets =
+    imageSets && imageSets.length > 0
+      ? imageSets
+      : legacyUrlsToImageSets(
+          apartment.images?.length ? apartment.images : [FALLBACK_IMAGE],
+        );
+  const hasMultipleImages = sets.length > 1;
 
   const goPrev = (e: React.MouseEvent) => {
     e.preventDefault();
     e.stopPropagation();
-    setImageIndex((prev) => (prev === 0 ? images.length - 1 : prev - 1));
+    setImageIndex((prev) => (prev === 0 ? sets.length - 1 : prev - 1));
   };
 
   const goNext = (e: React.MouseEvent) => {
     e.preventDefault();
     e.stopPropagation();
-    setImageIndex((prev) => (prev === images.length - 1 ? 0 : prev + 1));
+    setImageIndex((prev) => (prev === sets.length - 1 ? 0 : prev + 1));
   };
 
   const formatPrice = (price: number) => {
@@ -60,10 +69,11 @@ export default function ApartmentCard({ apartment, index = 0 }: ApartmentCardPro
                 transition={{ duration: 0.3 }}
                 className="absolute inset-0"
               >
-                <Image
-                  src={images[imageIndex] || FALLBACK_IMAGE}
+                <ResponsiveApartmentImage
+                  image={sets[imageIndex]}
                   alt={`${apartment.name} - Image ${imageIndex + 1}`}
                   fill
+                  variant="medium"
                   className="object-cover group-hover:scale-105 transition-transform duration-500"
                   sizes="(max-width: 768px) 100vw, (max-width: 1200px) 50vw, 33vw"
                 />
@@ -95,7 +105,7 @@ export default function ApartmentCard({ apartment, index = 0 }: ApartmentCardPro
             {/* Dot indicators */}
             {hasMultipleImages && (
               <div className="absolute bottom-3 left-1/2 -translate-x-1/2 z-10 flex gap-1.5">
-                {images.map((_, i) => (
+                {sets.map((_, i) => (
                   <button
                     key={i}
                     type="button"

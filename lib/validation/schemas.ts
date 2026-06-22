@@ -252,3 +252,15 @@ export const adminBookingsQuerySchema = z
       cursor: q.cursor,
     };
   });
+
+export const adminApartmentImagePatchBodySchema = z
+  .object({
+    altText: z.string().trim().max(200).nullable().optional(),
+  })
+  .strict();
+
+export const adminApartmentImagesReorderBodySchema = z
+  .object({
+    imageIds: z.array(nonEmptyTrimmedString).min(1),
+  })
+  .strict();

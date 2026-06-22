@@ -5,12 +5,14 @@ import TestimonialSlider from "@/components/TestimonialSlider";
 import AmenitiesSection from "@/components/AmenitiesSection";
 import BlogSection from "@/components/BlogSection";
 import { getFeaturedApartments } from "@/lib/data/apartments";
+import { getAllApartmentImageSetsMap } from "@/lib/data/getApartmentImages";
 import { Button } from "@/components/ui/button";
 import Link from "next/link";
 import { ArrowRight } from "lucide-react";
 
-export default function Home() {
+export default async function Home() {
   const featuredApartments = getFeaturedApartments(6);
+  const imageSetsByApartment = await getAllApartmentImageSetsMap();
 
   return (
     <>
@@ -30,7 +32,12 @@ export default function Home() {
 
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6 sm:gap-8 mb-8 sm:mb-12">
             {featuredApartments.map((apartment, index) => (
-              <ApartmentCard key={apartment.id} apartment={apartment} index={index} />
+              <ApartmentCard
+                key={apartment.id}
+                apartment={apartment}
+                index={index}
+                imageSets={imageSetsByApartment[apartment.id]}
+              />
             ))}
           </div>
 

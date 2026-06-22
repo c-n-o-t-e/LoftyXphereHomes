@@ -29,6 +29,18 @@ jest.mock('@/lib/data/apartments', () => ({
   apartments: [],
 }))
 
+jest.mock('@/lib/data/getApartmentImages', () => ({
+  getAllApartmentImageSetsMap: jest.fn(async () => ({
+    'test-1': [
+      {
+        thumbnail: 'https://example.com/thumb.jpg',
+        medium: 'https://example.com/medium.jpg',
+        large: 'https://example.com/large.jpg',
+      },
+    ],
+  })),
+}))
+
 // Mock components that use framer-motion or carousel
 jest.mock('@/components/ApartmentCard', () => {
   return function MockApartmentCard({ apartment }: { apartment: any }) {
@@ -43,45 +55,45 @@ jest.mock('@/components/TestimonialSlider', () => {
 })
 
 describe('Home Page', () => {
-  it('renders the hero section', () => {
-    render(<Home />)
+  it('renders the hero section', async () => {
+    render(await Home())
     expect(screen.getByText('Live Lofty.')).toBeInTheDocument()
     expect(screen.getByText('Stay Different.')).toBeInTheDocument()
   })
 
-  it('renders featured apartments section', () => {
-    render(<Home />)
+  it('renders featured apartments section', async () => {
+    render(await Home())
     expect(screen.getByText('Featured Apartments')).toBeInTheDocument()
   })
 
-  it('renders trust signals section', () => {
-    render(<Home />)
+  it('renders trust signals section', async () => {
+    render(await Home())
     expect(screen.getByText('Why Choose LoftyXphereHomes?')).toBeInTheDocument()
   })
 
-  it('renders amenities section', () => {
-    render(<Home />)
+  it('renders amenities section', async () => {
+    render(await Home())
     expect(screen.getByText('Premium Amenities')).toBeInTheDocument()
   })
 
-  it('renders blog section', () => {
-    render(<Home />)
+  it('renders blog section', async () => {
+    render(await Home())
     expect(screen.getByText('Latest from Our Blog')).toBeInTheDocument()
   })
 
-  it('renders testimonials section', () => {
-    render(<Home />)
+  it('renders testimonials section', async () => {
+    render(await Home())
     // TestimonialSlider is mocked, so check for the mock component
     expect(screen.getByTestId('testimonial-slider')).toBeInTheDocument()
   })
 
-  it('renders CTA section', () => {
-    render(<Home />)
+  it('renders CTA section', async () => {
+    render(await Home())
     expect(screen.getByText(/Ready to Experience Premium Shortlet Living/i)).toBeInTheDocument()
   })
 
-  it('renders view all apartments button', () => {
-    render(<Home />)
+  it('renders view all apartments button', async () => {
+    render(await Home())
     expect(screen.getByText('View All Apartments')).toBeInTheDocument()
   })
 })

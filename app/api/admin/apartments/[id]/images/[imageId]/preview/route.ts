@@ -47,12 +47,7 @@ export async function GET(request: NextRequest, context: RouteContext) {
         const storageKey = `${buildStorageKeyBase(apartmentId, imageId)}/${variant}.webp`;
         const buffer = await downloadStorageObject(storageKey);
 
-        const body = buffer.buffer.slice(
-            buffer.byteOffset,
-            buffer.byteOffset + buffer.byteLength,
-        ) as ArrayBuffer;
-
-        return new NextResponse(body, {
+        return new NextResponse(new Blob([new Uint8Array(buffer)], { type: "image/webp" }), {
             headers: {
                 "Content-Type": "image/webp",
                 "Cache-Control": "private, no-store",

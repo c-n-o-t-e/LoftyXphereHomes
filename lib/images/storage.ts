@@ -32,11 +32,16 @@ function requireSupabaseUploadEnv() {
     return { supabaseUrl, serviceKey };
 }
 
+/**
+ * Copy image bytes into a standalone Uint8Array for fetch/upload.
+ * Never pass Buffer.buffer.slice() directly — in production Sharp often backs
+ * buffers with SharedArrayBuffer, and fetch stores String(sab) which is the
+ * 26-byte literal "[object SharedArrayBuffer]" (what you saw in Storage).
+ */
 function toBinaryBody(buffer: Buffer): ArrayBuffer {
-    return buffer.buffer.slice(
-        buffer.byteOffset,
-        buffer.byteOffset + buffer.byteLength,
-    ) as ArrayBuffer;
+    const copy = new ArrayBuffer(buffer.length);
+    new Uint8Array(copy).set(buffer);
+    return copy;
 }
 
 async function assertValidImageBuffer(buffer: Buffer, label: string) {
@@ -81,6 +86,27 @@ async function uploadBinaryObject(
             `Failed to upload ${storageKey}: ${text || response.statusText}`,
         );
     }
+
+    const stored = await downloadStorageObject(storageKey);
+    if (stored.length !== buffer.length) {
+        await supabaseStorageRemove(storageKey);
+        throw new Error(
+            `Upload verification failed for ${storageKey}: expected ${buffer.length} bytes, got ${stored.length}.`,
+        );
+    }
+    try {
+        await sharp(stored).metadata();
+    } catch {
+        await supabaseStorageRemove(storageKey);
+        throw new Error(
+            `Upload verification failed for ${storageKey}: stored file is not a valid image.`,
+        );
+    }
+}
+
+async function supabaseStorageRemove(storageKey: string) {
+    const supabase = createServerSupabaseClient();
+    await supabase.storage.from(APARTMENT_IMAGES_BUCKET).remove([storageKey]);
 }
 
 export async function uploadImageVariants(args: {

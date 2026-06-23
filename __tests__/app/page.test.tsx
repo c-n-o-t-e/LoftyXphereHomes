@@ -41,6 +41,10 @@ jest.mock('@/lib/data/getApartmentImages', () => ({
   })),
 }))
 
+jest.mock('@/lib/admin/heroVideo', () => ({
+  getPublicHeroVideo: jest.fn(async () => null),
+}))
+
 // Mock components that use framer-motion or carousel
 jest.mock('@/components/ApartmentCard', () => {
   return function MockApartmentCard({ apartment }: { apartment: any }) {

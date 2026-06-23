@@ -1,7 +1,7 @@
 import type { NextConfig } from "next";
 
 const nextConfig: NextConfig = {
-    serverExternalPackages: ["sharp", "@supabase/supabase-js"],
+    serverExternalPackages: ["sharp", "@supabase/supabase-js", "ffmpeg-static"],
     experimental: {
         proxyClientMaxBodySize: "12mb",
         serverActions: {

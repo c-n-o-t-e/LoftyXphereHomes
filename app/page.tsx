@@ -6,6 +6,7 @@ import AmenitiesSection from "@/components/AmenitiesSection";
 import BlogSection from "@/components/BlogSection";
 import { getFeaturedApartments } from "@/lib/data/apartments";
 import { getAllApartmentImageSetsMap } from "@/lib/data/getApartmentImages";
+import { getPublicHeroVideo } from "@/lib/admin/heroVideo";
 import { Button } from "@/components/ui/button";
 import Link from "next/link";
 import { ArrowRight } from "lucide-react";
@@ -13,10 +14,11 @@ import { ArrowRight } from "lucide-react";
 export default async function Home() {
   const featuredApartments = getFeaturedApartments(4);
   const imageSetsByApartment = await getAllApartmentImageSetsMap();
+  const heroVideo = await getPublicHeroVideo();
 
   return (
     <>
-      <Hero />
+      <Hero heroVideo={heroVideo} />
       
       {/* Featured Apartments */}
       <section className="py-12 sm:py-16 md:py-24 bg-white">

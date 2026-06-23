@@ -2,13 +2,9 @@
 
 import { useRef, useEffect, useState, useCallback } from "react";
 import { motion } from "framer-motion";
-import { Loader2 } from "lucide-react";
 import HeroSearchBar from "./HeroSearchBar";
+import type { HeroVideoConfig } from "@/lib/videos/types";
 
-// Video URL from Pexels - luxury apartment interior tour
-const HERO_VIDEO_URL = "https://videos.pexels.com/video-files/7578554/7578554-uhd_2560_1440_30fps.mp4";
-
-/** CSS-only backdrop when the video fails (no third-party image dependency). */
 function HeroVideoErrorBackdrop() {
   return (
     <div
@@ -18,52 +14,68 @@ function HeroVideoErrorBackdrop() {
   );
 }
 
-export default function Hero() {
+type HeroProps = {
+  heroVideo?: HeroVideoConfig | null;
+};
+
+export default function Hero({ heroVideo = null }: HeroProps) {
   const videoRef = useRef<HTMLVideoElement>(null);
   const [videoError, setVideoError] = useState(false);
-  const [videoReady, setVideoReady] = useState(false);
+  const [videoPlaying, setVideoPlaying] = useState(false);
 
-  const markVideoReady = useCallback(() => {
-    setVideoReady(true);
+  const hasVideo = Boolean(
+    heroVideo?.mobileMp4Url && heroVideo?.desktopMp4Url && heroVideo?.posterUrl,
+  );
+
+  const markVideoPlaying = useCallback(() => {
+    setVideoPlaying(true);
   }, []);
 
-  // Hide loading when the first frame is available or playback actually starts
-  // (loadeddata covers autoplay-blocked cases where playing may never fire until user gesture)
   useEffect(() => {
-    if (videoError) return;
+    if (!hasVideo || videoError) return;
     const video = videoRef.current;
     if (!video) return;
 
-    const onReady = () => markVideoReady();
-    video.addEventListener("playing", onReady);
-    video.addEventListener("loadeddata", onReady);
+    const onPlaying = () => markVideoPlaying();
+    video.addEventListener("playing", onPlaying);
 
-    if (video.readyState >= HTMLMediaElement.HAVE_CURRENT_DATA) {
-      markVideoReady();
+    if (!video.paused && video.readyState >= HTMLMediaElement.HAVE_CURRENT_DATA) {
+      markVideoPlaying();
     }
 
     return () => {
-      video.removeEventListener("playing", onReady);
-      video.removeEventListener("loadeddata", onReady);
+      video.removeEventListener("playing", onPlaying);
     };
-  }, [videoError, markVideoReady]);
+  }, [hasVideo, videoError, markVideoPlaying, heroVideo?.desktopMp4Url]);
 
-  // Ensure video plays on mount (some browsers block autoplay)
   useEffect(() => {
+    if (!hasVideo) return;
     const video = videoRef.current;
-    if (video) {
-      video.play().catch(() => {
-        console.log("Video autoplay was prevented");
-      });
-    }
-  }, []);
+    if (!video) return;
+    video.load();
+    video.play().catch(() => {
+      // Autoplay may be blocked; poster remains visible.
+    });
+  }, [hasVideo, heroVideo?.desktopMp4Url, heroVideo?.mobileMp4Url]);
 
   return (
     <section className="relative min-h-screen w-full flex items-center justify-center overflow-hidden">
-      {/* Video Background */}
       <div className="absolute inset-0 z-0">
-        {!videoError ? (
+        {hasVideo && !videoError ? (
           <>
+            {heroVideo?.posterUrl ? (
+              // eslint-disable-next-line @next/next/no-img-element
+              <img
+                src={heroVideo.posterUrl}
+                alt=""
+                aria-hidden
+                fetchPriority="high"
+                decoding="async"
+                className={`absolute inset-0 h-full w-full object-cover transition-opacity duration-500 ${
+                  videoPlaying ? "opacity-0" : "opacity-100"
+                }`}
+              />
+            ) : null}
             <video
               ref={videoRef}
               autoPlay
@@ -71,34 +83,31 @@ export default function Hero() {
               loop
               playsInline
               preload="auto"
+              poster={heroVideo?.posterUrl}
               onError={() => setVideoError(true)}
-              className="absolute inset-0 w-full h-full object-cover"
-            >
-              <source src={HERO_VIDEO_URL} type="video/mp4" />
-            </video>
-            {/* Loading until first frame / playback (no external poster image) */}
-            <div
-              className={`absolute inset-0 z-[1] flex items-center justify-center bg-gradient-to-br from-stone-900/95 via-stone-800/95 to-neutral-950/95 transition-opacity duration-700 ease-out ${
-                videoReady ? "pointer-events-none opacity-0" : "opacity-100"
+              className={`absolute inset-0 h-full w-full object-cover transition-opacity duration-500 ${
+                videoPlaying ? "opacity-100" : "opacity-0"
               }`}
-              aria-busy={!videoReady}
-              aria-label="Loading hero video"
             >
-              <Loader2
-                className="h-10 w-10 text-white/40 animate-spin"
-                aria-hidden
-              />
-            </div>
+              {heroVideo?.mobileMp4Url ? (
+                <source
+                  src={heroVideo.mobileMp4Url}
+                  type="video/mp4"
+                  media="(max-width: 768px)"
+                />
+              ) : null}
+              {heroVideo?.desktopMp4Url ? (
+                <source src={heroVideo.desktopMp4Url} type="video/mp4" />
+              ) : null}
+            </video>
           </>
         ) : (
           <HeroVideoErrorBackdrop />
         )}
-        {/* Light gradient overlay for text readability */}
         <div className="absolute inset-0 bg-gradient-to-b from-black/20 via-black/10 to-black/20" />
         <div className="absolute inset-0 bg-gradient-to-r from-black/10 via-transparent to-black/10" />
       </div>
 
-      {/* Content - centered vertically; no extra top margin on mobile */}
       <div className="container mx-auto px-4 sm:px-6 lg:px-8 relative z-10">
         <div className="max-w-4xl mx-auto text-center">
           <motion.div
@@ -121,7 +130,6 @@ export default function Hero() {
               Where luxury meets comfort in the heart of Abuja
             </p>
 
-            {/* Search Bar */}
             <motion.div
               initial={{ opacity: 0, y: 20 }}
               animate={{ opacity: 1, y: 0 }}
@@ -133,7 +141,6 @@ export default function Hero() {
         </div>
       </div>
 
-      {/* Scroll Indicator - Hidden on mobile for cleaner look */}
       <motion.div
         initial={{ opacity: 0 }}
         animate={{ opacity: 1 }}
@@ -151,4 +158,3 @@ export default function Hero() {
     </section>
   );
 }
-

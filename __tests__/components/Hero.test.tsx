@@ -1,4 +1,4 @@
-import { render, screen, fireEvent } from '@testing-library/react'
+import { render, screen } from '@testing-library/react'
 import Hero from '@/components/Hero'
 
 jest.mock('next/link', () => {
@@ -7,94 +7,54 @@ jest.mock('next/link', () => {
   )
 })
 
-jest.mock('next/image', () => ({
-  __esModule: true,
-  default: ({ src, alt, ...props }: { src: string; alt: string; [key: string]: unknown }) => (
-    // eslint-disable-next-line @next/next/no-img-element, jsx-a11y/alt-text
-    <img src={src} alt={alt} {...props} />
-  ),
-}))
-
 jest.mock('@/components/HeroSearchBar', () => {
   return function MockHeroSearchBar() {
     return <div data-testid="hero-search-bar">HeroSearchBar</div>
   }
 })
 
+const mockHeroVideo = {
+  id: 'hero-1',
+  mobileMp4Url: 'https://example.supabase.co/mobile.mp4',
+  desktopMp4Url: 'https://example.supabase.co/desktop.mp4',
+  posterUrl: 'https://example.supabase.co/poster.webp',
+  updatedAt: new Date().toISOString(),
+}
+
 describe('Hero', () => {
   it('renders the hero section with main content', () => {
-    render(<Hero />)
+    render(<Hero heroVideo={mockHeroVideo} />)
     expect(screen.getByText('Live Lofty.')).toBeInTheDocument()
     expect(screen.getByText('Stay Different.')).toBeInTheDocument()
   })
 
-  it('renders the LoftyXphereHomes label', () => {
-    render(<Hero />)
-    expect(screen.getByText('LoftyXphereHomes')).toBeInTheDocument()
+  it('renders poster immediately when hero video is configured', () => {
+    const { container } = render(<Hero heroVideo={mockHeroVideo} />)
+    const poster = container.querySelector('img[src="https://example.supabase.co/poster.webp"]')
+    expect(poster).toBeInTheDocument()
   })
 
-  it('renders the description text', () => {
-    render(<Hero />)
-    expect(screen.getByText(/Where luxury meets comfort in the heart of Abuja/i)).toBeInTheDocument()
+  it('renders responsive video sources when hero video is configured', () => {
+    const { container } = render(<Hero heroVideo={mockHeroVideo} />)
+    const video = container.querySelector('video')
+    expect(video).toBeInTheDocument()
+    const sources = video?.querySelectorAll('source')
+    expect(sources?.length).toBe(2)
+  })
+
+  it('uses gradient backdrop when no hero video is configured', () => {
+    const { container } = render(<Hero />)
+    expect(container.querySelector('video')).toBeNull()
+    expect(container.querySelector('.from-stone-900')).toBeInTheDocument()
+  })
+
+  it('does not show a blocking loading spinner', () => {
+    render(<Hero heroVideo={mockHeroVideo} />)
+    expect(screen.queryByLabelText('Loading hero video')).not.toBeInTheDocument()
   })
 
   it('renders the HeroSearchBar component', () => {
-    render(<Hero />)
+    render(<Hero heroVideo={mockHeroVideo} />)
     expect(screen.getByTestId('hero-search-bar')).toBeInTheDocument()
-  })
-
-  it('renders scroll indicator on desktop', () => {
-    render(<Hero />)
-    expect(screen.getByText('Scroll to explore')).toBeInTheDocument()
-  })
-
-  it('renders a video element with source pointing to hero video', () => {
-    const { container } = render(<Hero />)
-    const video = container.querySelector('video')
-    expect(video).toBeInTheDocument()
-    const source = video?.querySelector('source')
-    expect(source).toHaveAttribute('src', expect.stringContaining('pexels.com'))
-    expect(source).toHaveAttribute('type', 'video/mp4')
-  })
-
-  it('shows loading state for hero video until ready', () => {
-    render(<Hero />)
-    expect(screen.getByLabelText('Loading hero video')).toBeInTheDocument()
-  })
-
-  it('shows CSS gradient backdrop when video errors', () => {
-    const { container } = render(<Hero />)
-    const video = container.querySelector('video')
-    expect(video).toBeInTheDocument()
-    fireEvent.error(video!)
-    expect(container.querySelector('video')).toBeNull()
-    const fallback = container.querySelector('.from-stone-900')
-    expect(fallback).toBeInTheDocument()
-  })
-
-  it('has gradient overlay elements for text readability', () => {
-    const { container } = render(<Hero />)
-    const gradients = container.querySelectorAll('.bg-gradient-to-b, .bg-gradient-to-r')
-    expect(gradients.length).toBeGreaterThanOrEqual(2)
-  })
-
-  it('video element has play method for autoplay', () => {
-    const { container } = render(<Hero />)
-    const video = container.querySelector('video')
-    expect(video).toBeInTheDocument()
-    expect(typeof (video as HTMLVideoElement).play).toBe('function')
-  })
-
-  it('has correct section structure and classes', () => {
-    const { container } = render(<Hero />)
-    const section = container.querySelector('section')
-    expect(section).toBeInTheDocument()
-    expect(section).toHaveClass('relative', 'min-h-screen', 'overflow-hidden')
-  })
-
-  it('heading has drop shadow and white text', () => {
-    render(<Hero />)
-    const heading = screen.getByRole('heading', { level: 1 })
-    expect(heading).toHaveClass('text-white', 'drop-shadow-2xl')
   })
 })

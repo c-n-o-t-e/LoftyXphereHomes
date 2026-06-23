@@ -40,7 +40,6 @@ try {
         apartmentId,
         imageId,
         variants: {
-            original: processed.original.buffer,
             thumbnail: processed.thumbnail.buffer,
             medium: processed.medium.buffer,
             large: processed.large.buffer,
@@ -49,7 +48,7 @@ try {
 
     console.log("Uploaded:", urls.mediumUrl);
 
-    for (const variant of ["thumbnail", "medium", "large", "original"]) {
+    for (const variant of ["thumbnail", "medium", "large"]) {
         const downloaded = await downloadStorageObject(
             `apartments/${apartmentId}/${imageId}/${variant}.webp`,
         );

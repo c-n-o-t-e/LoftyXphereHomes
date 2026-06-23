@@ -57,7 +57,6 @@ describe("processApartmentImage", () => {
         expect(processed.thumbnail.buffer).toBeInstanceOf(Buffer);
         expect(processed.medium.buffer).toBeInstanceOf(Buffer);
         expect(processed.large.buffer).toBeInstanceOf(Buffer);
-        expect(processed.original.buffer).toBeInstanceOf(Buffer);
         expect(processed.blurDataUrl.startsWith("data:image/webp;base64,")).toBe(
             true,
         );

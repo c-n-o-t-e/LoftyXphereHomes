@@ -6,7 +6,6 @@ export type ProcessedImageVariant = {
 };
 
 export type ProcessedApartmentImage = {
-    original: ProcessedImageVariant;
     thumbnail: ProcessedImageVariant;
     medium: ProcessedImageVariant;
     large: ProcessedImageVariant;

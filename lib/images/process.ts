@@ -94,9 +94,6 @@ export async function processApartmentImage(
     input: Buffer,
 ): Promise<ProcessedApartmentImage> {
     const normalized = await sharp(input).rotate().toBuffer();
-    const originalWebp = await sharp(normalized)
-        .webp({ quality: 90, effort: 4 })
-        .toBuffer({ resolveWithObject: true });
 
     const [thumbnail, medium, large, blurDataUrl] = await Promise.all([
         encodeWebpVariant(normalized, "thumbnail"),
@@ -106,12 +103,6 @@ export async function processApartmentImage(
     ]);
 
     return {
-        original: {
-            buffer: originalWebp.data,
-            width: originalWebp.info.width,
-            height: originalWebp.info.height,
-            bytes: originalWebp.data.length,
-        },
         thumbnail,
         medium,
         large,

@@ -15,7 +15,7 @@ type RouteContext = {
     params: Promise<{ id: string; imageId: string }>;
 };
 
-const VARIANTS = new Set(["thumbnail", "medium", "large", "original"]);
+const VARIANTS = new Set(["thumbnail", "medium", "large"]);
 
 export async function GET(request: NextRequest, context: RouteContext) {
     try {

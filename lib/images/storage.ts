@@ -113,7 +113,6 @@ export async function uploadImageVariants(args: {
     apartmentId: string;
     imageId: string;
     variants: {
-        original: Buffer;
         thumbnail: Buffer;
         medium: Buffer;
         large: Buffer;
@@ -123,7 +122,6 @@ export async function uploadImageVariants(args: {
     const storageKeyBase = buildStorageKeyBase(args.apartmentId, args.imageId);
 
     const uploads = [
-        { key: `${storageKeyBase}/original.webp`, buffer: args.variants.original },
         { key: `${storageKeyBase}/thumbnail.webp`, buffer: args.variants.thumbnail },
         { key: `${storageKeyBase}/medium.webp`, buffer: args.variants.medium },
         { key: `${storageKeyBase}/large.webp`, buffer: args.variants.large },
@@ -133,11 +131,14 @@ export async function uploadImageVariants(args: {
         await uploadBinaryObject(upload.key, upload.buffer, "image/webp");
     }
 
+    const largeUrl = buildPublicStorageUrl(`${storageKeyBase}/large.webp`);
+
     return {
-        originalUrl: buildPublicStorageUrl(`${storageKeyBase}/original.webp`),
+        // DB column kept for compatibility — points at large, not a separate original file.
+        originalUrl: largeUrl,
         thumbnailUrl: buildPublicStorageUrl(`${storageKeyBase}/thumbnail.webp`),
         mediumUrl: buildPublicStorageUrl(`${storageKeyBase}/medium.webp`),
-        largeUrl: buildPublicStorageUrl(`${storageKeyBase}/large.webp`),
+        largeUrl,
     };
 }
 

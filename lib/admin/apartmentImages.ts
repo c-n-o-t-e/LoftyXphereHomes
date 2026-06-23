@@ -84,7 +84,6 @@ async function persistProcessedImage(args: {
         apartmentId: args.apartmentId,
         imageId: args.imageId,
         variants: {
-            original: processed.original.buffer,
             thumbnail: processed.thumbnail.buffer,
             medium: processed.medium.buffer,
             large: processed.large.buffer,

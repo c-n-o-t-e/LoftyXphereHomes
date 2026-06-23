@@ -16,7 +16,7 @@ import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { StorageImage } from "@/components/StorageImage";
+import { AdminApartmentImagePreview } from "@/components/admin/AdminApartmentImagePreview";
 
 type AdminApartmentImage = {
     id: string;
@@ -66,6 +66,7 @@ async function parseJsonResponse<T>(res: Response): Promise<T> {
 
 function SortableImageCard({
     image,
+    apartmentId,
     onDelete,
     onReplace,
     onAltTextSave,
@@ -73,6 +74,7 @@ function SortableImageCard({
     isReplacing,
 }: {
     image: AdminApartmentImage;
+    apartmentId: string;
     onDelete: (imageId: string) => void;
     onReplace: (imageId: string, file: File) => void;
     onAltTextSave: (imageId: string, altText: string) => void;
@@ -85,8 +87,9 @@ function SortableImageCard({
     return (
         <Card className="overflow-hidden">
             <div className="relative aspect-[4/3] bg-gray-100 overflow-hidden">
-                <StorageImage
-                    urls={[image.mediumUrl, image.thumbnailUrl, image.largeUrl]}
+                <AdminApartmentImagePreview
+                    apartmentId={apartmentId}
+                    imageId={image.id}
                     alt={image.altText ?? "Apartment image"}
                     className="absolute inset-0 h-full w-full object-cover"
                 />
@@ -477,6 +480,7 @@ export function ApartmentImageManager({
                         >
                             <SortableImageCard
                                 image={image}
+                                apartmentId={apartmentId}
                                 onDelete={(imageId) => void deleteImage(imageId)}
                                 onReplace={(imageId, file) => void replaceImage(imageId, file)}
                                 onAltTextSave={(imageId, altText) =>

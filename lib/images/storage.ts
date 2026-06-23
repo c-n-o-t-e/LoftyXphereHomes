@@ -1,7 +1,7 @@
+import sharp from "sharp";
 import { createServerSupabaseClient } from "@/lib/supabase/server";
 import {
     APARTMENT_IMAGES_BUCKET,
-    APARTMENT_IMAGE_MAX_BYTES,
 } from "./constants";
 import { ensureApartmentImagesBucket } from "./bucket";
 
@@ -23,6 +23,66 @@ export function buildPublicStorageUrl(storageKey: string): string {
     return `${supabaseUrl}/storage/v1/object/public/${APARTMENT_IMAGES_BUCKET}/${storageKey}`;
 }
 
+function requireSupabaseUploadEnv() {
+    const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL?.replace(/\/$/, "");
+    const serviceKey = process.env.SUPABASE_SERVICE_ROLE_KEY;
+    if (!supabaseUrl || !serviceKey) {
+        throw new Error("Missing Supabase storage credentials");
+    }
+    return { supabaseUrl, serviceKey };
+}
+
+function toBinaryBody(buffer: Buffer): ArrayBuffer {
+    return buffer.buffer.slice(
+        buffer.byteOffset,
+        buffer.byteOffset + buffer.byteLength,
+    ) as ArrayBuffer;
+}
+
+async function assertValidImageBuffer(buffer: Buffer, label: string) {
+    try {
+        await sharp(buffer).metadata();
+    } catch {
+        throw new Error(
+            `Image processing produced an invalid ${label}. Please retry the upload.`,
+        );
+    }
+}
+
+/**
+ * Upload via Supabase REST with a raw Uint8Array body.
+ * Avoids subtle Buffer/string corruption that can happen in bundled server runtimes.
+ */
+async function uploadBinaryObject(
+    storageKey: string,
+    buffer: Buffer,
+    contentType: string,
+) {
+    await assertValidImageBuffer(buffer, storageKey);
+
+    const { supabaseUrl, serviceKey } = requireSupabaseUploadEnv();
+    const response = await fetch(
+        `${supabaseUrl}/storage/v1/object/${APARTMENT_IMAGES_BUCKET}/${storageKey}`,
+        {
+            method: "POST",
+            headers: {
+                Authorization: `Bearer ${serviceKey}`,
+                "Content-Type": contentType,
+                "x-upsert": "true",
+                "cache-control": "public, max-age=31536000, immutable",
+            },
+            body: toBinaryBody(buffer),
+        },
+    );
+
+    if (!response.ok) {
+        const text = await response.text();
+        throw new Error(
+            `Failed to upload ${storageKey}: ${text || response.statusText}`,
+        );
+    }
+}
+
 export async function uploadImageVariants(args: {
     apartmentId: string;
     imageId: string;
@@ -34,7 +94,6 @@ export async function uploadImageVariants(args: {
     };
 }) {
     await ensureApartmentImagesBucket();
-    const supabase = createServerSupabaseClient();
     const storageKeyBase = buildStorageKeyBase(args.apartmentId, args.imageId);
 
     const uploads = [
@@ -45,17 +104,7 @@ export async function uploadImageVariants(args: {
     ] as const;
 
     for (const upload of uploads) {
-        const { error } = await supabase.storage
-            .from(APARTMENT_IMAGES_BUCKET)
-            .upload(upload.key, upload.buffer, {
-                contentType: "image/webp",
-                upsert: true,
-                cacheControl: "public, max-age=31536000, immutable",
-            });
-
-        if (error) {
-            throw new Error(`Failed to upload ${upload.key}: ${error.message}`);
-        }
+        await uploadBinaryObject(upload.key, upload.buffer, "image/webp");
     }
 
     return {
@@ -77,6 +126,7 @@ export async function deleteStoredApartmentImage(
         `${storageKeyBase}/thumbnail.webp`,
         `${storageKeyBase}/medium.webp`,
         `${storageKeyBase}/large.webp`,
+        `${storageKeyBase}/raw-upload`,
     ];
 
     const { error } = await supabase.storage
@@ -86,6 +136,24 @@ export async function deleteStoredApartmentImage(
     if (error) {
         throw new Error(`Failed to delete storage objects: ${error.message}`);
     }
+}
+
+export async function downloadStorageObject(storageKey: string): Promise<Buffer> {
+    const { supabaseUrl, serviceKey } = requireSupabaseUploadEnv();
+    const response = await fetch(
+        `${supabaseUrl}/storage/v1/object/${APARTMENT_IMAGES_BUCKET}/${storageKey}`,
+        {
+            headers: { Authorization: `Bearer ${serviceKey}` },
+        },
+    );
+
+    if (!response.ok) {
+        throw new Error(
+            `Failed to download ${storageKey}: ${response.status} ${response.statusText}`,
+        );
+    }
+
+    return Buffer.from(await response.arrayBuffer());
 }
 
 export async function createRawUploadSignedUrl(
@@ -115,19 +183,19 @@ export async function downloadRawUpload(
     apartmentId: string,
     imageId: string,
 ): Promise<Buffer> {
-    const supabase = createServerSupabaseClient();
-    const path = buildRawUploadKey(apartmentId, imageId);
-    const { data, error } = await supabase.storage
-        .from(APARTMENT_IMAGES_BUCKET)
-        .download(path);
+    const buffer = await downloadStorageObject(
+        buildRawUploadKey(apartmentId, imageId),
+    );
 
-    if (error || !data) {
+    try {
+        await sharp(buffer).metadata();
+    } catch {
         throw new Error(
-            `Uploaded file not found in storage: ${error?.message ?? "missing object"}`,
+            "Uploaded file could not be read as an image. Please retry with a JPEG, PNG, or WebP photo.",
         );
     }
 
-    return Buffer.from(await data.arrayBuffer());
+    return buffer;
 }
 
 export async function deleteRawUpload(apartmentId: string, imageId: string) {

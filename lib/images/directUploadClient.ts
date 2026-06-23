@@ -63,17 +63,12 @@ export async function uploadApartmentImageDirect(args: {
     const upload = initData.upload;
 
     const supabase = getSupabaseClient();
-    const uploadBody =
-        args.file.type && args.file.type.startsWith("image/")
-            ? args.file
-            : new File([args.file], args.file.name, {
-                  type: "application/octet-stream",
-              });
+    const fileBody = await args.file.arrayBuffer();
 
     const { error: storageError } = await supabase.storage
         .from(upload.bucket)
-        .uploadToSignedUrl(upload.path, upload.token, uploadBody, {
-            contentType: uploadBody.type,
+        .uploadToSignedUrl(upload.path, upload.token, fileBody, {
+            contentType: args.file.type || "application/octet-stream",
             upsert: true,
         });
 

@@ -15,7 +15,7 @@ export async function generateMetadata({ params }: PageProps): Promise<Metadata>
   const { id } = await params;
   const apartment = getApartmentById(id);
 
-  if (!apartment) {
+  if (!apartment || apartment.status !== "active") {
     return {
       title: "Apartment Not Found",
     };
@@ -39,13 +39,11 @@ export default async function ApartmentDetailPage({ params }: PageProps) {
   const { id } = await params;
   const apartment = getApartmentById(id);
 
-  if (!apartment) {
+  if (!apartment || !isApartmentBookable(apartment)) {
     notFound();
   }
 
   const imageSets = await getApartmentImageSets(id);
-  const bookable = isApartmentBookable(apartment);
-  const comingSoon = apartment.status === "coming_soon";
 
   return (
     <div className="pt-20 pb-12 sm:pb-16 md:pb-24 bg-white min-h-screen">
@@ -60,17 +58,11 @@ export default async function ApartmentDetailPage({ params }: PageProps) {
               <MapPin className="h-5 w-5 mr-2 text-[#FA5C5C]" />
               {apartment.location.area}, {apartment.location.city}
             </div>
-            {comingSoon ? (
-              <span className="rounded-full bg-black/10 px-3 py-1 text-sm font-medium text-black/80">
-                Coming soon
-              </span>
-            ) : (
-              <div className="flex items-center">
-                <Star className="h-5 w-5 fill-[#FA5C5C] text-[#FA5C5C] mr-1" />
-                <span className="font-semibold text-black">{apartment.rating}</span>
-                <span className="ml-1 text-black/70">({apartment.reviews} reviews)</span>
-              </div>
-            )}
+            <div className="flex items-center">
+              <Star className="h-5 w-5 fill-[#FA5C5C] text-[#FA5C5C] mr-1" />
+              <span className="font-semibold text-black">{apartment.rating}</span>
+              <span className="ml-1 text-black/70">({apartment.reviews} reviews)</span>
+            </div>
           </div>
         </div>
 
@@ -130,8 +122,6 @@ export default async function ApartmentDetailPage({ params }: PageProps) {
               beds={apartment.beds}
               baths={apartment.baths}
               bookingUrl={apartment.bookingUrl}
-              bookable={bookable}
-              apartmentName={apartment.name}
             />
           </div>
         </div>

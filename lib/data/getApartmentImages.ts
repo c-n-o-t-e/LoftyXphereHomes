@@ -1,4 +1,4 @@
-import { getApartmentById, apartments } from "@/lib/data/apartments";
+import { getApartmentById, apartments, getActiveApartments } from "@/lib/data/apartments";
 import { prisma } from "@/lib/db";
 import { legacyUrlsToImageSets } from "@/lib/images/urls";
 import type { ApartmentImageSet } from "@/lib/images/types";
@@ -131,10 +131,12 @@ export async function enrichApartmentsWithImages<T extends Apartment>(
     });
 }
 
-/** Flat gallery feed across all listings for the /gallery page. */
+/** Flat gallery feed across active listings for the /gallery page. */
 export async function getGalleryImages(): Promise<GalleryImageItem[]> {
-    const imageMap = await getApartmentImageSetsMap(apartments.map((a) => a.id));
-    return apartments.flatMap((apartment) =>
+    const imageMap = await getApartmentImageSetsMap(
+        getActiveApartments().map((a) => a.id),
+    );
+    return getActiveApartments().flatMap((apartment) =>
         (imageMap[apartment.id] ?? []).map((image) => ({
             image,
             apartment: apartment.name,
@@ -146,13 +148,15 @@ export async function getGalleryImages(): Promise<GalleryImageItem[]> {
 export async function getAllApartmentImageSetsMap(): Promise<
     Record<string, ApartmentImageSet[]>
 > {
+    const activeApartments = getActiveApartments();
     const map: Record<string, ApartmentImageSet[]> = {};
-    for (const apartment of apartments) {
+    for (const apartment of activeApartments) {
         map[apartment.id] = legacyUrlsToImageSets(apartment.images);
     }
 
     try {
         const rows = await prisma.apartmentImage.findMany({
+            where: { apartmentId: { in: activeApartments.map((a) => a.id) } },
             orderBy: [{ apartmentId: "asc" }, { displayOrder: "asc" }],
             select: {
                 apartmentId: true,
@@ -164,7 +168,7 @@ export async function getAllApartmentImageSetsMap(): Promise<
             },
         });
 
-        for (const apartment of apartments) {
+        for (const apartment of activeApartments) {
             map[apartment.id] = [];
         }
 
@@ -179,7 +183,7 @@ export async function getAllApartmentImageSetsMap(): Promise<
             });
         }
 
-        for (const apartment of apartments) {
+        for (const apartment of activeApartments) {
             if (map[apartment.id].length === 0) {
                 map[apartment.id] = legacyUrlsToImageSets(apartment.images);
             }

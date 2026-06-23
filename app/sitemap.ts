@@ -1,5 +1,5 @@
 import { MetadataRoute } from "next";
-import { apartments } from "@/lib/data/apartments";
+import { getActiveApartments } from "@/lib/data/apartments";
 import { blogPosts } from "@/lib/data/blog";
 import { SITE_URL } from "@/lib/constants";
 
@@ -67,7 +67,7 @@ export default function sitemap(): MetadataRoute.Sitemap {
   }));
 
   // Dynamic apartment pages
-  const apartmentPages: MetadataRoute.Sitemap = apartments.map((apartment) => ({
+  const apartmentPages: MetadataRoute.Sitemap = getActiveApartments().map((apartment) => ({
     url: `${baseUrl}/apartments/${apartment.id}`,
     lastModified: new Date(),
     changeFrequency: "weekly",

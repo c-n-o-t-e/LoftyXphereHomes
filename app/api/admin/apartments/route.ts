@@ -29,6 +29,8 @@ export async function GET(request: NextRequest) {
                 id: apartment.id,
                 name: apartment.name,
                 location: apartment.location,
+                status: apartment.status,
+                beds: apartment.beds,
                 imageCount: imageCounts[apartment.id] ?? 0,
             })),
         });

@@ -4,11 +4,7 @@ import { Suspense, useMemo } from "react";
 import { useSearchParams } from "next/navigation";
 import Link from "next/link";
 import { useQuery } from "@tanstack/react-query";
-import {
-    apartments,
-    getActiveApartments,
-    getComingSoonApartments,
-} from "@/lib/data/apartments";
+import { getActiveApartments } from "@/lib/data/apartments";
 import ApartmentCard from "@/components/ApartmentCard";
 import { filterApartments, SearchFilters, calculateNights } from "@/lib/utils/search";
 import type { ApartmentImageSet } from "@/lib/images/types";
@@ -99,17 +95,11 @@ function ApartmentsContent() {
     return filtered;
   }, [filters, availableForFilter, activeApartments]);
 
-  const comingSoonApartments = useMemo(() => getComingSoonApartments(), []);
-
   const isSearchActive = !!(filters.location || filters.checkIn || filters.checkOut || filters.guests);
-  const showComingSoonSection = !isSearchActive || (!filters.checkIn && !filters.checkOut);
 
   const nights = filters.checkIn && filters.checkOut
     ? calculateNights(filters.checkIn, filters.checkOut)
     : 0;
-
-  const activeCount = getActiveApartments().length;
-  const totalCount = apartments.length;
 
   return (
     <div className="pt-20 pb-12 sm:pb-16 md:pb-24 bg-white min-h-screen">
@@ -125,7 +115,7 @@ function ApartmentsContent() {
               ? filters.checkIn && filters.checkOut
                 ? `Found ${filteredApartments.length} available suite${filteredApartments.length !== 1 ? "s" : ""} for your dates`
                 : `Found ${filteredApartments.length} suite${filteredApartments.length !== 1 ? "s" : ""} matching your search`
-              : `${activeCount} suites available now at Lofty Xphere Homes in Wuye, Abuja — ${totalCount - activeCount} more launching soon.`}
+              : "Premium shortlet suites in Wuye, Abuja — book your stay at Lofty Xphere Homes."}
           </p>
         </div>
 
@@ -214,58 +204,16 @@ function ApartmentsContent() {
               Finding suites available for your selected dates.
             </p>
           </div>
-        ) : filteredApartments.length > 0 || (showComingSoonSection && comingSoonApartments.length > 0) ? (
-          <div className="space-y-12 sm:space-y-16">
-            {filteredApartments.length > 0 && (
-              <section>
-                {!showComingSoonSection || comingSoonApartments.length === 0 ? null : (
-                  <h2 className="text-xl sm:text-2xl font-bold text-black mb-6 sm:mb-8">
-                    Available now
-                  </h2>
-                )}
-                <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6 sm:gap-8">
-                  {filteredApartments.map((apartment, index) => (
-                    <ApartmentCard
-                      key={apartment.id}
-                      apartment={apartment}
-                      index={index}
-                      imageSets={imageSetsByApartment?.[apartment.id]}
-                    />
-                  ))}
-                </div>
-              </section>
-            )}
-
-            {showComingSoonSection && comingSoonApartments.length > 0 && (
-              <section>
-                <div className="mb-6 sm:mb-8">
-                  <h2 className="text-xl sm:text-2xl font-bold text-black mb-2">
-                    Coming soon
-                  </h2>
-                  <p className="text-sm sm:text-base text-black/60 max-w-2xl">
-                    Five more suites are being prepared. Browse what&apos;s ahead or contact us to register interest.
-                  </p>
-                </div>
-                <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6 sm:gap-8">
-                  {comingSoonApartments.map((apartment, index) => (
-                    <ApartmentCard
-                      key={apartment.id}
-                      apartment={apartment}
-                      index={index}
-                      imageSets={imageSetsByApartment?.[apartment.id]}
-                    />
-                  ))}
-                </div>
-              </section>
-            )}
-
-            {filteredApartments.length === 0 && showComingSoonSection && (
-              <div className="text-center py-8 px-4 bg-black/5 rounded-xl border border-black/10 mb-8">
-                <p className="text-sm sm:text-base text-black/70">
-                  No suites match your search dates right now. Try different dates, or explore our upcoming suites below.
-                </p>
-              </div>
-            )}
+        ) : filteredApartments.length > 0 ? (
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6 sm:gap-8">
+            {filteredApartments.map((apartment, index) => (
+              <ApartmentCard
+                key={apartment.id}
+                apartment={apartment}
+                index={index}
+                imageSets={imageSetsByApartment?.[apartment.id]}
+              />
+            ))}
           </div>
         ) : (
           <div className="text-center py-12 sm:py-16 bg-white rounded-xl shadow-sm border border-black/10 px-4">

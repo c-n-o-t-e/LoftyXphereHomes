@@ -14,6 +14,8 @@ type AdminApartmentRow = {
     id: string;
     name: string;
     location: { city: string; area: string };
+    status: "active" | "coming_soon";
+    beds: number;
     imageCount: number;
 };
 
@@ -92,7 +94,7 @@ export default function AdminApartmentsPage() {
                             Apartment Images
                         </h1>
                         <p className="text-sm text-gray-600 mt-1">
-                            Upload, reorder, and manage production photos for each listing.
+                            All nine suites — manage photos for bookable and upcoming units.
                         </p>
                     </div>
                     <Button variant="outline" asChild>
@@ -110,11 +112,26 @@ export default function AdminApartmentsPage() {
                         {apartments.map((apartment) => (
                             <Card key={apartment.id} className="p-5 flex flex-col sm:flex-row sm:items-center justify-between gap-4">
                                 <div>
-                                    <h2 className="font-semibold text-gray-900">
-                                        {apartment.name}
-                                    </h2>
+                                    <div className="flex items-center gap-2 flex-wrap">
+                                        <h2 className="font-semibold text-gray-900">
+                                            {apartment.name}
+                                        </h2>
+                                        <span
+                                            className={`text-xs font-medium px-2 py-0.5 rounded-full ${
+                                                apartment.status === "active"
+                                                    ? "bg-green-100 text-green-800"
+                                                    : "bg-gray-200 text-gray-700"
+                                            }`}
+                                        >
+                                            {apartment.status === "active"
+                                                ? "Live on site"
+                                                : "Admin only"}
+                                        </span>
+                                    </div>
                                     <p className="text-sm text-gray-600">
                                         {apartment.location.area}, {apartment.location.city}
+                                        {" · "}
+                                        {apartment.beds} bed{apartment.beds === 1 ? "" : "s"}
                                     </p>
                                     <p className="text-sm text-gray-500 mt-1">
                                         {apartment.imageCount} uploaded image

@@ -16,7 +16,7 @@ describe('Apartments Page', () => {
 
   it('renders the page description', () => {
     renderWithQueryClient(<ApartmentsPage />)
-    expect(screen.getByText(/suites available now at Lofty Xphere Homes/i)).toBeInTheDocument()
+    expect(screen.getByText(/Premium shortlet suites in Wuye, Abuja/i)).toBeInTheDocument()
   })
 
   it('renders apartment cards', () => {

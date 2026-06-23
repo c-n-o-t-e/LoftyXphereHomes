@@ -16,13 +16,13 @@ describe('Apartments Page', () => {
 
   it('renders the page description', () => {
     renderWithQueryClient(<ApartmentsPage />)
-    expect(screen.getByText(/Discover our complete collection/i)).toBeInTheDocument()
+    expect(screen.getByText(/suites available now at Lofty Xphere Homes/i)).toBeInTheDocument()
   })
 
   it('renders apartment cards', () => {
     renderWithQueryClient(<ApartmentsPage />)
     // Should render at least one apartment card
-    const apartmentCards = screen.getAllByText(/Lofty/i)
+    const apartmentCards = screen.getAllByText(/Suite/i)
     expect(apartmentCards.length).toBeGreaterThan(0)
   })
 })

@@ -1,272 +1,227 @@
 import { Apartment } from "../types";
 
+const LOCATION = { city: "Abuja", area: "Wuye" } as const;
+
+const SHARED_AMENITIES = [
+    "24/7 Power",
+    "High-speed Wi-Fi",
+    "Air Conditioning",
+    "Fully equipped kitchen",
+    "Secure parking",
+    "Workspace desk",
+    "Netflix/YouTube enabled TV",
+    "Security personnel",
+    "Fresh towels & toiletries",
+] as const;
+
+const TWO_BED_AMENITIES = [
+    ...SHARED_AMENITIES,
+    "Balcony with city view",
+    "Washing machine",
+] as const;
+
+const SHARED_HOUSE_RULES = [
+    "No smoking indoors",
+    "No parties without approval",
+    "Valid ID required",
+    "Respect neighbors (noise control after 10PM)",
+] as const;
+
+const PLACEHOLDER_IMAGES = {
+    oneBed: [
+        "https://images.unsplash.com/photo-1522708323590-d24dbb6b0267?w=1200&q=80",
+        "https://images.unsplash.com/photo-1502672260266-1c1ef2d93688?w=1200&q=80",
+        "https://images.unsplash.com/photo-1484154218962-a197022b5858?w=1200&q=80",
+    ],
+    twoBed: [
+        "https://images.unsplash.com/photo-1512918728675-ed5a9ecdebfd?w=1200&q=80",
+        "https://images.unsplash.com/photo-1502672260266-1c1ef2d93688?w=1200&q=80",
+        "https://images.unsplash.com/photo-1560448204-e02f11c3d0e2?w=1200&q=80",
+        "https://images.unsplash.com/photo-1522771739844-6a9f6d5f14af?w=1200&q=80",
+    ],
+} as const;
+
+const ONE_BED_PRICE = 100_000;
+const TWO_BED_PRICE = 200_000;
+
 export const apartments: Apartment[] = [
     {
-        id: "lofty-wuye-04",
-        name: "Lofty Wuye Suite",
+        id: "lofty-horizon-suite",
+        name: "The Horizon Suite",
         shortDescription:
-            "Elegant 1-bedroom suite in the heart of Wuye, perfect for business travelers and couples.",
-        location: {
-            city: "Abuja",
-            area: "Wuye",
-        },
-        pricePerNight: 45000,
-        images: [
-            "https://images.unsplash.com/photo-1522708323590-d24dbb6b0267?w=800&q=80",
-            "https://images.unsplash.com/photo-1502672260266-1c1ef2d93688?w=800&q=80",
-            "https://images.unsplash.com/photo-1484154218962-a197022b5858?w=800&q=80",
-            "https://images.unsplash.com/photo-1560448204-e02f11c3d0e2?w=800&q=80",
-            "https://images.unsplash.com/photo-1505843513577-22bb7d21e455?w=800&q=80",
-        ],
-        amenities: [
-            "24/7 Power",
-            "High-speed Wi-Fi",
-            "Air Conditioning",
-            "Fully equipped kitchen",
-            "Secure parking",
-            "Workspace desk",
-            "Netflix/YouTube enabled TV",
-            "Security personnel",
-            "Fresh towels & toiletries",
-        ],
-        houseRules: [
-            "No smoking indoors",
-            "No parties without approval",
-            "Valid ID required",
-            "Respect neighbors (noise control after 10PM)",
-        ],
+            "Elegant 1-bedroom suite in Wuye — perfect for couples, solo travelers, and business stays.",
+        location: LOCATION,
+        pricePerNight: ONE_BED_PRICE,
+        images: [...PLACEHOLDER_IMAGES.oneBed],
+        amenities: [...SHARED_AMENITIES],
+        houseRules: [...SHARED_HOUSE_RULES],
         capacity: 2,
         beds: 1,
         baths: 1,
+        rating: 4.9,
+        reviews: 42,
+        status: "active",
+        bookingUrl: process.env.NEXT_PUBLIC_BOOKING_HORIZON_SUITE,
+    },
+    {
+        id: "lofty-skyline-suite",
+        name: "The Skyline Suite",
+        shortDescription:
+            "Spacious 2-bedroom apartment with skyline views, ideal for families and small groups.",
+        location: LOCATION,
+        pricePerNight: TWO_BED_PRICE,
+        images: [...PLACEHOLDER_IMAGES.twoBed],
+        amenities: [...TWO_BED_AMENITIES],
+        houseRules: [...SHARED_HOUSE_RULES],
+        capacity: 4,
+        beds: 2,
+        baths: 2,
+        rating: 4.9,
+        reviews: 38,
+        status: "active",
+        bookingUrl: process.env.NEXT_PUBLIC_BOOKING_SKYLINE_SUITE,
+    },
+    {
+        id: "lofty-meridian-suite",
+        name: "The Meridian Suite",
+        shortDescription:
+            "Premium 2-bedroom suite with modern finishes and a calm, residential feel in Wuye.",
+        location: LOCATION,
+        pricePerNight: TWO_BED_PRICE,
+        images: [...PLACEHOLDER_IMAGES.twoBed],
+        amenities: [...TWO_BED_AMENITIES],
+        houseRules: [...SHARED_HOUSE_RULES],
+        capacity: 4,
+        beds: 2,
+        baths: 2,
         rating: 4.8,
-        reviews: 34,
-        bookingUrl: process.env.NEXT_PUBLIC_BOOKING_WUYE_04,
+        reviews: 31,
+        status: "active",
+        bookingUrl: process.env.NEXT_PUBLIC_BOOKING_MERIDIAN_SUITE,
     },
     {
-        id: "lofty-wuye-01",
-        name: "Lofty Wuye Premium",
+        id: "lofty-lumen-suite",
+        name: "The Lumen Suite",
         shortDescription:
-            "Spacious 2-bedroom apartment in Wuye with stunning city views and modern amenities.",
-        location: {
-            city: "Abuja",
-            area: "Wuye",
-        },
-        pricePerNight: 65000,
-        images: [
-            "https://images.unsplash.com/photo-1512918728675-ed5a9ecdebfd?w=800&q=80",
-            "https://images.unsplash.com/photo-1502672260266-1c1ef2d93688?w=800&q=80",
-            "https://images.unsplash.com/photo-1484154218962-a197022b5858?w=800&q=80",
-            "https://images.unsplash.com/photo-1560448204-e02f11c3d0e2?w=800&q=80",
-            "https://images.unsplash.com/photo-1505843513577-22bb7d21e455?w=800&q=80",
-            "https://images.unsplash.com/photo-1522771739844-6a9f6d5f14af?w=800&q=80",
-        ],
-        amenities: [
-            "24/7 Power",
-            "High-speed Wi-Fi",
-            "Air Conditioning",
-            "Fully equipped kitchen",
-            "Secure parking",
-            "Workspace desk",
-            "Netflix/YouTube enabled TV",
-            "Security personnel",
-            "Fresh towels & toiletries",
-            "Balcony with city view",
-            "Washing machine",
-        ],
-        houseRules: [
-            "No smoking indoors",
-            "No parties without approval",
-            "Valid ID required",
-            "Respect neighbors (noise control after 10PM)",
-        ],
+            "Bright 2-bedroom apartment with airy living spaces and everything you need for a comfortable stay.",
+        location: LOCATION,
+        pricePerNight: TWO_BED_PRICE,
+        images: [...PLACEHOLDER_IMAGES.twoBed],
+        amenities: [...TWO_BED_AMENITIES],
+        houseRules: [...SHARED_HOUSE_RULES],
         capacity: 4,
         beds: 2,
         baths: 2,
-        rating: 4.9,
-        reviews: 52,
-        bookingUrl: process.env.NEXT_PUBLIC_BOOKING_WUYE_01,
+        rating: 4.8,
+        reviews: 27,
+        status: "active",
+        bookingUrl: process.env.NEXT_PUBLIC_BOOKING_LUMEN_SUITE,
     },
     {
-        id: "lofty-wuye-05",
-        name: "Lofty Wuye Executive",
+        id: "lofty-apex-suite",
+        name: "The Apex Suite",
         shortDescription:
-            "Luxury 3-bedroom penthouse in Wuye, ideal for families and extended stays.",
-        location: {
-            city: "Abuja",
-            area: "Wuye",
-        },
-        pricePerNight: 85000,
-        images: [
-            "https://images.unsplash.com/photo-1613977257363-707ba9348227?w=800&q=80",
-            "https://images.unsplash.com/photo-1502672260266-1c1ef2d93688?w=800&q=80",
-            "https://images.unsplash.com/photo-1484154218962-a197022b5858?w=800&q=80",
-            "https://images.unsplash.com/photo-1560448204-e02f11c3d0e2?w=800&q=80",
-            "https://images.unsplash.com/photo-1505843513577-22bb7d21e455?w=800&q=80",
-            "https://images.unsplash.com/photo-1522771739844-6a9f6d5f14af?w=800&q=80",
-            "https://images.unsplash.com/photo-1556912172-45b7abe8b7e4?w=800&q=80",
-        ],
-        amenities: [
-            "24/7 Power",
-            "High-speed Wi-Fi",
-            "Air Conditioning",
-            "Fully equipped kitchen",
-            "Secure parking",
-            "Workspace desk",
-            "Netflix/YouTube enabled TV",
-            "Security personnel",
-            "Fresh towels & toiletries",
-            "Private balcony",
-            "Washing machine",
-            "Dishwasher",
-        ],
-        houseRules: [
-            "No smoking indoors",
-            "No parties without approval",
-            "Valid ID required",
-            "Respect neighbors (noise control after 10PM)",
-        ],
-        capacity: 6,
-        beds: 3,
-        baths: 3,
-        rating: 4.7,
-        reviews: 28,
-        bookingUrl: process.env.NEXT_PUBLIC_BOOKING_WUYE_05,
+            "An elevated 2-bedroom suite — finishing touches underway. Join the waitlist for launch updates.",
+        location: LOCATION,
+        pricePerNight: TWO_BED_PRICE,
+        images: [...PLACEHOLDER_IMAGES.twoBed],
+        amenities: [...TWO_BED_AMENITIES],
+        houseRules: [...SHARED_HOUSE_RULES],
+        capacity: 4,
+        beds: 2,
+        baths: 2,
+        rating: 0,
+        reviews: 0,
+        status: "coming_soon",
     },
     {
-        id: "lofty-wuye-02",
-        name: "Lofty Wuye Studio",
+        id: "lofty-cascade-suite",
+        name: "The Cascade Suite",
         shortDescription:
-            "Modern studio apartment in Wuye, perfect for solo travelers and remote workers.",
-        location: {
-            city: "Abuja",
-            area: "Wuye",
-        },
-        pricePerNight: 35000,
-        images: [
-            "https://images.unsplash.com/photo-1522708323590-d24dbb6b0267?w=800&q=80",
-            "https://images.unsplash.com/photo-1502672260266-1c1ef2d93688?w=800&q=80",
-            "https://images.unsplash.com/photo-1484154218962-a197022b5858?w=800&q=80",
-            "https://images.unsplash.com/photo-1560448204-e02f11c3d0e2?w=800&q=80",
-        ],
-        amenities: [
-            "24/7 Power",
-            "High-speed Wi-Fi",
-            "Air Conditioning",
-            "Fully equipped kitchen",
-            "Secure parking",
-            "Workspace desk",
-            "Netflix/YouTube enabled TV",
-            "Security personnel",
-            "Fresh towels & toiletries",
-        ],
-        houseRules: [
-            "No smoking indoors",
-            "No parties without approval",
-            "Valid ID required",
-            "Respect neighbors (noise control after 10PM)",
-        ],
+            "A flowing 2-bedroom layout designed for comfort — currently being prepared for guests.",
+        location: LOCATION,
+        pricePerNight: TWO_BED_PRICE,
+        images: [...PLACEHOLDER_IMAGES.twoBed],
+        amenities: [...TWO_BED_AMENITIES],
+        houseRules: [...SHARED_HOUSE_RULES],
+        capacity: 4,
+        beds: 2,
+        baths: 2,
+        rating: 0,
+        reviews: 0,
+        status: "coming_soon",
+    },
+    {
+        id: "lofty-solstice-suite",
+        name: "The Solstice Suite",
+        shortDescription:
+            "Intimate 1-bedroom suite coming soon — perfect for short business trips and weekend escapes.",
+        location: LOCATION,
+        pricePerNight: ONE_BED_PRICE,
+        images: [...PLACEHOLDER_IMAGES.oneBed],
+        amenities: [...SHARED_AMENITIES],
+        houseRules: [...SHARED_HOUSE_RULES],
         capacity: 2,
         beds: 1,
         baths: 1,
-        rating: 4.6,
-        reviews: 41,
-        bookingUrl: process.env.NEXT_PUBLIC_BOOKING_WUYE_02,
+        rating: 0,
+        reviews: 0,
+        status: "coming_soon",
     },
     {
-        id: "lofty-wuye-06",
-        name: "Lofty Wuye Comfort",
+        id: "lofty-atrium-suite",
+        name: "The Atrium Suite",
         shortDescription:
-            "Cozy 2-bedroom apartment in Wuye, close to business districts and shopping centers.",
-        location: {
-            city: "Abuja",
-            area: "Wuye",
-        },
-        pricePerNight: 55000,
-        images: [
-            "https://images.unsplash.com/photo-1512918728675-ed5a9ecdebfd?w=800&q=80",
-            "https://images.unsplash.com/photo-1502672260266-1c1ef2d93688?w=800&q=80",
-            "https://images.unsplash.com/photo-1484154218962-a197022b5858?w=800&q=80",
-            "https://images.unsplash.com/photo-1560448204-e02f11c3d0e2?w=800&q=80",
-            "https://images.unsplash.com/photo-1505843513577-22bb7d21e455?w=800&q=80",
-        ],
-        amenities: [
-            "24/7 Power",
-            "High-speed Wi-Fi",
-            "Air Conditioning",
-            "Fully equipped kitchen",
-            "Secure parking",
-            "Workspace desk",
-            "Netflix/YouTube enabled TV",
-            "Security personnel",
-            "Fresh towels & toiletries",
-        ],
-        houseRules: [
-            "No smoking indoors",
-            "No parties without approval",
-            "Valid ID required",
-            "Respect neighbors (noise control after 10PM)",
-        ],
+            "Light-filled 2-bedroom apartment with an open feel — launching soon at Lofty Xphere Homes.",
+        location: LOCATION,
+        pricePerNight: TWO_BED_PRICE,
+        images: [...PLACEHOLDER_IMAGES.twoBed],
+        amenities: [...TWO_BED_AMENITIES],
+        houseRules: [...SHARED_HOUSE_RULES],
         capacity: 4,
         beds: 2,
         baths: 2,
-        rating: 4.5,
-        reviews: 19,
-        bookingUrl: process.env.NEXT_PUBLIC_BOOKING_WUYE_06,
+        rating: 0,
+        reviews: 0,
+        status: "coming_soon",
     },
     {
-        id: "lofty-wuye-03",
-        name: "Lofty Wuye Family Home",
+        id: "lofty-ember-suite",
+        name: "The Ember Suite",
         shortDescription:
-            "Spacious 4-bedroom family home in Wuye with private garden and premium finishes.",
-        location: {
-            city: "Abuja",
-            area: "Wuye",
-        },
-        pricePerNight: 120000,
-        images: [
-            "https://images.unsplash.com/photo-1613977257363-707ba9348227?w=800&q=80",
-            "https://images.unsplash.com/photo-1502672260266-1c1ef2d93688?w=800&q=80",
-            "https://images.unsplash.com/photo-1484154218962-a197022b5858?w=800&q=80",
-            "https://images.unsplash.com/photo-1560448204-e02f11c3d0e2?w=800&q=80",
-            "https://images.unsplash.com/photo-1505843513577-22bb7d21e455?w=800&q=80",
-            "https://images.unsplash.com/photo-1522771739844-6a9f6d5f14af?w=800&q=80",
-            "https://images.unsplash.com/photo-1556912172-45b7abe8b7e4?w=800&q=80",
-            "https://images.unsplash.com/photo-1560185007-c5ca9d2c014d?w=800&q=80",
-        ],
-        amenities: [
-            "24/7 Power",
-            "High-speed Wi-Fi",
-            "Air Conditioning",
-            "Fully equipped kitchen",
-            "Secure parking",
-            "Workspace desk",
-            "Netflix/YouTube enabled TV",
-            "Security personnel",
-            "Fresh towels & toiletries",
-            "Private garden",
-            "Washing machine",
-            "Dishwasher",
-            "Home office",
-        ],
-        houseRules: [
-            "No smoking indoors",
-            "No parties without approval",
-            "Valid ID required",
-            "Respect neighbors (noise control after 10PM)",
-        ],
-        capacity: 8,
-        beds: 4,
-        baths: 4,
-        rating: 4.9,
-        reviews: 67,
-        bookingUrl: process.env.NEXT_PUBLIC_BOOKING_WUYE_03,
+            "Warm, welcoming 2-bedroom suite — currently under fit-out. Register interest to be notified first.",
+        location: LOCATION,
+        pricePerNight: TWO_BED_PRICE,
+        images: [...PLACEHOLDER_IMAGES.twoBed],
+        amenities: [...TWO_BED_AMENITIES],
+        houseRules: [...SHARED_HOUSE_RULES],
+        capacity: 4,
+        beds: 2,
+        baths: 2,
+        rating: 0,
+        reviews: 0,
+        status: "coming_soon",
     },
 ];
 
-export const getApartmentById = (id: string): Apartment | undefined => {
+export function getApartmentById(id: string): Apartment | undefined {
     return apartments.find((apt) => apt.id === id);
-};
+}
 
-export const getFeaturedApartments = (limit: number = 6): Apartment[] => {
-    return apartments.sort((a, b) => b.rating - a.rating).slice(0, limit);
-};
+export function isApartmentBookable(apartment: Apartment): boolean {
+    return apartment.status === "active";
+}
+
+export function getActiveApartments(): Apartment[] {
+    return apartments.filter((apt) => apt.status === "active");
+}
+
+export function getComingSoonApartments(): Apartment[] {
+    return apartments.filter((apt) => apt.status === "coming_soon");
+}
+
+export function getFeaturedApartments(limit: number = 4): Apartment[] {
+    return getActiveApartments()
+        .sort((a, b) => b.rating - a.rating)
+        .slice(0, limit);
+}

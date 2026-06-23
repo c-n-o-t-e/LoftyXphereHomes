@@ -21,6 +21,7 @@ interface ApartmentCardProps {
 }
 
 export default function ApartmentCard({ apartment, index = 0, imageSets }: ApartmentCardProps) {
+  const comingSoon = apartment.status === "coming_soon";
   const [imageIndex, setImageIndex] = useState(0);
   const sets =
     imageSets && imageSets.length > 0
@@ -57,9 +58,9 @@ export default function ApartmentCard({ apartment, index = 0, imageSets }: Apart
       viewport={{ once: true }}
       transition={{ duration: 0.5, delay: index * 0.1 }}
     >
-      <Card className="overflow-hidden rounded-2xl border-0 shadow-lg hover:shadow-xl transition-shadow duration-300 group">
+      <Card className={`overflow-hidden rounded-2xl border-0 shadow-lg hover:shadow-xl transition-shadow duration-300 group ${comingSoon ? "opacity-90" : ""}`}>
         <Link href={`/apartments/${apartment.id}`} className="block">
-          <div className="relative h-64 overflow-hidden bg-black/5">
+          <div className={`relative h-64 overflow-hidden bg-black/5 ${comingSoon ? "grayscale-[35%]" : ""}`}>
             <AnimatePresence mode="wait">
               <motion.div
                 key={imageIndex}
@@ -123,12 +124,18 @@ export default function ApartmentCard({ apartment, index = 0, imageSets }: Apart
               </div>
             )}
 
-            <div className="absolute top-4 right-4 bg-white/95 backdrop-blur-sm px-3 py-1 rounded-full flex items-center space-x-1 border border-black/10">
-              <Star className="h-4 w-4 fill-[#FA5C5C] text-[#FA5C5C]" />
-              <span className="text-sm font-semibold text-black">
-                {apartment.rating}
-              </span>
-            </div>
+            {comingSoon ? (
+              <div className="absolute top-4 left-4 z-10 rounded-full bg-black/75 px-3 py-1 text-xs font-semibold text-white">
+                Coming soon
+              </div>
+            ) : (
+              <div className="absolute top-4 right-4 bg-white/95 backdrop-blur-sm px-3 py-1 rounded-full flex items-center space-x-1 border border-black/10">
+                <Star className="h-4 w-4 fill-[#FA5C5C] text-[#FA5C5C]" />
+                <span className="text-sm font-semibold text-black">
+                  {apartment.rating}
+                </span>
+              </div>
+            )}
           </div>
         </Link>
         <CardContent className="p-6">
@@ -163,14 +170,30 @@ export default function ApartmentCard({ apartment, index = 0, imageSets }: Apart
             </div>
 
             <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between pt-3 border-t border-black/10 gap-3">
-              <div>
-                <p className="text-xl sm:text-2xl font-bold text-black">
-                  {formatPrice(apartment.pricePerNight)}
+              {comingSoon ? (
+                <p className="text-sm text-black/60">
+                  Launching soon — view details or contact us to register interest.
                 </p>
-                <p className="text-xs text-black/60">per night</p>
-              </div>
-              <Button asChild className="rounded-full bg-[#FA5C5C] hover:bg-[#E84A4A] text-white w-full sm:w-auto min-h-[44px] px-6 text-sm sm:text-base">
-                <Link href={`/apartments/${apartment.id}`} className="w-full sm:w-auto text-center">View Details</Link>
+              ) : (
+                <div>
+                  <p className="text-xl sm:text-2xl font-bold text-black">
+                    {formatPrice(apartment.pricePerNight)}
+                  </p>
+                  <p className="text-xs text-black/60">per night</p>
+                </div>
+              )}
+              <Button
+                asChild
+                variant={comingSoon ? "outline" : "default"}
+                className={`rounded-full w-full sm:w-auto min-h-[44px] px-6 text-sm sm:text-base ${
+                  comingSoon
+                    ? "border-black/20 text-black hover:bg-black/5"
+                    : "bg-[#FA5C5C] hover:bg-[#E84A4A] text-white"
+                }`}
+              >
+                <Link href={`/apartments/${apartment.id}`} className="w-full sm:w-auto text-center">
+                  {comingSoon ? "View details" : "View Details"}
+                </Link>
               </Button>
             </div>
           </div>

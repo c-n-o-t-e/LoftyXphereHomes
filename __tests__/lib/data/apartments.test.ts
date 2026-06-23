@@ -1,9 +1,19 @@
-import { apartments, getApartmentById, getFeaturedApartments } from '@/lib/data/apartments'
+import {
+  apartments,
+  getApartmentById,
+  getFeaturedApartments,
+  getActiveApartments,
+  getComingSoonApartments,
+} from '@/lib/data/apartments'
 
 describe('apartments data', () => {
-  it('exports apartments array', () => {
-    expect(Array.isArray(apartments)).toBe(true)
-    expect(apartments.length).toBeGreaterThan(0)
+  it('exports nine apartments', () => {
+    expect(apartments).toHaveLength(9)
+  })
+
+  it('has four active and five coming soon suites', () => {
+    expect(getActiveApartments()).toHaveLength(4)
+    expect(getComingSoonApartments()).toHaveLength(5)
   })
 
   it('each apartment has required fields', () => {
@@ -21,7 +31,24 @@ describe('apartments data', () => {
       expect(apartment).toHaveProperty('baths')
       expect(apartment).toHaveProperty('rating')
       expect(apartment).toHaveProperty('reviews')
+      expect(apartment).toHaveProperty('status')
     })
+  })
+
+  it('active one-bedroom suites are priced at ₦100,000', () => {
+    getActiveApartments()
+      .filter((apt) => apt.beds === 1)
+      .forEach((apt) => {
+        expect(apt.pricePerNight).toBe(100_000)
+      })
+  })
+
+  it('active two-bedroom suites are priced at ₦200,000', () => {
+    getActiveApartments()
+      .filter((apt) => apt.beds === 2)
+      .forEach((apt) => {
+        expect(apt.pricePerNight).toBe(200_000)
+      })
   })
 
   it('apartment location has city and area', () => {
@@ -93,9 +120,15 @@ describe('getFeaturedApartments', () => {
     }
   })
 
-  it('returns all apartments when limit is greater than total', () => {
+  it('returns only active apartments when limit is greater than active total', () => {
     const featured = getFeaturedApartments(100)
-    expect(featured.length).toBeLessThanOrEqual(apartments.length)
+    expect(featured.length).toBeLessThanOrEqual(getActiveApartments().length)
+  })
+
+  it('featured apartments are all active', () => {
+    getFeaturedApartments(10).forEach((apt) => {
+      expect(apt.status).toBe('active')
+    })
   })
 })
 

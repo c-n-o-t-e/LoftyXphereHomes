@@ -18,28 +18,28 @@ describe('Apartment Detail Page', () => {
     waitFor(() => expect(screen.getByText('Book Apartment')).toBeInTheDocument())
 
   it('renders apartment name when apartment exists', async () => {
-    const params = Promise.resolve({ id: 'lofty-wuye-01' })
+    const params = Promise.resolve({ id: 'lofty-skyline-suite' })
     renderWithQueryClient(await ApartmentDetailPage({ params }))
     await waitForReservationCard()
-    expect(screen.getByText(/Lofty Wuye Premium/i)).toBeInTheDocument()
+    expect(screen.getByText(/The Skyline Suite/i)).toBeInTheDocument()
   })
 
   it('renders apartment location', async () => {
-    const params = Promise.resolve({ id: 'lofty-wuye-01' })
+    const params = Promise.resolve({ id: 'lofty-skyline-suite' })
     renderWithQueryClient(await ApartmentDetailPage({ params }))
     await waitForReservationCard()
     expect(screen.getByText(/Wuye, Abuja/i)).toBeInTheDocument()
   })
 
   it('renders apartment rating', async () => {
-    const params = Promise.resolve({ id: 'lofty-wuye-01' })
+    const params = Promise.resolve({ id: 'lofty-skyline-suite' })
     renderWithQueryClient(await ApartmentDetailPage({ params }))
     await waitForReservationCard()
     expect(screen.getAllByText(/4\.9/i).length).toBeGreaterThan(0)
   })
 
   it('renders booking button', async () => {
-    const params = Promise.resolve({ id: 'lofty-wuye-01' })
+    const params = Promise.resolve({ id: 'lofty-skyline-suite' })
     renderWithQueryClient(await ApartmentDetailPage({ params }))
     await waitForReservationCard()
     expect(screen.getByText('Book Apartment')).toBeInTheDocument()

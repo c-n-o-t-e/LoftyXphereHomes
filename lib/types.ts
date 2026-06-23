@@ -1,3 +1,5 @@
+export type ApartmentStatus = "active" | "coming_soon";
+
 export interface Apartment {
     id: string;
     name: string;
@@ -16,6 +18,7 @@ export interface Apartment {
     bookingUrl?: string;
     rating: number;
     reviews: number;
+    status: ApartmentStatus;
 }
 
 export interface Testimonial {

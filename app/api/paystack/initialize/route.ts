@@ -1,6 +1,6 @@
 import { randomBytes } from "crypto";
 import { NextRequest, NextResponse } from "next/server";
-import { getApartmentById } from "@/lib/data/apartments";
+import { getApartmentById, isApartmentBookable } from "@/lib/data/apartments";
 import { prisma } from "@/lib/db";
 import { computeBookingQuote, totalNgnToKobo } from "@/lib/pricing";
 import { parseJsonBody } from "@/lib/validation/http";
@@ -33,6 +33,13 @@ export async function POST(request: NextRequest) {
         return NextResponse.json(
             { error: "Apartment not found" },
             { status: 404 },
+        );
+    }
+
+    if (!isApartmentBookable(apartment)) {
+        return NextResponse.json(
+            { error: "This suite is not available for booking yet." },
+            { status: 400 },
         );
     }
 

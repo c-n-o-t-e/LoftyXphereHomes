@@ -4,7 +4,11 @@ import { Suspense, useMemo } from "react";
 import { useSearchParams } from "next/navigation";
 import Link from "next/link";
 import { useQuery } from "@tanstack/react-query";
-import { apartments } from "@/lib/data/apartments";
+import {
+    apartments,
+    getActiveApartments,
+    getComingSoonApartments,
+} from "@/lib/data/apartments";
 import ApartmentCard from "@/components/ApartmentCard";
 import { filterApartments, SearchFilters, calculateNights } from "@/lib/utils/search";
 import type { ApartmentImageSet } from "@/lib/images/types";
@@ -14,7 +18,6 @@ import { Button } from "@/components/ui/button";
 function ApartmentsContent() {
   const searchParams = useSearchParams();
 
-  // Extract search filters from URL params
   const filters: SearchFilters = useMemo(() => {
     return {
       location: searchParams.get("location") || undefined,
@@ -83,9 +86,10 @@ function ApartmentsContent() {
           ? []
           : availabilityIds ?? [];
 
-  // Filter apartments based on search criteria AND availability
+  const activeApartments = useMemo(() => getActiveApartments(), []);
+
   const filteredApartments = useMemo(() => {
-    let filtered = filterApartments(apartments, filters);
+    let filtered = filterApartments(activeApartments, filters);
 
     if (availableForFilter !== null) {
       const availableSet = new Set(availableForFilter);
@@ -93,15 +97,19 @@ function ApartmentsContent() {
     }
 
     return filtered;
-  }, [filters, availableForFilter]);
+  }, [filters, availableForFilter, activeApartments]);
 
-  // Check if search is active
+  const comingSoonApartments = useMemo(() => getComingSoonApartments(), []);
+
   const isSearchActive = !!(filters.location || filters.checkIn || filters.checkOut || filters.guests);
+  const showComingSoonSection = !isSearchActive || (!filters.checkIn && !filters.checkOut);
 
-  // Calculate nights if dates are provided
-  const nights = filters.checkIn && filters.checkOut 
+  const nights = filters.checkIn && filters.checkOut
     ? calculateNights(filters.checkIn, filters.checkOut)
     : 0;
+
+  const activeCount = getActiveApartments().length;
+  const totalCount = apartments.length;
 
   return (
     <div className="pt-20 pb-12 sm:pb-16 md:pb-24 bg-white min-h-screen">
@@ -115,13 +123,12 @@ function ApartmentsContent() {
               ? "Checking availability..."
               : isSearchActive
               ? filters.checkIn && filters.checkOut
-                ? `Found ${filteredApartments.length} available apartment${filteredApartments.length !== 1 ? "s" : ""} for your dates`
-                : `Found ${filteredApartments.length} apartment${filteredApartments.length !== 1 ? "s" : ""} matching your search`
-              : "Discover our complete collection of premium shortlet apartments in Wuye, Abuja"}
+                ? `Found ${filteredApartments.length} available suite${filteredApartments.length !== 1 ? "s" : ""} for your dates`
+                : `Found ${filteredApartments.length} suite${filteredApartments.length !== 1 ? "s" : ""} matching your search`
+              : `${activeCount} suites available now at Lofty Xphere Homes in Wuye, Abuja — ${totalCount - activeCount} more launching soon.`}
           </p>
         </div>
 
-        {/* Search Filters Summary */}
         {isSearchActive && (
           <div className="mb-6 sm:mb-8 p-4 sm:p-6 bg-white rounded-xl shadow-sm border border-black/10">
             <div className="flex flex-wrap items-center gap-3 sm:gap-4 text-xs sm:text-sm text-black/80">
@@ -156,7 +163,6 @@ function ApartmentsContent() {
           </div>
         )}
 
-        {/* Results */}
         {availabilityEnabled && isError ? (
           <div
             className="text-center py-12 sm:py-16 bg-white rounded-xl shadow-sm border border-black/10 px-4"
@@ -205,27 +211,69 @@ function ApartmentsContent() {
             <Loader2 className="h-10 w-10 sm:h-12 sm:w-12 text-[#FA5C5C] mx-auto mb-4 animate-spin" />
             <h2 className="text-xl sm:text-2xl font-bold text-black mb-2">Checking availability...</h2>
             <p className="text-sm sm:text-base text-black/70 max-w-md mx-auto">
-              Finding apartments available for your selected dates.
+              Finding suites available for your selected dates.
             </p>
           </div>
-        ) : filteredApartments.length > 0 ? (
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6 sm:gap-8">
-            {filteredApartments.map((apartment, index) => (
-              <ApartmentCard
-                key={apartment.id}
-                apartment={apartment}
-                index={index}
-                imageSets={imageSetsByApartment?.[apartment.id]}
-              />
-            ))}
+        ) : filteredApartments.length > 0 || (showComingSoonSection && comingSoonApartments.length > 0) ? (
+          <div className="space-y-12 sm:space-y-16">
+            {filteredApartments.length > 0 && (
+              <section>
+                {!showComingSoonSection || comingSoonApartments.length === 0 ? null : (
+                  <h2 className="text-xl sm:text-2xl font-bold text-black mb-6 sm:mb-8">
+                    Available now
+                  </h2>
+                )}
+                <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6 sm:gap-8">
+                  {filteredApartments.map((apartment, index) => (
+                    <ApartmentCard
+                      key={apartment.id}
+                      apartment={apartment}
+                      index={index}
+                      imageSets={imageSetsByApartment?.[apartment.id]}
+                    />
+                  ))}
+                </div>
+              </section>
+            )}
+
+            {showComingSoonSection && comingSoonApartments.length > 0 && (
+              <section>
+                <div className="mb-6 sm:mb-8">
+                  <h2 className="text-xl sm:text-2xl font-bold text-black mb-2">
+                    Coming soon
+                  </h2>
+                  <p className="text-sm sm:text-base text-black/60 max-w-2xl">
+                    Five more suites are being prepared. Browse what&apos;s ahead or contact us to register interest.
+                  </p>
+                </div>
+                <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6 sm:gap-8">
+                  {comingSoonApartments.map((apartment, index) => (
+                    <ApartmentCard
+                      key={apartment.id}
+                      apartment={apartment}
+                      index={index}
+                      imageSets={imageSetsByApartment?.[apartment.id]}
+                    />
+                  ))}
+                </div>
+              </section>
+            )}
+
+            {filteredApartments.length === 0 && showComingSoonSection && (
+              <div className="text-center py-8 px-4 bg-black/5 rounded-xl border border-black/10 mb-8">
+                <p className="text-sm sm:text-base text-black/70">
+                  No suites match your search dates right now. Try different dates, or explore our upcoming suites below.
+                </p>
+              </div>
+            )}
           </div>
         ) : (
           <div className="text-center py-12 sm:py-16 bg-white rounded-xl shadow-sm border border-black/10 px-4">
             <Info className="h-10 w-10 sm:h-12 sm:w-12 text-black/40 mx-auto mb-4" />
-            <h2 className="text-xl sm:text-2xl font-bold text-black mb-2">No apartments available</h2>
+            <h2 className="text-xl sm:text-2xl font-bold text-black mb-2">No suites available</h2>
             <p className="text-sm sm:text-base text-black/70 mb-6 max-w-md mx-auto">
               {isSearchActive && filters.checkIn && filters.checkOut
-                ? "All apartments are booked for your selected dates. Try different dates or check back later."
+                ? "All suites are booked for your selected dates. Try different dates or check back later."
                 : isSearchActive
                 ? "Try adjusting your search filters to find more options."
                 : "Please check back later or contact us for assistance."}
@@ -235,7 +283,7 @@ function ApartmentsContent() {
                 href="/apartments"
                 className="inline-block px-6 py-3 sm:px-8 sm:py-4 bg-[#FA5C5C] text-white rounded-full hover:bg-[#E84A4A] transition-colors text-sm sm:text-base min-h-[44px]"
               >
-                View All Apartments
+                View All Suites
               </a>
             )}
           </div>
@@ -265,4 +313,3 @@ export default function ApartmentsPage() {
     </Suspense>
   );
 }
-

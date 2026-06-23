@@ -25,6 +25,7 @@ const mockApartment: Apartment = {
   baths: 1,
   rating: 4.5,
   reviews: 10,
+  status: 'active',
 }
 
 describe('ApartmentCard', () => {

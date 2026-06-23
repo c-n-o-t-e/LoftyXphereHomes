@@ -1,6 +1,7 @@
 "use client";
 
 import { useState, useMemo } from "react";
+import Link from "next/link";
 import { useQueryClient } from "@tanstack/react-query";
 import { Calendar, Users, Bed, Bath, Loader2, Info } from "lucide-react";
 import { Button } from "@/components/ui/button";
@@ -46,6 +47,8 @@ interface YourReservationCardProps {
   beds: number;
   baths: number;
   bookingUrl?: string | null;
+  bookable?: boolean;
+  apartmentName?: string;
 }
 
 export function YourReservationCard({
@@ -55,6 +58,8 @@ export function YourReservationCard({
   beds,
   baths,
   bookingUrl,
+  bookable = true,
+  apartmentName,
 }: YourReservationCardProps) {
   const queryClient = useQueryClient();
   const today = useMemo(() => {
@@ -173,6 +178,44 @@ export function YourReservationCard({
     }
     setIsRedirecting(false);
   };
+
+  if (!bookable) {
+    const label = apartmentName ?? "This suite";
+    return (
+      <div className="sticky top-24 bg-white border border-black/10 rounded-2xl p-6 shadow-lg">
+        <h2 className="text-lg font-medium text-black/70 mb-4">Your Reservation</h2>
+        <div className="rounded-xl bg-black/5 border border-black/10 p-4 mb-4">
+          <p className="text-sm font-semibold text-black mb-2">Coming soon</p>
+          <p className="text-sm text-black/70 leading-relaxed">
+            {label} is not open for bookings yet. Contact us to register interest and we&apos;ll notify you when it launches.
+          </p>
+        </div>
+        <div className="flex items-center gap-4 text-sm text-black/70 mb-6">
+          <div className="flex items-center">
+            <Bed className="h-4 w-4 mr-1.5 text-[#FA5C5C]" />
+            {beds} bed{beds !== 1 ? "s" : ""}
+          </div>
+          <div className="flex items-center">
+            <Bath className="h-4 w-4 mr-1.5 text-[#FA5C5C]" />
+            {baths} bath{baths !== 1 ? "s" : ""}
+          </div>
+        </div>
+        <Button
+          asChild
+          className="w-full h-12 rounded-lg text-base font-medium bg-[#FA5C5C] hover:bg-[#E84A4A] text-white"
+          size="lg"
+        >
+          <Link
+            href={`/contact?category=booking&message=${encodeURIComponent(
+              `I'd like to register interest in ${label} when it becomes available.`,
+            )}`}
+          >
+            Register interest
+          </Link>
+        </Button>
+      </div>
+    );
+  }
 
   return (
     <div className="sticky top-24 bg-white border border-black/10 rounded-2xl p-6 shadow-lg">

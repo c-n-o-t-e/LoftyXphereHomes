@@ -11,7 +11,7 @@ import Link from "next/link";
 import { ArrowRight } from "lucide-react";
 
 export default async function Home() {
-  const featuredApartments = getFeaturedApartments(6);
+  const featuredApartments = getFeaturedApartments(4);
   const imageSetsByApartment = await getAllApartmentImageSetsMap();
 
   return (
@@ -26,7 +26,7 @@ export default async function Home() {
               Featured Apartments
             </h2>
             <p className="text-base sm:text-lg md:text-xl text-black/70 max-w-2xl mx-auto leading-relaxed px-4">
-              Discover our handpicked selection of premium shortlet apartments
+              Four premium suites available now — book your stay in Wuye, Abuja
             </p>
           </div>
 

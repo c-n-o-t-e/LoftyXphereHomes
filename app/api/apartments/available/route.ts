@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
-import { apartments } from "@/lib/data/apartments";
+import { getActiveApartments } from "@/lib/data/apartments";
 import { getOverlappingBookings } from "@/lib/cache/availability-data";
 import { parseSearchParams } from "@/lib/validation/http";
 import { availableApartmentsQuerySchema } from "@/lib/validation/schemas";
@@ -42,7 +42,7 @@ export async function GET(request: NextRequest) {
     );
 
     // Filter to get available apartments
-    let availableApartments = apartments.filter(
+    let availableApartments = getActiveApartments().filter(
       (apt) => !bookedApartmentIds.has(apt.id)
     );
 

@@ -5,7 +5,6 @@ import Image from "next/image";
 import {
     GripVertical,
     Loader2,
-    RefreshCw,
     Trash2,
     Upload,
 } from "lucide-react";
@@ -68,21 +67,16 @@ function SortableImageCard({
     image,
     apartmentId,
     onDelete,
-    onReplace,
     onAltTextSave,
     isDeleting,
-    isReplacing,
 }: {
     image: AdminApartmentImage;
     apartmentId: string;
     onDelete: (imageId: string) => void;
-    onReplace: (imageId: string, file: File) => void;
     onAltTextSave: (imageId: string, altText: string) => void;
     isDeleting: boolean;
-    isReplacing: boolean;
 }) {
     const [altText, setAltText] = useState(image.altText ?? "");
-    const replaceInputRef = useRef<HTMLInputElement>(null);
 
     return (
         <Card className="overflow-hidden">
@@ -118,36 +112,8 @@ function SortableImageCard({
                     type="button"
                     variant="outline"
                     size="sm"
-                    className="w-full"
-                    disabled={isReplacing || isDeleting}
-                    onClick={() => replaceInputRef.current?.click()}
-                >
-                    {isReplacing ? (
-                        <Loader2 className="h-4 w-4 animate-spin" />
-                    ) : (
-                        <>
-                            <RefreshCw className="h-4 w-4 mr-2" />
-                            Replace
-                        </>
-                    )}
-                </Button>
-                <input
-                    ref={replaceInputRef}
-                    type="file"
-                    accept="image/jpeg,image/png,image/webp,image/heic,image/heif"
-                    className="hidden"
-                    onChange={(e) => {
-                        const file = e.target.files?.[0];
-                        if (file) onReplace(image.id, file);
-                        e.target.value = "";
-                    }}
-                />
-                <Button
-                    type="button"
-                    variant="outline"
-                    size="sm"
                     className="w-full text-red-600 hover:text-red-700"
-                    disabled={isDeleting || isReplacing}
+                    disabled={isDeleting}
                     onClick={() => onDelete(image.id)}
                 >
                     {isDeleting ? (
@@ -173,7 +139,6 @@ export function ApartmentImageManager({
     const [isLoading, setIsLoading] = useState(true);
     const [isUploading, setIsUploading] = useState(false);
     const [deletingId, setDeletingId] = useState<string | null>(null);
-    const [replacingId, setReplacingId] = useState<string | null>(null);
     const [draggingId, setDraggingId] = useState<string | null>(null);
     const fileInputRef = useRef<HTMLInputElement>(null);
 
@@ -282,27 +247,6 @@ export function ApartmentImageManager({
             toast.error(err instanceof Error ? err.message : "Delete failed");
         } finally {
             setDeletingId(null);
-        }
-    };
-
-    const replaceImage = async (imageId: string, file: File) => {
-        setReplacingId(imageId);
-        try {
-            const headers = await getAuthHeaders();
-            const image = await uploadApartmentImageDirect({
-                apartmentId,
-                file,
-                authHeaders: headers,
-                replaceImageId: imageId,
-            });
-            setImages((current) =>
-                current.map((row) => (row.id === imageId ? image : row)),
-            );
-            toast.success("Image replaced");
-        } catch (err) {
-            toast.error(err instanceof Error ? err.message : "Replace failed");
-        } finally {
-            setReplacingId(null);
         }
     };
 
@@ -482,12 +426,10 @@ export function ApartmentImageManager({
                                 image={image}
                                 apartmentId={apartmentId}
                                 onDelete={(imageId) => void deleteImage(imageId)}
-                                onReplace={(imageId, file) => void replaceImage(imageId, file)}
                                 onAltTextSave={(imageId, altText) =>
                                     void saveAltText(imageId, altText)
                                 }
                                 isDeleting={deletingId === image.id}
-                                isReplacing={replacingId === image.id}
                             />
                         </div>
                     ))}

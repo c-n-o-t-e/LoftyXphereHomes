@@ -1,4 +1,5 @@
 import type { NextConfig } from "next";
+import { buildSecurityHeaders } from "./lib/security/headers";
 
 const nextConfig: NextConfig = {
     serverExternalPackages: ["sharp", "@supabase/supabase-js", "ffmpeg-static"],
@@ -21,6 +22,14 @@ const nextConfig: NextConfig = {
                 pathname: "/storage/v1/object/public/**",
             },
         ],
+    },
+    async headers() {
+        return [
+            {
+                source: "/(.*)",
+                headers: buildSecurityHeaders(),
+            },
+        ];
     },
 };
 

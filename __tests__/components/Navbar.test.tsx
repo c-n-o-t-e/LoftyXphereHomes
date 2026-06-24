@@ -42,6 +42,7 @@ describe('Navbar', () => {
     renderNavbar()
     expect(screen.getByText('Home')).toBeInTheDocument()
     expect(screen.getByText('Apartments')).toBeInTheDocument()
+    expect(screen.getByText('Experience')).toBeInTheDocument()
     expect(screen.getByText('Gallery')).toBeInTheDocument()
     expect(screen.getByText('About')).toBeInTheDocument()
     expect(screen.getByText('Contact')).toBeInTheDocument()

@@ -1,11 +1,13 @@
 import Hero from "@/components/Hero";
 import ApartmentCard from "@/components/ApartmentCard";
 import TrustSignals from "@/components/TrustSignals";
+import PropertyExperienceSection from "@/components/PropertyExperienceSection";
 import TestimonialSlider from "@/components/TestimonialSlider";
 import AmenitiesSection from "@/components/AmenitiesSection";
 import BlogSection from "@/components/BlogSection";
 import { getFeaturedApartments } from "@/lib/data/apartments";
 import { getAllApartmentImageSetsMap } from "@/lib/data/getApartmentImages";
+import { getPublishedPropertyAmenitiesWithImages } from "@/lib/data/propertyAmenities";
 import { getPublicHeroVideo } from "@/lib/admin/heroVideo";
 import { Button } from "@/components/ui/button";
 import Link from "next/link";
@@ -15,6 +17,7 @@ export default async function Home() {
   const featuredApartments = getFeaturedApartments(2);
   const imageSetsByApartment = await getAllApartmentImageSetsMap();
   const heroVideo = await getPublicHeroVideo();
+  const propertyAmenities = await getPublishedPropertyAmenitiesWithImages();
 
   return (
     <>
@@ -55,6 +58,7 @@ export default async function Home() {
       </section>
 
       <TrustSignals />
+      <PropertyExperienceSection amenities={propertyAmenities} />
       <AmenitiesSection />
       <BlogSection />
       <TestimonialSlider />

@@ -134,6 +134,39 @@ model ApartmentImage {
   @@index([apartmentId, displayOrder])
 }
 
+// --- Shared property amenities (pool, gym, bar, outdoor — separate from unit photos) ---
+
+model PropertyAmenity {
+  id               String   @id @default(cuid())
+  slug             String   @unique
+  name             String
+  shortDescription String
+  description      String?  @db.Text
+  displayOrder     Int      @default(0)
+  isPublished      Boolean  @default(true)
+  createdAt        DateTime @default(now())
+  updatedAt        DateTime @updatedAt
+  images           PropertyAmenityImage[]
+
+  @@index([isPublished, displayOrder])
+}
+
+model PropertyAmenityImage {
+  id           String   @id @default(cuid())
+  amenityId    String
+  amenity      PropertyAmenity @relation(fields: [amenityId], references: [id], onDelete: Cascade)
+  thumbnailUrl String
+  mediumUrl    String
+  largeUrl     String
+  blurDataUrl  String?
+  altText      String?
+  displayOrder Int      @default(0)
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
+
+  @@index([amenityId, displayOrder])
+}
+
 // --- Homepage hero video (optimized variants in Supabase Storage) ---
 
 model HeroVideo {

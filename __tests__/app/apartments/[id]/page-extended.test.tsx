@@ -29,7 +29,7 @@ describe('Apartment Detail Page - Extended Coverage', () => {
     const params = Promise.resolve({ id: 'lofty-skyline-suite' })
     renderWithQueryClient(await ApartmentDetailPage({ params }))
     await waitForReservationCard()
-    expect(screen.getByText('Amenities')).toBeInTheDocument()
+    expect(screen.getByText('In your suite')).toBeInTheDocument()
     expect(screen.getByText(/24\/7 Power/i)).toBeInTheDocument()
   })
 

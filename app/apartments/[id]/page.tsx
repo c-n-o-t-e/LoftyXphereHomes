@@ -5,6 +5,7 @@ import { getApartmentImageSets } from "@/lib/data/getApartmentImages";
 import { MapPin, Check } from "lucide-react";
 import { YourReservationCard } from "@/components/YourReservationCard";
 import { ApartmentImageGallery } from "@/components/ApartmentImageGallery";
+import { IncludedWithStayStrip } from "@/components/IncludedWithStayStrip";
 import { CHECK_IN_TIME, CHECK_OUT_TIME } from "@/lib/constants";
 
 interface PageProps {
@@ -67,6 +68,8 @@ export default async function ApartmentDetailPage({ params }: PageProps) {
           name={apartment.name}
         />
 
+        <IncludedWithStayStrip />
+
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 sm:gap-8">
           {/* Main Content */}
           <div className="lg:col-span-2 space-y-6 sm:space-y-8">
@@ -78,7 +81,7 @@ export default async function ApartmentDetailPage({ params }: PageProps) {
 
             {/* Amenities */}
             <div>
-              <h2 className="text-2xl font-bold text-black mb-4">Amenities</h2>
+              <h2 className="text-2xl font-bold text-black mb-4">In your suite</h2>
               <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
                 {apartment.amenities.map((amenity) => (
                   <div key={amenity} className="flex items-center text-black/80">

@@ -107,3 +107,75 @@ export async function uploadApartmentImageDirect(args: {
 
     return completeData.image;
 }
+
+export async function uploadPropertyAmenityImageDirect(args: {
+    amenityId: string;
+    file: File;
+    authHeaders: Record<string, string>;
+    altText?: string | null;
+}) {
+    const initRes = await fetch(
+        `/api/admin/property-amenities/${args.amenityId}/images/init`,
+        {
+            method: "POST",
+            headers: {
+                ...args.authHeaders,
+                "Content-Type": "application/json",
+            },
+            body: JSON.stringify({
+                fileName: args.file.name,
+                mimeType: args.file.type || "application/octet-stream",
+                fileSize: args.file.size,
+            }),
+        },
+    );
+
+    const initData = await parseApiResponse<{
+        upload: DirectUploadInit;
+    }>(initRes);
+    const upload = initData.upload;
+
+    const supabase = getSupabaseClient();
+    const fileBody = await args.file.arrayBuffer();
+
+    const { error: storageError } = await supabase.storage
+        .from(upload.bucket)
+        .uploadToSignedUrl(upload.path, upload.token, fileBody, {
+            contentType: args.file.type || "application/octet-stream",
+            upsert: true,
+        });
+
+    if (storageError) {
+        throw new Error(storageError.message);
+    }
+
+    const completeRes = await fetch(
+        `/api/admin/property-amenities/${args.amenityId}/images/complete`,
+        {
+            method: "POST",
+            headers: {
+                ...args.authHeaders,
+                "Content-Type": "application/json",
+            },
+            body: JSON.stringify({
+                imageId: upload.imageId,
+                mimeType: args.file.type || "application/octet-stream",
+                altText: args.altText,
+            }),
+        },
+    );
+
+    const completeData = await parseApiResponse<{
+        image: {
+            id: string;
+            amenityId: string;
+            thumbnailUrl: string;
+            mediumUrl: string;
+            largeUrl: string;
+            altText: string | null;
+            displayOrder: number;
+        };
+    }>(completeRes);
+
+    return completeData.image;
+}

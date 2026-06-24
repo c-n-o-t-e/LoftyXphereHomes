@@ -4,12 +4,12 @@ import AmenitiesSection from '@/components/AmenitiesSection'
 describe('AmenitiesSection', () => {
   it('renders the section heading', () => {
     render(<AmenitiesSection />)
-    expect(screen.getByText('Premium Amenities')).toBeInTheDocument()
+    expect(screen.getByText('In every suite')).toBeInTheDocument()
   })
 
   it('renders the section description', () => {
     render(<AmenitiesSection />)
-    expect(screen.getByText(/Every detail designed for your comfort/i)).toBeInTheDocument()
+    expect(screen.getByText(/Inside your apartment/i)).toBeInTheDocument()
   })
 
   it('renders all standard amenities', () => {

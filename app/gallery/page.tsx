@@ -1,8 +1,12 @@
 import { getGalleryImages } from "@/lib/data/getApartmentImages";
+import { getPropertyGalleryImages } from "@/lib/data/propertyAmenities";
 import { GalleryClient } from "@/components/GalleryClient";
 
 export default async function GalleryPage() {
-    const items = await getGalleryImages();
+    const [suiteItems, propertyItems] = await Promise.all([
+        getGalleryImages(),
+        getPropertyGalleryImages(),
+    ]);
 
     return (
         <div className="pt-20 pb-24 bg-white min-h-screen">
@@ -12,11 +16,11 @@ export default async function GalleryPage() {
                         Gallery
                     </h1>
                     <p className="text-lg md:text-xl text-black/70 max-w-2xl mx-auto leading-relaxed">
-                        Explore our premium apartments through stunning visuals
+                        Browse suite interiors and shared property spaces
                     </p>
                 </div>
 
-                <GalleryClient items={items} />
+                <GalleryClient suiteItems={suiteItems} propertyItems={propertyItems} />
             </div>
         </div>
     );

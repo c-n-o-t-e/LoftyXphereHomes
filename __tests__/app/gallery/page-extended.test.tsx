@@ -14,13 +14,13 @@ const mockItems: GalleryImageItem[] = apartments.flatMap((apt) =>
 
 describe('Gallery Page - Extended Coverage', () => {
   it('renders all apartment images', () => {
-    render(<GalleryClient items={mockItems} />)
+    render(<GalleryClient suiteItems={mockItems} propertyItems={[]} />)
     const images = screen.getAllByRole('img')
     expect(images.length).toBeGreaterThan(5)
   })
 
   it('displays apartment names with images', () => {
-    render(<GalleryClient items={mockItems} />)
+    render(<GalleryClient suiteItems={mockItems} propertyItems={[]} />)
     const images = screen.getAllByRole('img')
     expect(images.length).toBeGreaterThan(0)
   })

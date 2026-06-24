@@ -45,6 +45,16 @@ jest.mock('@/lib/admin/heroVideo', () => ({
   getPublicHeroVideo: jest.fn(async () => null),
 }))
 
+jest.mock('@/lib/data/propertyAmenities', () => ({
+  getPublishedPropertyAmenitiesWithImages: jest.fn(async () => []),
+}))
+
+jest.mock('@/components/PropertyExperienceSection', () => {
+  return function MockPropertyExperienceSection() {
+    return null
+  }
+})
+
 // Mock components that use framer-motion or carousel
 jest.mock('@/components/ApartmentCard', () => {
   return function MockApartmentCard({ apartment }: { apartment: any }) {
@@ -77,7 +87,7 @@ describe('Home Page', () => {
 
   it('renders amenities section', async () => {
     render(await Home())
-    expect(screen.getByText('Premium Amenities')).toBeInTheDocument()
+    expect(screen.getByText('In every suite')).toBeInTheDocument()
   })
 
   it('renders blog section', async () => {

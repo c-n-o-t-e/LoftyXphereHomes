@@ -110,6 +110,9 @@ export default function AdminHomePage() {
                                 <Button variant="outline" asChild>
                                     <Link href="/admin/hero-video">Manage hero video</Link>
                                 </Button>
+                                <Button variant="outline" asChild>
+                                    <Link href="/admin/property-amenities">Manage property amenities</Link>
+                                </Button>
                             </div>
                         )}
                         <Button

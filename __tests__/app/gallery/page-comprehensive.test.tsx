@@ -16,7 +16,7 @@ const mockItems: GalleryImageItem[] = apartments.flatMap((apt) =>
 describe('Gallery Page - Comprehensive Coverage', () => {
   it('opens lightbox when image is clicked', async () => {
     const user = userEvent.setup()
-    render(<GalleryClient items={mockItems} />)
+    render(<GalleryClient suiteItems={mockItems} propertyItems={[]} />)
 
     const images = screen.getAllByRole('img')
     await user.click(images[0]!)
@@ -26,7 +26,7 @@ describe('Gallery Page - Comprehensive Coverage', () => {
 
   it('closes lightbox when close button is clicked', async () => {
     const user = userEvent.setup()
-    render(<GalleryClient items={mockItems} />)
+    render(<GalleryClient suiteItems={mockItems} propertyItems={[]} />)
 
     const images = screen.getAllByRole('img')
     await user.click(images[0]!)
@@ -37,7 +37,7 @@ describe('Gallery Page - Comprehensive Coverage', () => {
 
   it('handles image click with correct apartment ID', async () => {
     const user = userEvent.setup()
-    render(<GalleryClient items={mockItems} />)
+    render(<GalleryClient suiteItems={mockItems} propertyItems={[]} />)
 
     const images = screen.getAllByRole('img')
     expect(images.length).toBeGreaterThan(0)

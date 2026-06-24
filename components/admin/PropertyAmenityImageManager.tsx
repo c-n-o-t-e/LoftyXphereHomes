@@ -1,0 +1,444 @@
+"use client";
+
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
+import Image from "next/image";
+import { GripVertical, Loader2, Trash2, Upload } from "lucide-react";
+import { toast } from "sonner";
+import { getSupabaseClient } from "@/lib/supabase/client";
+import { uploadPropertyAmenityImageDirect } from "@/lib/images/directUploadClient";
+import { Button } from "@/components/ui/button";
+import { Card } from "@/components/ui/card";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+import { AdminPropertyAmenityImagePreview } from "@/components/admin/AdminPropertyAmenityImagePreview";
+
+type AdminPropertyAmenityImage = {
+    id: string;
+    amenityId: string;
+    thumbnailUrl: string;
+    mediumUrl: string;
+    largeUrl: string;
+    altText: string | null;
+    displayOrder: number;
+};
+
+interface PropertyAmenityImageManagerProps {
+    amenityId: string;
+    amenityName: string;
+}
+
+type PendingUpload = {
+    id: string;
+    file: File;
+    previewUrl: string;
+};
+
+async function parseJsonResponse<T>(res: Response): Promise<T> {
+    const text = await res.text();
+    let data: (T & { error?: string }) | null = null;
+
+    if (text) {
+        try {
+            data = JSON.parse(text) as T & { error?: string };
+        } catch {
+            throw new Error(
+                text.length > 180 ? `${text.slice(0, 180)}…` : text,
+            );
+        }
+    }
+
+    if (!res.ok) {
+        throw new Error(data?.error ?? (text || "Request failed"));
+    }
+
+    if (!data) {
+        throw new Error("Empty response from server");
+    }
+
+    return data;
+}
+
+function SortableImageCard({
+    image,
+    amenityId,
+    onDelete,
+    onAltTextSave,
+    isDeleting,
+}: {
+    image: AdminPropertyAmenityImage;
+    amenityId: string;
+    onDelete: (imageId: string) => void;
+    onAltTextSave: (imageId: string, altText: string) => void;
+    isDeleting: boolean;
+}) {
+    const [altText, setAltText] = useState(image.altText ?? "");
+
+    return (
+        <Card className="overflow-hidden">
+            <div className="relative aspect-[4/3] bg-gray-100 overflow-hidden">
+                <AdminPropertyAmenityImagePreview
+                    amenityId={amenityId}
+                    imageId={image.id}
+                    alt={image.altText ?? "Property amenity image"}
+                    className="absolute inset-0 h-full w-full object-cover"
+                />
+                <div className="absolute top-2 left-2 rounded bg-black/60 px-2 py-1 text-xs text-white">
+                    #{image.displayOrder + 1}
+                </div>
+            </div>
+            <div className="p-3 space-y-3">
+                <div className="flex items-center gap-2 text-xs text-gray-500">
+                    <GripVertical className="h-4 w-4" />
+                    Drag to reorder
+                </div>
+                <div className="space-y-1">
+                    <Label htmlFor={`alt-${image.id}`} className="text-xs">
+                        Alt text
+                    </Label>
+                    <Input
+                        id={`alt-${image.id}`}
+                        value={altText}
+                        onChange={(e) => setAltText(e.target.value)}
+                        onBlur={() => onAltTextSave(image.id, altText)}
+                        placeholder="Describe this photo"
+                    />
+                </div>
+                <Button
+                    type="button"
+                    variant="outline"
+                    size="sm"
+                    className="w-full text-red-600 hover:text-red-700"
+                    disabled={isDeleting}
+                    onClick={() => onDelete(image.id)}
+                >
+                    {isDeleting ? (
+                        <Loader2 className="h-4 w-4 animate-spin" />
+                    ) : (
+                        <>
+                            <Trash2 className="h-4 w-4 mr-2" />
+                            Delete
+                        </>
+                    )}
+                </Button>
+            </div>
+        </Card>
+    );
+}
+
+export function PropertyAmenityImageManager({
+    amenityId,
+    amenityName,
+}: PropertyAmenityImageManagerProps) {
+    const [images, setImages] = useState<AdminPropertyAmenityImage[]>([]);
+    const [pendingUploads, setPendingUploads] = useState<PendingUpload[]>([]);
+    const [isLoading, setIsLoading] = useState(true);
+    const [isUploading, setIsUploading] = useState(false);
+    const [deletingId, setDeletingId] = useState<string | null>(null);
+    const [draggingId, setDraggingId] = useState<string | null>(null);
+    const fileInputRef = useRef<HTMLInputElement>(null);
+
+    const getAuthHeaders = useCallback(async () => {
+        const supabase = getSupabaseClient();
+        const {
+            data: { session },
+        } = await supabase.auth.getSession();
+        const token = session?.access_token;
+        if (!token) throw new Error("Not signed in");
+        return { Authorization: `Bearer ${token}` };
+    }, []);
+
+    const loadImages = useCallback(async () => {
+        setIsLoading(true);
+        try {
+            const headers = await getAuthHeaders();
+            const res = await fetch(
+                `/api/admin/property-amenities/${amenityId}/images`,
+                { headers },
+            );
+            const data = await parseJsonResponse<{ images: AdminPropertyAmenityImage[] }>(
+                res,
+            );
+            setImages(data.images);
+        } catch (err) {
+            toast.error(err instanceof Error ? err.message : "Failed to load images");
+        } finally {
+            setIsLoading(false);
+        }
+    }, [amenityId, getAuthHeaders]);
+
+    useEffect(() => {
+        void loadImages();
+    }, [loadImages]);
+
+    const addPendingFiles = (files: FileList | File[]) => {
+        const next = Array.from(files).map((file) => ({
+            id: `${file.name}-${file.size}-${file.lastModified}`,
+            file,
+            previewUrl: URL.createObjectURL(file),
+        }));
+        setPendingUploads((current) => [...current, ...next]);
+    };
+
+    const clearPendingUploads = () => {
+        pendingUploads.forEach((item) => URL.revokeObjectURL(item.previewUrl));
+        setPendingUploads([]);
+    };
+
+    const uploadPending = async () => {
+        if (pendingUploads.length === 0) return;
+        setIsUploading(true);
+        const uploaded: AdminPropertyAmenityImage[] = [];
+        const errors: { fileName: string; error: string }[] = [];
+
+        try {
+            const headers = await getAuthHeaders();
+
+            for (const item of pendingUploads) {
+                try {
+                    const image = await uploadPropertyAmenityImageDirect({
+                        amenityId,
+                        file: item.file,
+                        authHeaders: headers,
+                    });
+                    uploaded.push(image);
+                } catch (err) {
+                    errors.push({
+                        fileName: item.file.name,
+                        error: err instanceof Error ? err.message : "Upload failed",
+                    });
+                }
+            }
+
+            if (uploaded.length === 0) {
+                throw new Error(errors[0]?.error ?? "All uploads failed");
+            }
+
+            setImages((current) => [...current, ...uploaded]);
+            clearPendingUploads();
+
+            if (errors.length > 0) {
+                toast.error(
+                    `${errors.length} file(s) failed: ${errors[0]?.error}`,
+                );
+            } else {
+                toast.success(`Uploaded ${uploaded.length} image(s)`);
+            }
+        } catch (err) {
+            toast.error(err instanceof Error ? err.message : "Upload failed");
+        } finally {
+            setIsUploading(false);
+        }
+    };
+
+    const deleteImage = async (imageId: string) => {
+        setDeletingId(imageId);
+        try {
+            const headers = await getAuthHeaders();
+            const res = await fetch(
+                `/api/admin/property-amenities/${amenityId}/images/${imageId}`,
+                { method: "DELETE", headers },
+            );
+            await parseJsonResponse(res);
+            setImages((current) => current.filter((image) => image.id !== imageId));
+            toast.success("Image deleted");
+        } catch (err) {
+            toast.error(err instanceof Error ? err.message : "Delete failed");
+        } finally {
+            setDeletingId(null);
+        }
+    };
+
+    const saveAltText = async (imageId: string, altText: string) => {
+        try {
+            const headers = await getAuthHeaders();
+            const res = await fetch(
+                `/api/admin/property-amenities/${amenityId}/images/${imageId}`,
+                {
+                    method: "PATCH",
+                    headers: { ...headers, "Content-Type": "application/json" },
+                    body: JSON.stringify({ altText: altText.trim() || null }),
+                },
+            );
+            const data = await parseJsonResponse<{ image: AdminPropertyAmenityImage }>(
+                res,
+            );
+            setImages((current) =>
+                current.map((image) =>
+                    image.id === imageId
+                        ? { ...image, altText: data.image.altText }
+                        : image,
+                ),
+            );
+        } catch (err) {
+            toast.error(err instanceof Error ? err.message : "Could not save alt text");
+        }
+    };
+
+    const persistOrder = async (nextImages: AdminPropertyAmenityImage[]) => {
+        const headers = await getAuthHeaders();
+        const res = await fetch(
+            `/api/admin/property-amenities/${amenityId}/images/reorder`,
+            {
+                method: "PATCH",
+                headers: { ...headers, "Content-Type": "application/json" },
+                body: JSON.stringify({ imageIds: nextImages.map((image) => image.id) }),
+            },
+        );
+        const data = await parseJsonResponse<{ images: AdminPropertyAmenityImage[] }>(
+            res,
+        );
+        setImages(data.images);
+    };
+
+    const onDropReorder = async (targetId: string) => {
+        if (!draggingId || draggingId === targetId) return;
+        const current = [...images];
+        const fromIndex = current.findIndex((image) => image.id === draggingId);
+        const toIndex = current.findIndex((image) => image.id === targetId);
+        if (fromIndex < 0 || toIndex < 0) return;
+
+        const [moved] = current.splice(fromIndex, 1);
+        current.splice(toIndex, 0, moved);
+        const reordered = current.map((image, index) => ({
+            ...image,
+            displayOrder: index,
+        }));
+        setImages(reordered);
+        setDraggingId(null);
+
+        try {
+            await persistOrder(reordered);
+        } catch (err) {
+            toast.error(err instanceof Error ? err.message : "Reorder failed");
+            void loadImages();
+        }
+    };
+
+    const sortedImages = useMemo(
+        () => [...images].sort((a, b) => a.displayOrder - b.displayOrder),
+        [images],
+    );
+
+    return (
+        <div className="space-y-6">
+            <Card
+                className="p-6 border-dashed"
+                onDragOver={(e) => e.preventDefault()}
+                onDrop={(e) => {
+                    e.preventDefault();
+                    if (e.dataTransfer.files?.length) {
+                        addPendingFiles(e.dataTransfer.files);
+                    }
+                }}
+            >
+                <div className="flex flex-col items-center text-center gap-4">
+                    <Upload className="h-10 w-10 text-gray-400" />
+                    <div>
+                        <h2 className="font-semibold text-gray-900">
+                            Upload photos for {amenityName}
+                        </h2>
+                        <p className="text-sm text-gray-600 mt-1">
+                            Shared property photos — pool, gym, bar, and outdoor spaces.
+                            Images are converted to WebP automatically.
+                        </p>
+                    </div>
+                    <div className="flex gap-2 flex-wrap justify-center">
+                        <Button
+                            type="button"
+                            onClick={() => fileInputRef.current?.click()}
+                        >
+                            Choose files
+                        </Button>
+                        {pendingUploads.length > 0 && (
+                            <Button
+                                type="button"
+                                onClick={() => void uploadPending()}
+                                disabled={isUploading}
+                            >
+                                {isUploading ? (
+                                    <>
+                                        <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+                                        Uploading...
+                                    </>
+                                ) : (
+                                    `Upload ${pendingUploads.length} file(s)`
+                                )}
+                            </Button>
+                        )}
+                    </div>
+                    <input
+                        ref={fileInputRef}
+                        type="file"
+                        accept="image/jpeg,image/png,image/webp,image/heic,image/heif"
+                        multiple
+                        className="hidden"
+                        onChange={(e) => {
+                            if (e.target.files?.length) {
+                                addPendingFiles(e.target.files);
+                                e.target.value = "";
+                            }
+                        }}
+                    />
+                </div>
+            </Card>
+
+            {pendingUploads.length > 0 && (
+                <div>
+                    <h3 className="font-medium text-gray-900 mb-3">Preview before upload</h3>
+                    <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
+                        {pendingUploads.map((item) => (
+                            <Card key={item.id} className="overflow-hidden">
+                                <div className="relative aspect-[4/3]">
+                                    <Image
+                                        src={item.previewUrl}
+                                        alt={item.file.name}
+                                        fill
+                                        className="object-cover"
+                                        unoptimized
+                                    />
+                                </div>
+                                <div className="p-3 text-xs text-gray-600 truncate">
+                                    {item.file.name}
+                                </div>
+                            </Card>
+                        ))}
+                    </div>
+                </div>
+            )}
+
+            {isLoading ? (
+                <div className="flex items-center gap-2 text-gray-600">
+                    <Loader2 className="h-4 w-4 animate-spin" />
+                    Loading images...
+                </div>
+            ) : sortedImages.length === 0 ? (
+                <Card className="p-6 text-sm text-gray-600">
+                    No photos yet. Upload images to show this amenity on the homepage and
+                    Experience page.
+                </Card>
+            ) : (
+                <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
+                    {sortedImages.map((image) => (
+                        <div
+                            key={image.id}
+                            draggable
+                            onDragStart={() => setDraggingId(image.id)}
+                            onDragOver={(e) => e.preventDefault()}
+                            onDrop={() => void onDropReorder(image.id)}
+                        >
+                            <SortableImageCard
+                                image={image}
+                                amenityId={amenityId}
+                                onDelete={(imageId) => void deleteImage(imageId)}
+                                onAltTextSave={(imageId, altText) =>
+                                    void saveAltText(imageId, altText)
+                                }
+                                isDeleting={deletingId === image.id}
+                            />
+                        </div>
+                    ))}
+                </div>
+            )}
+        </div>
+    );
+}

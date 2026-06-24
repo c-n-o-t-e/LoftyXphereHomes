@@ -1,3 +1,4 @@
+import { unstable_noStore as noStore } from "next/cache";
 import { randomUUID } from "crypto";
 import { prisma } from "@/lib/db";
 import { HERO_VIDEO_BUCKET } from "@/lib/videos/constants";
@@ -45,6 +46,7 @@ export async function getActiveHeroVideo(): Promise<HeroVideoRow | null> {
 }
 
 export async function getPublicHeroVideo(): Promise<HeroVideoConfig | null> {
+    noStore();
     const row = await getActiveHeroVideo();
     return row ? serializeHeroVideo(row) : null;
 }

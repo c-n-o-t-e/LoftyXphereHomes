@@ -28,24 +28,20 @@ describe('Hero', () => {
     expect(screen.getByText('Stay Different.')).toBeInTheDocument()
   })
 
-  it('renders poster immediately when hero video is configured', () => {
-    const { container } = render(<Hero heroVideo={mockHeroVideo} />)
-    const poster = container.querySelector('img[src="https://example.supabase.co/poster.webp"]')
-    expect(poster).toBeInTheDocument()
-  })
-
-  it('renders responsive video sources when hero video is configured', () => {
+  it('renders video with poster when hero video is configured', () => {
     const { container } = render(<Hero heroVideo={mockHeroVideo} />)
     const video = container.querySelector('video')
     expect(video).toBeInTheDocument()
-    const sources = video?.querySelectorAll('source')
-    expect(sources?.length).toBe(2)
+    expect(video).toHaveAttribute('poster', mockHeroVideo.posterUrl)
+    expect(video?.querySelector('source')?.getAttribute('src')).toBe(
+      mockHeroVideo.desktopMp4Url,
+    )
   })
 
-  it('uses gradient backdrop when no hero video is configured', () => {
+  it('does not show a dark fallback backdrop when no hero video is configured', () => {
     const { container } = render(<Hero />)
     expect(container.querySelector('video')).toBeNull()
-    expect(container.querySelector('.from-stone-900')).toBeInTheDocument()
+    expect(container.querySelector('.from-stone-900')).toBeNull()
   })
 
   it('does not show a blocking loading spinner', () => {

@@ -178,7 +178,8 @@ export function HeroVideoManager() {
             ) : (
                 <Card className="p-6">
                     <p className="text-sm text-gray-600">
-                        No hero video yet. The homepage uses a gradient until you upload one.
+                        No hero video yet. Upload one to show a looping background on the
+                        homepage.
                     </p>
                 </Card>
             )}

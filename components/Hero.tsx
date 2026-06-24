@@ -1,109 +1,94 @@
 "use client";
 
-import { useRef, useEffect, useState, useCallback } from "react";
+import { useRef, useEffect, useState } from "react";
 import { motion } from "framer-motion";
 import HeroSearchBar from "./HeroSearchBar";
 import type { HeroVideoConfig } from "@/lib/videos/types";
-
-function HeroVideoErrorBackdrop() {
-  return (
-    <div
-      className="absolute inset-0 bg-gradient-to-br from-stone-900 via-stone-800 to-neutral-950"
-      aria-hidden
-    />
-  );
-}
 
 type HeroProps = {
   heroVideo?: HeroVideoConfig | null;
 };
 
+function resolveVideoSrc(heroVideo: HeroVideoConfig, preferMobile: boolean) {
+  if (preferMobile && heroVideo.mobileMp4Url) {
+    return heroVideo.mobileMp4Url;
+  }
+  return heroVideo.desktopMp4Url || heroVideo.mobileMp4Url || null;
+}
+
 export default function Hero({ heroVideo = null }: HeroProps) {
   const videoRef = useRef<HTMLVideoElement>(null);
-  const [videoError, setVideoError] = useState(false);
-  const [videoPlaying, setVideoPlaying] = useState(false);
+  const [videoSrc, setVideoSrc] = useState<string | null>(() =>
+    heroVideo ? resolveVideoSrc(heroVideo, false) : null,
+  );
+  const [showPosterFallback, setShowPosterFallback] = useState(false);
 
   const hasVideo = Boolean(
-    heroVideo?.mobileMp4Url && heroVideo?.desktopMp4Url && heroVideo?.posterUrl,
+    heroVideo?.mobileMp4Url || heroVideo?.desktopMp4Url,
   );
 
-  const markVideoPlaying = useCallback(() => {
-    setVideoPlaying(true);
-  }, []);
-
   useEffect(() => {
-    if (!hasVideo || videoError) return;
-    const video = videoRef.current;
-    if (!video) return;
-
-    const onPlaying = () => markVideoPlaying();
-    video.addEventListener("playing", onPlaying);
-
-    if (!video.paused && video.readyState >= HTMLMediaElement.HAVE_CURRENT_DATA) {
-      markVideoPlaying();
+    if (!heroVideo) {
+      setVideoSrc(null);
+      return;
     }
 
-    return () => {
-      video.removeEventListener("playing", onPlaying);
+    if (typeof window.matchMedia !== "function") {
+      setVideoSrc(resolveVideoSrc(heroVideo, false));
+      return;
+    }
+
+    const mq = window.matchMedia("(max-width: 768px)");
+    const syncSrc = () => {
+      setVideoSrc(resolveVideoSrc(heroVideo, mq.matches));
     };
-  }, [hasVideo, videoError, markVideoPlaying, heroVideo?.desktopMp4Url]);
+
+    syncSrc();
+    mq.addEventListener("change", syncSrc);
+    return () => mq.removeEventListener("change", syncSrc);
+  }, [heroVideo]);
 
   useEffect(() => {
-    if (!hasVideo) return;
+    if (!videoSrc) return;
     const video = videoRef.current;
     if (!video) return;
+
+    setShowPosterFallback(false);
     video.load();
     video.play().catch(() => {
-      // Autoplay may be blocked; poster remains visible.
+      // Autoplay may be blocked; poster remains visible via the video element.
     });
-  }, [hasVideo, heroVideo?.desktopMp4Url, heroVideo?.mobileMp4Url]);
+  }, [videoSrc]);
 
   return (
     <section className="relative min-h-screen w-full flex items-center justify-center overflow-hidden">
       <div className="absolute inset-0 z-0">
-        {hasVideo && !videoError ? (
-          <>
-            {heroVideo?.posterUrl ? (
-              // eslint-disable-next-line @next/next/no-img-element
-              <img
-                src={heroVideo.posterUrl}
-                alt=""
-                aria-hidden
-                fetchPriority="high"
-                decoding="async"
-                className={`absolute inset-0 h-full w-full object-cover transition-opacity duration-500 ${
-                  videoPlaying ? "opacity-0" : "opacity-100"
-                }`}
-              />
-            ) : null}
-            <video
-              ref={videoRef}
-              autoPlay
-              muted
-              loop
-              playsInline
-              preload="auto"
-              poster={heroVideo?.posterUrl}
-              onError={() => setVideoError(true)}
-              className={`absolute inset-0 h-full w-full object-cover transition-opacity duration-500 ${
-                videoPlaying ? "opacity-100" : "opacity-0"
-              }`}
-            >
-              {heroVideo?.mobileMp4Url ? (
-                <source
-                  src={heroVideo.mobileMp4Url}
-                  type="video/mp4"
-                  media="(max-width: 768px)"
-                />
-              ) : null}
-              {heroVideo?.desktopMp4Url ? (
-                <source src={heroVideo.desktopMp4Url} type="video/mp4" />
-              ) : null}
-            </video>
-          </>
-        ) : (
-          <HeroVideoErrorBackdrop />
-        )}
+        {hasVideo && videoSrc && !showPosterFallback ? (
+          <video
+            ref={videoRef}
+            key={videoSrc}
+            autoPlay
+            muted
+            loop
+            playsInline
+            preload="auto"
+            poster={heroVideo?.posterUrl}
+            onError={() => setShowPosterFallback(true)}
+            className="absolute inset-0 h-full w-full object-cover"
+          >
+            <source src={videoSrc} type="video/mp4" />
+          </video>
+        ) : heroVideo?.posterUrl ? (
+          // eslint-disable-next-line @next/next/no-img-element
+          <img
+            src={heroVideo.posterUrl}
+            alt=""
+            aria-hidden
+            fetchPriority="high"
+            decoding="async"
+            className="absolute inset-0 h-full w-full object-cover"
+          />
+        ) : null}
         <div className="absolute inset-0 bg-gradient-to-b from-black/20 via-black/10 to-black/20" />
         <div className="absolute inset-0 bg-gradient-to-r from-black/10 via-transparent to-black/10" />
       </div>

@@ -49,6 +49,23 @@ jest.mock('@/lib/data/propertyAmenities', () => ({
   getPublishedPropertyAmenitiesWithImages: jest.fn(async () => []),
 }))
 
+jest.mock('@/components/home/FeaturedApartmentsSection', () => ({
+  FeaturedApartmentsSection: function MockFeaturedApartmentsSection() {
+    return (
+      <section>
+        <h2>Featured Apartments</h2>
+        <a href="/apartments">View All Apartments</a>
+      </section>
+    )
+  },
+}))
+
+jest.mock('@/components/home/PropertyExperienceSectionLoader', () => ({
+  PropertyExperienceSectionLoader: function MockPropertyExperienceSectionLoader() {
+    return null
+  },
+}))
+
 jest.mock('@/components/PropertyExperienceSection', () => {
   return function MockPropertyExperienceSection() {
     return null

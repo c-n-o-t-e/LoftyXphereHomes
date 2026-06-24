@@ -220,7 +220,7 @@ export function getComingSoonApartments(): Apartment[] {
     return apartments.filter((apt) => apt.status === "coming_soon");
 }
 
-export function getFeaturedApartments(limit: number = 4): Apartment[] {
+export function getFeaturedApartments(limit: number = 2): Apartment[] {
     return getActiveApartments()
         .sort((a, b) => b.rating - a.rating)
         .slice(0, limit);

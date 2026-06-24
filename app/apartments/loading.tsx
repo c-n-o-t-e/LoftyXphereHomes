@@ -6,8 +6,8 @@ export default function Loading() {
           <div className="h-10 w-64 bg-black/10 rounded mb-4" />
           <div className="h-5 w-full max-w-2xl bg-black/10 rounded mb-10" />
 
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6 sm:gap-8">
-            {Array.from({ length: 9 }).map((_, i) => (
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-6 sm:gap-8 max-w-5xl mx-auto">
+            {Array.from({ length: 4 }).map((_, i) => (
               <div key={i} className="rounded-2xl border border-black/10 overflow-hidden">
                 <div className="h-56 bg-black/10" />
                 <div className="p-5 space-y-3">

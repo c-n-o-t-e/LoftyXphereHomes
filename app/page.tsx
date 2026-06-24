@@ -12,7 +12,7 @@ import Link from "next/link";
 import { ArrowRight } from "lucide-react";
 
 export default async function Home() {
-  const featuredApartments = getFeaturedApartments(4);
+  const featuredApartments = getFeaturedApartments(2);
   const imageSetsByApartment = await getAllApartmentImageSetsMap();
   const heroVideo = await getPublicHeroVideo();
 
@@ -28,11 +28,11 @@ export default async function Home() {
               Featured Apartments
             </h2>
             <p className="text-base sm:text-lg md:text-xl text-black/70 max-w-2xl mx-auto leading-relaxed px-4">
-              Four premium suites available now — book your stay in Wuye, Abuja
+              Premium suites in Wuye, Abuja — book your stay at Lofty Xphere Homes
             </p>
           </div>
 
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6 sm:gap-8 mb-8 sm:mb-12">
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-6 sm:gap-8 mb-8 sm:mb-12 max-w-5xl mx-auto">
             {featuredApartments.map((apartment, index) => (
               <ApartmentCard
                 key={apartment.id}

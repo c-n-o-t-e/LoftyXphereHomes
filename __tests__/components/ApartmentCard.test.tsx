@@ -50,9 +50,9 @@ describe('ApartmentCard', () => {
     expect(screen.getByText(/per night/i)).toBeInTheDocument()
   })
 
-  it('renders rating', () => {
+  it('does not render rating badge', () => {
     render(<ApartmentCard apartment={mockApartment} />)
-    expect(screen.getByText('4.5')).toBeInTheDocument()
+    expect(screen.queryByText('4.5')).not.toBeInTheDocument()
   })
 
   it('renders capacity, beds, and baths', () => {

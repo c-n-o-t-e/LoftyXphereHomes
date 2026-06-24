@@ -31,13 +31,6 @@ describe('Apartment Detail Page', () => {
     expect(screen.getByText(/Wuye, Abuja/i)).toBeInTheDocument()
   })
 
-  it('renders apartment rating', async () => {
-    const params = Promise.resolve({ id: 'lofty-skyline-suite' })
-    renderWithQueryClient(await ApartmentDetailPage({ params }))
-    await waitForReservationCard()
-    expect(screen.getAllByText(/4\.9/i).length).toBeGreaterThan(0)
-  })
-
   it('renders booking button', async () => {
     const params = Promise.resolve({ id: 'lofty-skyline-suite' })
     renderWithQueryClient(await ApartmentDetailPage({ params }))

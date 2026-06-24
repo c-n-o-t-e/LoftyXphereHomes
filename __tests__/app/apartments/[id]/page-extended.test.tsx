@@ -23,9 +23,6 @@ describe('Apartment Detail Page - Extended Coverage', () => {
     await waitForReservationCard()
     expect(screen.getByText(/The Skyline Suite/i)).toBeInTheDocument()
     expect(screen.getByText(/Wuye, Abuja/i)).toBeInTheDocument()
-    // Rating may appear multiple times, use getAllByText
-    const ratingElements = screen.getAllByText(/4\.9/i)
-    expect(ratingElements.length).toBeGreaterThan(0)
   })
 
   it('renders apartment amenities', async () => {

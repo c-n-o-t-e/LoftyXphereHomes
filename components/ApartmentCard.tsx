@@ -5,7 +5,7 @@ import Link from "next/link";
 import { ResponsiveApartmentImage } from "@/components/ResponsiveApartmentImage";
 import { legacyUrlsToImageSets } from "@/lib/images/urls";
 import { motion, AnimatePresence } from "framer-motion";
-import { ChevronLeft, ChevronRight, MapPin, Users, Bed, Bath, Star } from "lucide-react";
+import { ChevronLeft, ChevronRight, MapPin, Users, Bed, Bath } from "lucide-react";
 import { Apartment } from "@/lib/types";
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -128,14 +128,7 @@ export default function ApartmentCard({ apartment, index = 0, imageSets }: Apart
               <div className="absolute top-4 left-4 z-10 rounded-full bg-black/75 px-3 py-1 text-xs font-semibold text-white">
                 Coming soon
               </div>
-            ) : (
-              <div className="absolute top-4 right-4 bg-white/95 backdrop-blur-sm px-3 py-1 rounded-full flex items-center space-x-1 border border-black/10">
-                <Star className="h-4 w-4 fill-[#FA5C5C] text-[#FA5C5C]" />
-                <span className="text-sm font-semibold text-black">
-                  {apartment.rating}
-                </span>
-              </div>
-            )}
+            ) : null}
           </div>
         </Link>
         <CardContent className="p-6">

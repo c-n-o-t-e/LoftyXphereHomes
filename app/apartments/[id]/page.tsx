@@ -2,7 +2,7 @@ import { Metadata } from "next";
 import { notFound } from "next/navigation";
 import { getApartmentById, isApartmentBookable } from "@/lib/data/apartments";
 import { getApartmentImageSets } from "@/lib/data/getApartmentImages";
-import { MapPin, Star, Check } from "lucide-react";
+import { MapPin, Check } from "lucide-react";
 import { YourReservationCard } from "@/components/YourReservationCard";
 import { ApartmentImageGallery } from "@/components/ApartmentImageGallery";
 import { CHECK_IN_TIME, CHECK_OUT_TIME } from "@/lib/constants";
@@ -57,11 +57,6 @@ export default async function ApartmentDetailPage({ params }: PageProps) {
             <div className="flex items-center">
               <MapPin className="h-5 w-5 mr-2 text-[#FA5C5C]" />
               {apartment.location.area}, {apartment.location.city}
-            </div>
-            <div className="flex items-center">
-              <Star className="h-5 w-5 fill-[#FA5C5C] text-[#FA5C5C] mr-1" />
-              <span className="font-semibold text-black">{apartment.rating}</span>
-              <span className="ml-1 text-black/70">({apartment.reviews} reviews)</span>
             </div>
           </div>
         </div>

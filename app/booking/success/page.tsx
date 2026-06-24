@@ -4,7 +4,10 @@ import { after } from "next/server";
 import { CheckCircle, XCircle, ArrowRight, ShieldCheck, FileText } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { verifyTransaction } from "@/lib/paystack";
-import { upsertBookingFromPaystack } from "@/lib/booking";
+import {
+  BookingDateConflictError,
+  upsertBookingFromPaystack,
+} from "@/lib/booking";
 import { sendAdminAlertBookingPersistenceFailed } from "@/lib/email/admin-alerts";
 import {
   enqueuePostBookingJobs,
@@ -25,6 +28,7 @@ export default async function BookingSuccessPage({
   const reference = typeof refParam === "string" ? refParam : Array.isArray(refParam) ? refParam[0] ?? "" : "";
   let verifyError: string | null = null;
   let didVerifyPaymentSuccess = false;
+  let conflictRefundInitiated = false;
 
   if (reference.trim()) {
     const result = await verifyTransaction(reference.trim());
@@ -32,21 +36,27 @@ export default async function BookingSuccessPage({
       didVerifyPaymentSuccess = true;
       try {
         const booking = await upsertBookingFromPaystack(result.data);
-        // Backup path: if Paystack webhook is not configured/reachable, still enqueue downstream work.
-        // This is idempotent (bookingId+type unique + skipDuplicates).
         await enqueuePostBookingJobs(booking.id);
         after(async () => {
           await flushPostBookingJobsForBooking(booking.id);
         });
       } catch (error) {
-        try {
-          await sendAdminAlertBookingPersistenceFailed({
-            reference: reference.trim(),
-            paystackData: result.data,
-            error,
-          });
-        } catch {
-          // Ignore alert failures; payment verification is still successful.
+        if (error instanceof BookingDateConflictError) {
+          conflictRefundInitiated = error.refundInitiated;
+          verifyError = error.refundInitiated
+            ? "Payment received, but those dates are no longer available. A refund has been initiated."
+            : "Payment received, but those dates are no longer available. Our team will process your refund shortly.";
+          didVerifyPaymentSuccess = false;
+        } else {
+          try {
+            await sendAdminAlertBookingPersistenceFailed({
+              reference: reference.trim(),
+              paystackData: result.data,
+              error,
+            });
+          } catch {
+            // Ignore alert failures; payment verification is still successful.
+          }
         }
       }
     } else if (result?.data?.status) {
@@ -58,6 +68,9 @@ export default async function BookingSuccessPage({
   
   const isConfirmed = didVerifyPaymentSuccess && !verifyError;
   const isFailed = !isConfirmed;
+  const isConflictRefund = conflictRefundInitiated || Boolean(
+    verifyError?.includes("refund"),
+  );
 
   const statusIcon = isConfirmed ? (
     <CheckCircle className="h-10 w-10 text-green-600" />
@@ -82,13 +95,19 @@ export default async function BookingSuccessPage({
             </div>
 
             <h1 className="text-2xl sm:text-3xl font-bold text-gray-900 mb-2">
-              {isConfirmed ? "Your stay is confirmed" : "We couldn’t confirm your booking"}
+              {isConfirmed
+                ? "Your stay is confirmed"
+                : isConflictRefund
+                  ? "Those dates are no longer available"
+                  : "We couldn’t confirm your booking"}
             </h1>
 
             <p className="text-gray-700 mb-6">
               {isConfirmed
                 ? "Payment confirmed — your apartment is now reserved for your dates."
-                : "We couldn’t verify and confirm this booking right now. Please contact us and include your payment reference."}
+                : isConflictRefund
+                  ? verifyError
+                  : "We couldn’t verify and confirm this booking right now. Please contact us and include your payment reference."}
             </p>
 
             <p className="text-gray-600 mb-4">

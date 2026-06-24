@@ -1,4 +1,5 @@
 import type { PaystackVerifyData } from "./paystack";
+import { initiateRefund } from "./paystack";
 import { getApartmentById } from "./data/apartments";
 import { prisma } from "./db";
 import {
@@ -6,6 +7,15 @@ import {
     nightsBetweenStayDates,
     totalNgnToKobo,
 } from "./pricing";
+import {
+    BookingDateConflictError,
+    findOverlappingBooking,
+    isExclusionConstraintViolation,
+    withApartmentBookingTransaction,
+} from "./booking/conflict";
+import { sendAdminAlertBookingConflictRefund } from "./email/admin-alerts";
+
+export { BookingDateConflictError } from "./booking/conflict";
 
 function parseDate(s: string): Date {
     const d = new Date(s);
@@ -13,7 +23,7 @@ function parseDate(s: string): Date {
     return d;
 }
 
-export async function upsertBookingFromPaystack(data: PaystackVerifyData) {
+function validatePaystackBookingInput(data: PaystackVerifyData) {
     if (data.status !== "success") {
         throw new Error(
             `Cannot create booking from non-successful Paystack transaction: ${data.status}`,
@@ -53,33 +63,212 @@ export async function upsertBookingFromPaystack(data: PaystackVerifyData) {
         );
     }
 
-    const checkIn = parseDate(checkInStr);
-    const checkOut = parseDate(checkOutStr);
-    const nights = nightsBetweenStayDates(checkInStr, checkOutStr);
-    const amountPaidNgn = Math.round(data.amount / 100); // kobo -> NGN
-    const status = "PAID";
+    return {
+        meta,
+        apartmentId,
+        checkInStr,
+        checkOutStr,
+        email,
+        checkIn: parseDate(checkInStr),
+        checkOut: parseDate(checkOutStr),
+        nights: nightsBetweenStayDates(checkInStr, checkOutStr),
+        amountPaidNgn: Math.round(data.amount / 100),
+    };
+}
 
-    const booking = await prisma.booking.upsert({
-        where: { reference: data.reference },
+async function persistConflictAuditBooking(args: {
+    data: PaystackVerifyData;
+    apartmentId: string;
+    checkIn: Date;
+    checkOut: Date;
+    nights: number;
+    amountPaidNgn: number;
+    email: string;
+    bookerName: string | null;
+    bookerPhone: string | null;
+}) {
+    await prisma.booking.upsert({
+        where: { reference: args.data.reference },
         create: {
-            reference: data.reference,
-            apartmentId,
-            checkIn,
-            checkOut,
-            nights,
-            amountPaid: amountPaidNgn,
-            status,
+            reference: args.data.reference,
+            apartmentId: args.apartmentId,
+            checkIn: args.checkIn,
+            checkOut: args.checkOut,
+            nights: args.nights,
+            amountPaid: args.amountPaidNgn,
+            status: "CANCELLED",
             source: "WEBSITE",
-            bookerEmail: email,
-            bookerName: meta.booker_name ?? null,
-            bookerPhone: meta.booker_phone ?? null,
+            bookerEmail: args.email,
+            bookerName: args.bookerName,
+            bookerPhone: args.bookerPhone,
+            expiresAt: null,
         },
         update: {
-            status,
-            amountPaid: amountPaidNgn,
+            status: "CANCELLED",
+            expiresAt: null,
             updatedAt: new Date(),
         },
     });
+}
 
-    return booking;
+async function handleBookingDateConflict(
+    data: PaystackVerifyData,
+    validated: ReturnType<typeof validatePaystackBookingInput>,
+): Promise<never> {
+    const refund = await initiateRefund({
+        transaction: data.reference,
+        amount: data.amount,
+    });
+
+    try {
+        await persistConflictAuditBooking({
+            data,
+            apartmentId: validated.apartmentId,
+            checkIn: validated.checkIn,
+            checkOut: validated.checkOut,
+            nights: validated.nights,
+            amountPaidNgn: validated.amountPaidNgn,
+            email: validated.email,
+            bookerName: validated.meta.booker_name ?? null,
+            bookerPhone: validated.meta.booker_phone ?? null,
+        });
+    } catch (auditErr) {
+        console.error("Failed to persist conflict audit booking:", auditErr);
+    }
+
+    await sendAdminAlertBookingConflictRefund({
+        reference: data.reference,
+        apartmentId: validated.apartmentId,
+        checkIn: validated.checkInStr,
+        checkOut: validated.checkOutStr,
+        bookerEmail: validated.email,
+        refundInitiated: refund.ok,
+        refundMessage: refund.message,
+        paystackData: data,
+    });
+
+    throw new BookingDateConflictError(
+        "Requested dates are no longer available for this apartment",
+        { refundInitiated: refund.ok },
+    );
+}
+
+async function confirmBookingInTransaction(
+    data: PaystackVerifyData,
+    validated: ReturnType<typeof validatePaystackBookingInput>,
+) {
+    const {
+        meta,
+        apartmentId,
+        email,
+        checkIn,
+        checkOut,
+        nights,
+        amountPaidNgn,
+    } = validated;
+
+    return withApartmentBookingTransaction(apartmentId, async (tx) => {
+        const existing = await tx.booking.findUnique({
+            where: { reference: data.reference },
+        });
+
+        if (existing?.status === "PAID") {
+            return existing;
+        }
+
+        if (existing?.status === "PENDING") {
+            const expiresAt = existing.expiresAt;
+            if (expiresAt && expiresAt <= new Date()) {
+                throw new BookingDateConflictError("Checkout hold expired");
+            }
+
+            const overlap = await findOverlappingBooking(tx, {
+                apartmentId,
+                checkIn,
+                checkOut,
+                excludeReference: data.reference,
+            });
+            if (overlap) {
+                throw new BookingDateConflictError("Overlapping booking exists");
+            }
+
+            return tx.booking.update({
+                where: { reference: data.reference },
+                data: {
+                    status: "PAID",
+                    amountPaid: amountPaidNgn,
+                    expiresAt: null,
+                    bookerEmail: email,
+                    bookerName: meta.booker_name ?? existing.bookerName,
+                    bookerPhone: meta.booker_phone ?? existing.bookerPhone,
+                    updatedAt: new Date(),
+                },
+            });
+        }
+
+        const overlap = await findOverlappingBooking(tx, {
+            apartmentId,
+            checkIn,
+            checkOut,
+            excludeReference: data.reference,
+        });
+        if (overlap) {
+            throw new BookingDateConflictError("Overlapping booking exists");
+        }
+
+        return tx.booking.create({
+            data: {
+                reference: data.reference,
+                apartmentId,
+                checkIn,
+                checkOut,
+                nights,
+                amountPaid: amountPaidNgn,
+                status: "PAID",
+                source: "WEBSITE",
+                bookerEmail: email,
+                bookerName: meta.booker_name ?? null,
+                bookerPhone: meta.booker_phone ?? null,
+                expiresAt: null,
+            },
+        });
+    });
+}
+
+export async function upsertBookingFromPaystack(data: PaystackVerifyData) {
+    const validated = validatePaystackBookingInput(data);
+
+    try {
+        return await confirmBookingInTransaction(data, validated);
+    } catch (err) {
+        if (
+            err instanceof BookingDateConflictError ||
+            isExclusionConstraintViolation(err)
+        ) {
+            await handleBookingDateConflict(data, validated);
+        }
+        throw err;
+    }
+}
+
+export async function cancelBookingHold(reference: string): Promise<void> {
+    await prisma.booking.updateMany({
+        where: { reference, status: "PENDING" },
+        data: { status: "CANCELLED", expiresAt: null },
+    });
+}
+
+export function formatBookingConflictMessage(
+    checkIn: Date,
+    checkOut: Date,
+): string {
+    const conflictStart = checkIn.toLocaleDateString("en-US", {
+        month: "short",
+        day: "numeric",
+    });
+    const conflictEnd = checkOut.toLocaleDateString("en-US", {
+        month: "short",
+        day: "numeric",
+    });
+    return `This apartment is already booked from ${conflictStart} to ${conflictEnd}. Please select different dates.`;
 }

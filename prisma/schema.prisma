@@ -22,6 +22,7 @@ model Booking {
   amountPaid    Int      // total paid in NGN (not kobo)
   currency     String   @default("NGN")
   status       BookingStatus @default(PENDING)
+  expiresAt    DateTime?     // PENDING checkout holds; null once PAID/CANCELLED
 
   source       BookingSource @default(WEBSITE)
 
@@ -56,6 +57,7 @@ model Booking {
   @@index([checkIn, checkOut])
   // Overlap queries: WHERE status IN (...) AND checkIn < ? AND checkOut > ?
   @@index([status, checkIn, checkOut])
+  @@index([status, expiresAt])
 }
 
 enum BookingStatus {

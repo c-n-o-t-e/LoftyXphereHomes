@@ -11,6 +11,11 @@ import {
     flushPostBookingJobsForBooking,
 } from "@/lib/ops/bookingJobs";
 import { resolveInvoiceIdFromFormInput } from "@/lib/ops/invoiceId";
+import {
+    findOverlappingBooking,
+    isExclusionConstraintViolation,
+    withApartmentBookingTransaction,
+} from "@/lib/booking/conflict";
 
 type RouteError = {
     httpResponse?: Response;
@@ -232,19 +237,41 @@ export async function POST(request: NextRequest) {
     );
 
     try {
-        const { prisma } = await import("@/lib/db");
+        const booking = await withApartmentBookingTransaction(
+            body.apartmentId,
+            async (tx) => {
+                const conflicting = await findOverlappingBooking(tx, {
+                    apartmentId: body.apartmentId,
+                    checkIn: checkInDate,
+                    checkOut: checkOutDate,
+                });
+                if (conflicting) {
+                    return { conflict: true as const };
+                }
 
-        // prevent overlap against PAID/PENDING
-        const conflicting = await prisma.booking.findFirst({
-            where: {
-                apartmentId: body.apartmentId,
-                status: { in: ["PAID", "PENDING"] },
-                checkIn: { lt: checkOutDate },
-                checkOut: { gt: checkInDate },
+                const created = await tx.booking.create({
+                    data: {
+                        reference: safeManualReference(),
+                        apartmentId: body.apartmentId,
+                        checkIn: checkInDate,
+                        checkOut: checkOutDate,
+                        nights,
+                        amountPaid: body.amountNgn,
+                        status: "PAID",
+                        source: "MANUAL",
+                        bookerEmail: body.email,
+                        bookerName: body.name,
+                        bookerPhone: body.phone,
+                        manualPaymentMethod: body.paymentMethod ?? null,
+                        manualPaymentReference: body.paymentReference ?? null,
+                    },
+                });
+
+                return { conflict: false as const, booking: created };
             },
-            select: { id: true, checkIn: true, checkOut: true },
-        });
-        if (conflicting) {
+        );
+
+        if (booking.conflict) {
             return NextResponse.json(
                 {
                     error: "This apartment is already booked for those dates.",
@@ -254,36 +281,26 @@ export async function POST(request: NextRequest) {
             );
         }
 
-        // Create booking as PAID (manual payment already taken)
-        const booking = await prisma.booking.create({
-            data: {
-                reference: safeManualReference(),
-                apartmentId: body.apartmentId,
-                checkIn: checkInDate,
-                checkOut: checkOutDate,
-                nights,
-                amountPaid: body.amountNgn,
-                status: "PAID",
-                source: "MANUAL",
-                bookerEmail: body.email,
-                bookerName: body.name,
-                bookerPhone: body.phone,
-                manualPaymentMethod: body.paymentMethod ?? null,
-                manualPaymentReference: body.paymentReference ?? null,
-            },
-        });
-
-        await enqueuePostBookingJobs(booking.id);
+        await enqueuePostBookingJobs(booking.booking.id);
         after(async () => {
-            await flushPostBookingJobsForBooking(booking.id);
+            await flushPostBookingJobsForBooking(booking.booking.id);
         });
 
         return NextResponse.json({
             ok: true,
-            bookingId: booking.id,
-            reference: booking.reference,
+            bookingId: booking.booking.id,
+            reference: booking.booking.reference,
         });
     } catch (err) {
+        if (isExclusionConstraintViolation(err)) {
+            return NextResponse.json(
+                {
+                    error: "This apartment is already booked for those dates.",
+                    code: "DATE_CONFLICT",
+                },
+                { status: 409 },
+            );
+        }
         console.error("admin manual booking failed:", err);
         return NextResponse.json(
             { error: "Failed to create booking" },

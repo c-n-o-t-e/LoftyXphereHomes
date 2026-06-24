@@ -1,7 +1,10 @@
 import { NextRequest, NextResponse } from "next/server";
 import { after } from "next/server";
 import { verifyTransaction, verifyWebhookSignature } from "@/lib/paystack";
-import { upsertBookingFromPaystack } from "@/lib/booking";
+import {
+    BookingDateConflictError,
+    upsertBookingFromPaystack,
+} from "@/lib/booking";
 import { inviteUserByEmail } from "@/lib/supabase/server";
 import { validationErrorResponse } from "@/lib/validation/http";
 import { paystackWebhookPayloadSchema } from "@/lib/validation/schemas";
@@ -76,23 +79,27 @@ export async function POST(request: NextRequest) {
 
     try {
         const booking = await upsertBookingFromPaystack(result.data);
-        // Enqueue downstream artifacts (invoice + Google Sheets)
         await enqueuePostBookingJobs(booking.id);
         after(async () => {
             await flushPostBookingJobsForBooking(booking.id);
         });
 
-        // Send magic link to create/login user account
-        // This runs async and doesn't block the webhook response
         if (booking.bookerEmail && booking.status === "PAID") {
             inviteUserByEmail(booking.bookerEmail).catch((err) => {
                 console.error("Failed to send magic link:", err);
-                // Don't fail the webhook if email fails
             });
         }
 
         return NextResponse.json({ received: true });
     } catch (err) {
+        if (err instanceof BookingDateConflictError) {
+            return NextResponse.json({
+                received: true,
+                conflictResolved: true,
+                refundInitiated: err.refundInitiated,
+            });
+        }
+
         console.error("Webhook booking upsert error:", err);
         try {
             await sendAdminAlertBookingPersistenceFailed({

@@ -28,9 +28,32 @@ jest.mock("@/lib/paystack", () => ({
   verifyWebhookSignature: jest.fn(),
 }));
 
-jest.mock("@/lib/booking", () => ({
-  upsertBookingFromPaystack: jest.fn(),
-}));
+jest.mock("@/lib/booking", () => {
+  const actual = jest.requireActual("@/lib/booking");
+  return {
+    ...actual,
+    upsertBookingFromPaystack: jest.fn(),
+    cancelBookingHold: jest.fn(),
+  };
+});
+
+const mockBookingTx = {
+  booking: {
+    create: jest.fn(),
+  },
+};
+
+jest.mock("@/lib/booking/conflict", () => {
+  const actual = jest.requireActual("@/lib/booking/conflict");
+  return {
+    ...actual,
+    withApartmentBookingTransaction: jest.fn(
+      (_apartmentId: string, fn: (tx: typeof mockBookingTx) => unknown) =>
+        fn(mockBookingTx),
+    ),
+    findOverlappingBooking: jest.fn(),
+  };
+});
 
 jest.mock("@/lib/db", () => ({
   prisma: {
@@ -85,6 +108,11 @@ const { POST: postAdminBooking } = require("@/app/api/admin/bookings/route");
 const { POST: postPaystackWebhook } = require("@/app/api/paystack/webhook/route");
 const { POST: postPaystackInitialize } = require("@/app/api/paystack/initialize/route");
 const { verifyTransaction, verifyWebhookSignature } = require("@/lib/paystack");
+const { upsertBookingFromPaystack, cancelBookingHold } = require("@/lib/booking");
+const {
+  withApartmentBookingTransaction,
+  findOverlappingBooking,
+} = require("@/lib/booking/conflict");
 const { sendAdminAlertBookingPersistenceFailed } = require("@/lib/email/admin-alerts");
 const { getOverlappingBookings } = require("@/lib/cache/availability-data");
 const { createClient } = require("@supabase/supabase-js");
@@ -430,8 +458,8 @@ describe("API validation integration", () => {
       email: "admin@example.com",
       role: "admin",
     });
-    (prisma.booking.findFirst as jest.Mock).mockResolvedValueOnce(null);
-    (prisma.booking.create as jest.Mock).mockResolvedValueOnce({
+    (findOverlappingBooking as jest.Mock).mockResolvedValueOnce(null);
+    (mockBookingTx.booking.create as jest.Mock).mockResolvedValueOnce({
       id: "booking_1",
       reference: "manual_ref_1",
     });
@@ -446,7 +474,7 @@ describe("API validation integration", () => {
         name: "Manual Guest",
         email: "guest@example.com",
         phone: "08000000000",
-        apartmentId: "lofty-wuye-01",
+        apartmentId: "lofty-horizon-suite",
         checkIn: "2026-05-01",
         checkOut: "2026-05-03",
         amountNgn: 150000,
@@ -464,5 +492,120 @@ describe("API validation integration", () => {
     expect(enqueuePostBookingJobs).toHaveBeenCalledWith("booking_1");
     expect(flushPostBookingJobsForBooking).toHaveBeenCalledWith("booking_1");
     expect(processPostBookingJobs).not.toHaveBeenCalled();
+  });
+
+  it("returns 409 when initialize finds an overlapping booking hold", async () => {
+    process.env.PAYSTACK_SECRET_KEY = "sk_test_abc123";
+    (findOverlappingBooking as jest.Mock).mockResolvedValueOnce({
+      checkIn: new Date("2026-05-01T00:00:00.000Z"),
+      checkOut: new Date("2026-05-03T00:00:00.000Z"),
+    });
+
+    const request = makeNextRequest("http://localhost/api/paystack/initialize", {
+      method: "POST",
+      headers: { "content-type": "application/json" },
+      body: JSON.stringify({
+        email: "guest@example.com",
+        name: "Guest",
+        phone: "08000000000",
+        apartmentId: "lofty-horizon-suite",
+        checkIn: "2026-05-01",
+        checkOut: "2026-05-03",
+      }),
+    });
+
+    const response = await postPaystackInitialize(request);
+    const json = await response.json();
+
+    expect(response.status).toBe(409);
+    expect(json.error).toEqual(expect.any(String));
+    expect(mockBookingTx.booking.create).not.toHaveBeenCalled();
+  });
+
+  it("creates a PENDING hold and initializes Paystack", async () => {
+    process.env.PAYSTACK_SECRET_KEY = "sk_test_abc123";
+    (findOverlappingBooking as jest.Mock).mockResolvedValueOnce(null);
+    (mockBookingTx.booking.create as jest.Mock).mockResolvedValueOnce({
+      reference: "ref_hold",
+    });
+
+    const fetchSpy = jest.spyOn(global, "fetch").mockResolvedValueOnce({
+      ok: true,
+      status: 200,
+      json: async () => ({
+        status: true,
+        data: {
+          authorization_url: "https://checkout.paystack.com/test",
+          reference: "ref_hold",
+        },
+      }),
+    } as Response);
+
+    const request = makeNextRequest("http://localhost/api/paystack/initialize", {
+      method: "POST",
+      headers: { "content-type": "application/json" },
+      body: JSON.stringify({
+        email: "guest@example.com",
+        name: "Guest",
+        phone: "08000000000",
+        apartmentId: "lofty-horizon-suite",
+        checkIn: "2026-05-01",
+        checkOut: "2026-05-03",
+      }),
+    });
+
+    const response = await postPaystackInitialize(request);
+    const json = await response.json();
+
+    expect(response.status).toBe(200);
+    expect(json).toEqual(
+      expect.objectContaining({
+        authorization_url: "https://checkout.paystack.com/test",
+      }),
+    );
+    expect(mockBookingTx.booking.create).toHaveBeenCalledWith(
+      expect.objectContaining({
+        data: expect.objectContaining({
+          status: "PENDING",
+          expiresAt: expect.any(Date),
+        }),
+      }),
+    );
+    expect(cancelBookingHold).not.toHaveBeenCalled();
+
+    fetchSpy.mockRestore();
+  });
+
+  it("cancels the hold when Paystack initialize fails", async () => {
+    process.env.PAYSTACK_SECRET_KEY = "sk_test_abc123";
+    (findOverlappingBooking as jest.Mock).mockResolvedValueOnce(null);
+    (mockBookingTx.booking.create as jest.Mock).mockResolvedValueOnce({
+      reference: "ref_hold",
+    });
+
+    const fetchSpy = jest.spyOn(global, "fetch").mockResolvedValueOnce({
+      ok: false,
+      status: 400,
+      json: async () => ({ message: "Paystack rejected" }),
+    } as Response);
+
+    const request = makeNextRequest("http://localhost/api/paystack/initialize", {
+      method: "POST",
+      headers: { "content-type": "application/json" },
+      body: JSON.stringify({
+        email: "guest@example.com",
+        name: "Guest",
+        phone: "08000000000",
+        apartmentId: "lofty-horizon-suite",
+        checkIn: "2026-05-01",
+        checkOut: "2026-05-03",
+      }),
+    });
+
+    const response = await postPaystackInitialize(request);
+    expect(response.status).toBe(400);
+    expect(cancelBookingHold).toHaveBeenCalled();
+
+    fetchSpy.mockRestore();
   });
 });

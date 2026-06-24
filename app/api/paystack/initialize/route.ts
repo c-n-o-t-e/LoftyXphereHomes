@@ -1,8 +1,16 @@
 import { randomBytes } from "crypto";
 import { NextRequest, NextResponse } from "next/server";
 import { getApartmentById, isApartmentBookable } from "@/lib/data/apartments";
-import { prisma } from "@/lib/db";
-import { computeBookingQuote, totalNgnToKobo } from "@/lib/pricing";
+import {
+    bookingHoldExpiresAt,
+    findOverlappingBooking,
+    withApartmentBookingTransaction,
+} from "@/lib/booking/conflict";
+import {
+    cancelBookingHold,
+    formatBookingConflictMessage,
+} from "@/lib/booking";
+import { computeBookingQuote, nightsBetweenStayDates, totalNgnToKobo } from "@/lib/pricing";
 import { parseJsonBody } from "@/lib/validation/http";
 import { paystackInitializeBodySchema } from "@/lib/validation/schemas";
 
@@ -55,7 +63,6 @@ export async function POST(request: NextRequest) {
         );
     }
 
-    // Paystack minimum charge (documented as whole currency units; we use NGN ≥ 100)
     if (quote.totalNgn < 100) {
         return NextResponse.json(
             {
@@ -66,48 +73,63 @@ export async function POST(request: NextRequest) {
     }
 
     const amountInKobo = totalNgnToKobo(quote.totalNgn);
+    const requestedCheckIn = new Date(checkIn);
+    const requestedCheckOut = new Date(checkOut);
+    const nights = nightsBetweenStayDates(checkIn, checkOut);
 
-    // --- SERVER-SIDE DOUBLE-BOOKING PREVENTION ---
-    // Check if any existing PAID or PENDING booking overlaps with the requested dates.
-    // Overlap condition: existing.checkIn < requested.checkOut AND existing.checkOut > requested.checkIn
+    const reference =
+        `lxh_${apartmentId}_${Date.now()}_${randomBytes(8).toString("hex")}`.replace(
+            /[^a-zA-Z0-9_-]/g,
+            "_",
+        );
+
     try {
-        const requestedCheckIn = new Date(checkIn);
-        const requestedCheckOut = new Date(checkOut);
+        const conflictingBooking = await withApartmentBookingTransaction(
+            apartmentId,
+            async (tx) => {
+                const conflict = await findOverlappingBooking(tx, {
+                    apartmentId,
+                    checkIn: requestedCheckIn,
+                    checkOut: requestedCheckOut,
+                });
+                if (conflict) {
+                    return conflict;
+                }
 
-        const conflictingBooking = await prisma.booking.findFirst({
-            where: {
-                apartmentId,
-                status: { in: ["PAID", "PENDING"] },
-                // Date ranges overlap if: existingCheckIn < requestedCheckOut AND existingCheckOut > requestedCheckIn
-                checkIn: { lt: requestedCheckOut },
-                checkOut: { gt: requestedCheckIn },
+                await tx.booking.create({
+                    data: {
+                        reference,
+                        apartmentId,
+                        checkIn: requestedCheckIn,
+                        checkOut: requestedCheckOut,
+                        nights,
+                        amountPaid: quote.totalNgn,
+                        status: "PENDING",
+                        source: "WEBSITE",
+                        bookerEmail: email.trim(),
+                        bookerName: name?.trim() || null,
+                        bookerPhone: phone?.trim() || null,
+                        expiresAt: bookingHoldExpiresAt(),
+                    },
+                });
+
+                return null;
             },
-            select: { id: true, checkIn: true, checkOut: true },
-        });
+        );
 
         if (conflictingBooking) {
-            const conflictStart = new Date(
-                conflictingBooking.checkIn,
-            ).toLocaleDateString("en-US", {
-                month: "short",
-                day: "numeric",
-            });
-            const conflictEnd = new Date(
-                conflictingBooking.checkOut,
-            ).toLocaleDateString("en-US", {
-                month: "short",
-                day: "numeric",
-            });
             return NextResponse.json(
                 {
-                    error: `This apartment is already booked from ${conflictStart} to ${conflictEnd}. Please select different dates.`,
+                    error: formatBookingConflictMessage(
+                        conflictingBooking.checkIn,
+                        conflictingBooking.checkOut,
+                    ),
                 },
                 { status: 409 },
             );
         }
     } catch (dbError) {
         console.error("Database error checking availability:", dbError);
-        // Fail CLOSED: if we can't check conflicts, we must not start payment.
         return NextResponse.json(
             {
                 error: "Availability is temporarily unavailable. Please retry before booking.",
@@ -117,38 +139,44 @@ export async function POST(request: NextRequest) {
         );
     }
 
-    const reference =
-        `lxh_${apartmentId}_${Date.now()}_${randomBytes(8).toString("hex")}`.replace(
-            /[^a-zA-Z0-9_-]/g,
-            "_",
-        );
     const baseUrl = process.env.NEXT_PUBLIC_SITE_URL || request.nextUrl.origin;
     const callbackUrl = `${baseUrl}/booking/success?reference=${reference}`;
 
-    const res = await fetch(`${PAYSTACK_BASE}/transaction/initialize`, {
-        method: "POST",
-        headers: {
-            Authorization: `Bearer ${secretKey}`,
-            "Content-Type": "application/json",
-        },
-        body: JSON.stringify({
-            email: email.trim(),
-            amount: amountInKobo,
-            reference,
-            callback_url: callbackUrl,
-            metadata: {
-                apartment_id: apartmentId,
-                check_in: checkIn,
-                check_out: checkOut,
-                booker_name: name?.trim() || undefined,
-                booker_phone: phone?.trim() || undefined,
+    let res: Response;
+    try {
+        res = await fetch(`${PAYSTACK_BASE}/transaction/initialize`, {
+            method: "POST",
+            headers: {
+                Authorization: `Bearer ${secretKey}`,
+                "Content-Type": "application/json",
             },
-        }),
-    });
+            body: JSON.stringify({
+                email: email.trim(),
+                amount: amountInKobo,
+                reference,
+                callback_url: callbackUrl,
+                metadata: {
+                    apartment_id: apartmentId,
+                    check_in: checkIn,
+                    check_out: checkOut,
+                    booker_name: name?.trim() || undefined,
+                    booker_phone: phone?.trim() || undefined,
+                },
+            }),
+        });
+    } catch (paystackError) {
+        await cancelBookingHold(reference);
+        console.error("Paystack initialize request failed:", paystackError);
+        return NextResponse.json(
+            { error: "Failed to initialize payment" },
+            { status: 502 },
+        );
+    }
 
     const data = await res.json();
 
     if (!res.ok) {
+        await cancelBookingHold(reference);
         return NextResponse.json(
             { error: data.message || "Failed to initialize payment" },
             { status: res.status >= 400 ? res.status : 500 },
@@ -156,6 +184,7 @@ export async function POST(request: NextRequest) {
     }
 
     if (!data.status || !data.data?.authorization_url) {
+        await cancelBookingHold(reference);
         return NextResponse.json(
             { error: data.message || "Invalid response from Paystack" },
             { status: 500 },

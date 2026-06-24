@@ -81,6 +81,43 @@ export async function sendAdminAlertBookingPersistenceFailed(args: {
     });
 }
 
+export async function sendAdminAlertBookingConflictRefund(args: {
+    reference: string;
+    apartmentId: string;
+    checkIn: string;
+    checkOut: string;
+    bookerEmail?: string | null;
+    refundInitiated: boolean;
+    refundMessage?: string;
+    paystackData?: PaystackVerifyData;
+}): Promise<void> {
+    await sendAdminAlertEmail({
+        subject: `Booking date conflict — refund ${args.refundInitiated ? "queued" : "FAILED"} — ${args.reference}`,
+        lines: [
+            "A successful Paystack payment could not be confirmed due to a date conflict.",
+            args.refundInitiated
+                ? "An automatic refund was queued with Paystack."
+                : "Automatic refund FAILED — manual refund required.",
+            "",
+            `reference: ${args.reference}`,
+            `apartmentId: ${args.apartmentId}`,
+            `checkIn: ${args.checkIn}`,
+            `checkOut: ${args.checkOut}`,
+            `bookerEmail: ${args.bookerEmail ?? "(unknown)"}`,
+            `refundInitiated: ${args.refundInitiated}`,
+            ...(args.refundMessage ? [`refundMessage: ${args.refundMessage}`] : []),
+            "",
+            "paystackData:",
+            safeStringify(args.paystackData ?? null),
+        ],
+        logContext: {
+            reference: args.reference,
+            apartmentId: args.apartmentId,
+            refundInitiated: args.refundInitiated,
+        },
+    });
+}
+
 export async function sendAdminAlertBookingJobFailed(args: {
     booking: BookingJobAlertBooking | null;
     bookingId: string;

@@ -1,7 +1,10 @@
 import '@testing-library/jest-dom'
 import { render, screen } from '@testing-library/react'
 import * as paystack from '@/lib/paystack'
-import * as booking from '@/lib/booking'
+import {
+  BookingDateConflictError,
+  upsertBookingFromPaystack,
+} from '@/lib/booking'
 import * as alerts from '@/lib/email/admin-alerts'
 import {
   enqueuePostBookingJobs,
@@ -19,9 +22,13 @@ jest.mock('@/lib/paystack', () => ({
   verifyTransaction: jest.fn(),
 }))
 
-jest.mock('@/lib/booking', () => ({
-  upsertBookingFromPaystack: jest.fn(),
-}))
+jest.mock('@/lib/booking', () => {
+  const actual = jest.requireActual('@/lib/booking')
+  return {
+    ...actual,
+    upsertBookingFromPaystack: jest.fn(),
+  }
+})
 
 jest.mock('@/lib/email/admin-alerts', () => ({
   sendAdminAlertBookingPersistenceFailed: jest.fn(),
@@ -58,7 +65,7 @@ describe('Booking Success Page', () => {
 
   it('renders confirmed state when payment verifies successfully', async () => {
     const verifyTransaction = jest.mocked(paystack.verifyTransaction)
-    const upsertBookingFromPaystack = jest.mocked(booking.upsertBookingFromPaystack)
+    const upsertBookingFromPaystackMock = jest.mocked(upsertBookingFromPaystack)
     verifyTransaction.mockResolvedValueOnce({
       status: true,
       data: { status: 'success', reference: 'ref_123', amount: 100_00 },
@@ -99,7 +106,7 @@ describe('Booking Success Page', () => {
 
   it('calls verifyTransaction when reference is provided', async () => {
     const verifyTransaction = jest.mocked(paystack.verifyTransaction)
-    const upsertBookingFromPaystack = jest.mocked(booking.upsertBookingFromPaystack)
+    const upsertBookingFromPaystackMock = jest.mocked(upsertBookingFromPaystack)
     verifyTransaction.mockResolvedValueOnce({
       status: true,
       data: { status: 'success', reference: 'ref_123', amount: 100_00 },
@@ -120,7 +127,7 @@ describe('Booking Success Page', () => {
 
   it('attempts to persist the booking on the success page after verification success', async () => {
     const verifyTransaction = jest.mocked(paystack.verifyTransaction)
-    const upsertBookingFromPaystack = jest.mocked(booking.upsertBookingFromPaystack)
+    const upsertBookingFromPaystackMock = jest.mocked(upsertBookingFromPaystack)
     verifyTransaction.mockResolvedValueOnce({
       status: true,
       data: { status: 'success', reference: 'ref_123', amount: 100_00 },
@@ -134,9 +141,27 @@ describe('Booking Success Page', () => {
     expect(upsertBookingFromPaystack).toHaveBeenCalled()
   })
 
+  it('shows refund messaging when dates conflict after payment', async () => {
+    const verifyTransaction = jest.mocked(paystack.verifyTransaction)
+    verifyTransaction.mockResolvedValueOnce({
+      status: true,
+      data: { status: 'success', reference: 'ref_conflict', amount: 100_00 },
+    })
+    jest.mocked(upsertBookingFromPaystack).mockRejectedValueOnce(
+      new BookingDateConflictError('Dates unavailable', { refundInitiated: true }),
+    )
+
+    await renderSuccessPage({ reference: 'ref_conflict' })
+
+    expect(
+      screen.getByRole('heading', { name: /those dates are no longer available/i }),
+    ).toBeInTheDocument()
+    expect(screen.getAllByText(/refund has been initiated/i).length).toBeGreaterThan(0)
+  })
+
   it('sends admin alert if persistence fails but still shows confirmed state', async () => {
     const verifyTransaction = jest.mocked(paystack.verifyTransaction)
-    const upsertBookingFromPaystack = jest.mocked(booking.upsertBookingFromPaystack)
+    const upsertBookingFromPaystackMock = jest.mocked(upsertBookingFromPaystack)
     const sendAdminAlertBookingPersistenceFailed = jest.mocked(alerts.sendAdminAlertBookingPersistenceFailed)
 
     const paystackData = { status: 'success' as const, reference: 'ref_123', amount: 100_00 }

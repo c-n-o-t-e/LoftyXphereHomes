@@ -1,5 +1,9 @@
 import crypto from "crypto";
 import { timingSafeEqualHex } from "@/lib/security/timing";
+import {
+  buildE2ePaystackVerifyResponse,
+  isE2ePaystackMockEnabled,
+} from "@/lib/paystack/e2eMock";
 
 const PAYSTACK_VERIFY = "https://api.paystack.co/transaction/verify";
 const PAYSTACK_REFUND = "https://api.paystack.co/refund";
@@ -27,6 +31,11 @@ export interface PaystackVerifyResponse {
 export async function verifyTransaction(
   reference: string
 ): Promise<PaystackVerifyResponse | null> {
+  if (isE2ePaystackMockEnabled()) {
+    const mocked = buildE2ePaystackVerifyResponse(reference);
+    if (mocked) return mocked;
+  }
+
   const secretKey = process.env.PAYSTACK_SECRET_KEY;
   if (!secretKey) return null;
 

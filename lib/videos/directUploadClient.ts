@@ -1,4 +1,5 @@
 import { getSupabaseClient } from "@/lib/supabase/client";
+import type { ApartmentVideoConfig } from "@/lib/videos/types";
 
 async function parseApiResponse<T>(res: Response): Promise<T> {
     const text = await res.text();
@@ -89,4 +90,71 @@ export async function uploadHeroVideoDirect(args: {
     }>(completeRes);
 
     return completeData.heroVideo;
+}
+
+export async function uploadApartmentVideoDirect(args: {
+    apartmentId: string;
+    file: File;
+    authHeaders: Record<string, string>;
+}): Promise<ApartmentVideoConfig> {
+    const initRes = await fetch(
+        `/api/admin/apartments/${args.apartmentId}/video/init`,
+        {
+            method: "POST",
+            headers: {
+                ...args.authHeaders,
+                "Content-Type": "application/json",
+            },
+            body: JSON.stringify({
+                fileName: args.file.name,
+                mimeType: args.file.type || "application/octet-stream",
+                fileSize: args.file.size,
+            }),
+        },
+    );
+
+    const initData = await parseApiResponse<{
+        upload: {
+            videoId: string;
+            bucket: string;
+            path: string;
+            token: string;
+        };
+    }>(initRes);
+    const upload = initData.upload;
+
+    const supabase = getSupabaseClient();
+    const fileBody = await args.file.arrayBuffer();
+
+    const { error: storageError } = await supabase.storage
+        .from(upload.bucket)
+        .uploadToSignedUrl(upload.path, upload.token, fileBody, {
+            contentType: args.file.type || "application/octet-stream",
+            upsert: true,
+        });
+
+    if (storageError) {
+        throw new Error(storageError.message);
+    }
+
+    const completeRes = await fetch(
+        `/api/admin/apartments/${args.apartmentId}/video/complete`,
+        {
+            method: "POST",
+            headers: {
+                ...args.authHeaders,
+                "Content-Type": "application/json",
+            },
+            body: JSON.stringify({
+                videoId: upload.videoId,
+                mimeType: args.file.type || "application/octet-stream",
+            }),
+        },
+    );
+
+    const completeData = await parseApiResponse<{
+        apartmentVideo: ApartmentVideoConfig;
+    }>(completeRes);
+
+    return completeData.apartmentVideo;
 }

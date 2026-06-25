@@ -1,28 +1,51 @@
 "use client";
 
 import { useState, useEffect, useCallback } from "react";
-import { X, ChevronLeft, ChevronRight, Grid2x2 } from "lucide-react";
+import Image from "next/image";
+import { X, ChevronLeft, ChevronRight, Grid2x2, Play } from "lucide-react";
 import type { ApartmentImageSet } from "@/lib/images/types";
+import type { ApartmentVideoConfig } from "@/lib/videos/types";
 import { ResponsiveApartmentImage } from "@/components/ResponsiveApartmentImage";
 import { ApartmentImagePlaceholder } from "@/components/ApartmentImagePlaceholder";
+import { ApartmentVideoPlayer } from "@/components/ApartmentVideoPlayer";
 import {
   trackApartmentGalleryOpen,
   trackApartmentImageInteraction,
+  trackApartmentVideoTourOpen,
+  trackApartmentVideoTourProgress,
 } from "@/lib/analytics/events";
 
 interface ApartmentImageGalleryProps {
     images: ApartmentImageSet[];
     name: string;
     apartmentId: string;
+    video?: ApartmentVideoConfig | null;
 }
 
-export function ApartmentImageGallery({ images, name, apartmentId }: ApartmentImageGalleryProps) {
+export function ApartmentImageGallery({ images, name, apartmentId, video = null }: ApartmentImageGalleryProps) {
     const [selectedIndex, setSelectedIndex] = useState<number | null>(null);
+    const [isVideoOpen, setIsVideoOpen] = useState(false);
 
     const allImages = images;
+    const hasVideo = Boolean(video?.posterUrl);
     const heroImage = allImages[0];
-    const gridImages = allImages.slice(1, 5);
-    const extraCount = Math.max(0, allImages.length - 5);
+    const gridImages = hasVideo ? allImages.slice(0, 5) : allImages.slice(1, 5);
+    const extraCount = hasVideo
+        ? Math.max(0, allImages.length - 5)
+        : Math.max(0, allImages.length - 5);
+
+    const openVideoTour = useCallback(
+        (source: "hero_tile" | "lightbox") => {
+            setIsVideoOpen(true);
+            trackApartmentVideoTourOpen({
+                apartmentId,
+                apartmentName: name,
+                source,
+            });
+        },
+        [apartmentId, name],
+    );
+    const closeVideoTour = () => setIsVideoOpen(false);
 
     const openLightbox = useCallback(
         (index: number, source: "grid" | "show_all" | "hero") => {
@@ -78,10 +101,13 @@ export function ApartmentImageGallery({ images, name, apartmentId }: ApartmentIm
     };
 
     useEffect(() => {
-        if (selectedIndex === null) return;
+        if (selectedIndex === null && !isVideoOpen) return;
         const handleKey = (e: KeyboardEvent) => {
-            if (e.key === "Escape") closeLightbox();
-            if (e.key === "ArrowLeft") {
+            if (e.key === "Escape") {
+                if (isVideoOpen) closeVideoTour();
+                else closeLightbox();
+            }
+            if (e.key === "ArrowLeft" && !isVideoOpen) {
                 setSelectedIndex((i) => {
                     if (i === null) return null;
                     const nextIndex = i === 0 ? allImages.length - 1 : i - 1;
@@ -94,7 +120,7 @@ export function ApartmentImageGallery({ images, name, apartmentId }: ApartmentIm
                     return nextIndex;
                 });
             }
-            if (e.key === "ArrowRight") {
+            if (e.key === "ArrowRight" && !isVideoOpen) {
                 setSelectedIndex((i) => {
                     if (i === null) return null;
                     const nextIndex = i === allImages.length - 1 ? 0 : i + 1;
@@ -114,9 +140,9 @@ export function ApartmentImageGallery({ images, name, apartmentId }: ApartmentIm
             window.removeEventListener("keydown", handleKey);
             document.body.style.overflow = "";
         };
-    }, [selectedIndex, allImages.length, apartmentId, name]);
+    }, [selectedIndex, isVideoOpen, allImages.length, apartmentId, name]);
 
-    if (allImages.length === 0) {
+    if (allImages.length === 0 && !hasVideo) {
         return (
             <div className="relative mb-8 sm:mb-12">
                 <div className="relative h-64 sm:h-80 md:h-[28rem] rounded-2xl overflow-hidden">
@@ -130,36 +156,70 @@ export function ApartmentImageGallery({ images, name, apartmentId }: ApartmentIm
         <>
             <div className="relative mb-8 sm:mb-12">
                 <div className="grid grid-cols-1 md:grid-cols-4 gap-3 sm:gap-4">
-                    <div className="md:col-span-2 md:row-span-2">
-                        <button
-                            type="button"
-                            onClick={() => openLightbox(0, "hero")}
-                            className="relative h-64 sm:h-80 md:h-[28rem] rounded-2xl overflow-hidden w-full cursor-pointer focus:outline-none focus:ring-2 focus:ring-[#FA5C5C] focus:ring-offset-2"
-                            aria-label={`View ${name} - cover photo`}
-                        >
-                            <ResponsiveApartmentImage
-                                image={heroImage!}
-                                variant="large"
-                                alt={heroImage?.altText ?? name}
-                                fill
-                                className="object-cover"
-                                priority
-                                sizes="(max-width: 768px) 100vw, 55vw"
-                            />
-                        </button>
-                    </div>
+                    {hasVideo && video ? (
+                        <div className="md:col-span-2 md:row-span-2">
+                            <button
+                                type="button"
+                                onClick={() => openVideoTour("hero_tile")}
+                                className="relative h-64 sm:h-80 md:h-[28rem] rounded-2xl overflow-hidden w-full cursor-pointer focus:outline-none focus:ring-2 focus:ring-[#FA5C5C] focus:ring-offset-2 group"
+                                aria-label={`Watch video tour of ${name}`}
+                            >
+                                <Image
+                                    src={video.posterUrl}
+                                    alt={`${name} video tour poster`}
+                                    fill
+                                    className="object-cover"
+                                    sizes="(max-width: 768px) 100vw, 55vw"
+                                    priority
+                                />
+                                <div className="absolute inset-0 bg-black/25 group-hover:bg-black/35 transition-colors" />
+                                <div className="absolute inset-0 flex flex-col items-center justify-center gap-3">
+                                    <span className="flex h-16 w-16 items-center justify-center rounded-full bg-white/95 text-black shadow-lg group-hover:scale-105 transition-transform">
+                                        <Play className="h-7 w-7 ml-1" aria-hidden />
+                                    </span>
+                                    <span className="rounded-full bg-black/60 px-4 py-1.5 text-sm font-medium text-white">
+                                        Watch tour
+                                    </span>
+                                </div>
+                            </button>
+                        </div>
+                    ) : heroImage ? (
+                        <div className="md:col-span-2 md:row-span-2">
+                            <button
+                                type="button"
+                                onClick={() => openLightbox(0, "hero")}
+                                className="relative h-64 sm:h-80 md:h-[28rem] rounded-2xl overflow-hidden w-full cursor-pointer focus:outline-none focus:ring-2 focus:ring-[#FA5C5C] focus:ring-offset-2"
+                                aria-label={`View ${name} - cover photo`}
+                            >
+                                <ResponsiveApartmentImage
+                                    image={heroImage}
+                                    variant="large"
+                                    alt={heroImage.altText ?? name}
+                                    fill
+                                    className="object-cover"
+                                    priority
+                                    sizes="(max-width: 768px) 100vw, 55vw"
+                                />
+                            </button>
+                        </div>
+                    ) : null}
                     {gridImages.map((image, index) => (
                         <button
                             key={`${image.large}-${index}`}
                             type="button"
-                            onClick={() => openLightbox(index + 1, "grid")}
+                            onClick={() =>
+                                openLightbox(
+                                    hasVideo ? index : index + 1,
+                                    "grid",
+                                )
+                            }
                             className="relative h-40 sm:h-48 md:h-[13.5rem] rounded-2xl overflow-hidden w-full cursor-pointer focus:outline-none focus:ring-2 focus:ring-[#FA5C5C] focus:ring-offset-2"
-                            aria-label={`View ${name} - Image ${index + 2}`}
+                            aria-label={`View ${name} - Image ${hasVideo ? index + 1 : index + 2}`}
                         >
                             <ResponsiveApartmentImage
                                 image={image}
                                 variant="medium"
-                                alt={image.altText ?? `${name} - Image ${index + 2}`}
+                                alt={image.altText ?? `${name} - Image ${hasVideo ? index + 1 : index + 2}`}
                                 fill
                                 className="object-cover"
                                 sizes="(max-width: 768px) 100vw, 25vw"
@@ -185,7 +245,59 @@ export function ApartmentImageGallery({ images, name, apartmentId }: ApartmentIm
                         Show all photos
                     </button>
                 )}
+                {hasVideo && allImages.length === 0 && (
+                    <p className="mt-3 text-sm text-black/60 px-1">
+                        Video tour available — add photos to complete this gallery.
+                    </p>
+                )}
             </div>
+
+            {isVideoOpen && video && (
+                <div
+                    className="fixed inset-0 z-50 bg-black/95 flex flex-col"
+                    onClick={closeVideoTour}
+                    role="dialog"
+                    aria-modal="true"
+                    aria-label={`${name} video tour`}
+                >
+                    <div className="flex items-center justify-between p-4 shrink-0">
+                        <p className="text-white/80 text-sm">Video tour</p>
+                        <button
+                            type="button"
+                            onClick={closeVideoTour}
+                            className="p-2 rounded-full text-white/90 hover:text-white hover:bg-white/10 transition-colors focus:outline-none focus:ring-2 focus:ring-white"
+                            aria-label="Close video tour"
+                        >
+                            <X className="h-8 w-8" />
+                        </button>
+                    </div>
+                    <div
+                        className="relative flex-1 flex items-center justify-center px-4 pb-4 min-h-0"
+                        onClick={(e) => e.stopPropagation()}
+                    >
+                        <div className="relative w-full max-w-5xl aspect-video">
+                            <ApartmentVideoPlayer
+                                video={video}
+                                autoPlay
+                                onPlay={() =>
+                                    trackApartmentVideoTourProgress({
+                                        apartmentId,
+                                        apartmentName: name,
+                                        milestone: "start",
+                                    })
+                                }
+                                onEnded={() =>
+                                    trackApartmentVideoTourProgress({
+                                        apartmentId,
+                                        apartmentName: name,
+                                        milestone: "complete",
+                                    })
+                                }
+                            />
+                        </div>
+                    </div>
+                </div>
+            )}
 
             {selectedIndex !== null && (
                 <div

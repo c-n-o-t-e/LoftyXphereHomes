@@ -24,3 +24,17 @@ export type HeroVideoConfig = {
     posterUrl: string;
     updatedAt: string;
 };
+
+export type ApartmentVideoConfig = {
+    id: string;
+    apartmentId: string;
+    mobileMp4Url: string;
+    desktopMp4Url: string;
+    posterUrl: string;
+    updatedAt: string;
+};
+
+export type ApartmentVideoSummary = {
+    apartmentId: string;
+    posterUrl: string;
+};

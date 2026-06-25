@@ -5,6 +5,9 @@ import { tmpdir } from "os";
 import sharp from "sharp";
 import {
     ALLOWED_HERO_VIDEO_MIME_TYPES,
+    APARTMENT_VIDEO_MAX_BYTES,
+    APARTMENT_VIDEO_MAX_DURATION_SEC,
+    APARTMENT_VIDEO_VARIANTS,
     HERO_VIDEO_MAX_BYTES,
     HERO_VIDEO_MAX_DURATION_SEC,
     HERO_VIDEO_VARIANTS,
@@ -12,21 +15,50 @@ import {
 import { probeVideoDurationSec, runFfmpeg } from "./ffmpeg";
 import type { ProcessedHeroVideoResult, ProcessedHeroVideoVariant } from "./types";
 
-export type ValidateHeroVideoInputResult =
+export type ValidateVideoInputResult =
     | { ok: true; mimeType: string }
     | { ok: false; error: string };
 
-export function validateHeroVideoUpload(args: {
+export type ValidateHeroVideoInputResult = ValidateVideoInputResult;
+
+type VideoVariantConfig = {
+    mobile: {
+        fileName: string;
+        maxWidth: number;
+        crf: number;
+        maxRateKbps: number;
+        maxBytes: number;
+    };
+    desktop: {
+        fileName: string;
+        maxWidth: number;
+        crf: number;
+        maxRateKbps: number;
+        maxBytes: number;
+    };
+    poster: {
+        fileName: string;
+        width: number;
+        quality: number;
+        maxBytes: number;
+    };
+};
+
+export function validateVideoUpload(args: {
     buffer: Buffer;
     mimeType?: string;
     fileName?: string;
-}): ValidateHeroVideoInputResult {
+    maxBytes?: number;
+    allowedMimeTypes?: Set<string>;
+}): ValidateVideoInputResult {
+    const maxBytes = args.maxBytes ?? HERO_VIDEO_MAX_BYTES;
+    const allowedMimeTypes = args.allowedMimeTypes ?? ALLOWED_HERO_VIDEO_MIME_TYPES;
     const mimeType =
         args.mimeType?.toLowerCase().split(";")[0]?.trim() ??
         guessMimeFromName(args.fileName) ??
         "";
 
-    if (mimeType && !ALLOWED_HERO_VIDEO_MIME_TYPES.has(mimeType)) {
+    if (mimeType && !allowedMimeTypes.has(mimeType)) {
         return {
             ok: false,
             error: "Unsupported video type. Upload MP4, WebM, or MOV.",
@@ -37,14 +69,33 @@ export function validateHeroVideoUpload(args: {
         return { ok: false, error: "Video file is empty." };
     }
 
-    if (args.buffer.length > HERO_VIDEO_MAX_BYTES) {
+    if (args.buffer.length > maxBytes) {
         return {
             ok: false,
-            error: `Video exceeds maximum size of ${Math.round(HERO_VIDEO_MAX_BYTES / (1024 * 1024))}MB.`,
+            error: `Video exceeds maximum size of ${Math.round(maxBytes / (1024 * 1024))}MB.`,
         };
     }
 
     return { ok: true, mimeType: mimeType || "video/mp4" };
+}
+
+export function validateHeroVideoUpload(args: {
+    buffer: Buffer;
+    mimeType?: string;
+    fileName?: string;
+}): ValidateHeroVideoInputResult {
+    return validateVideoUpload(args);
+}
+
+export function validateApartmentVideoUpload(args: {
+    buffer: Buffer;
+    mimeType?: string;
+    fileName?: string;
+}): ValidateVideoInputResult {
+    return validateVideoUpload({
+        ...args,
+        maxBytes: APARTMENT_VIDEO_MAX_BYTES,
+    });
 }
 
 function guessMimeFromName(fileName?: string) {
@@ -61,6 +112,7 @@ async function transcodeMp4(args: {
     maxWidth: number;
     crf: number;
     maxRateKbps: number;
+    maxDurationSec: number;
 }) {
     const scale = `scale='min(${args.maxWidth},iw)':-2`;
     await runFfmpeg([
@@ -85,12 +137,16 @@ async function transcodeMp4(args: {
         "-pix_fmt",
         "yuv420p",
         "-t",
-        String(HERO_VIDEO_MAX_DURATION_SEC),
+        String(args.maxDurationSec),
         args.outputPath,
     ]);
 }
 
-async function extractPosterWebp(inputPath: string, outputPath: string) {
+async function extractPosterWebp(
+    inputPath: string,
+    outputPath: string,
+    posterConfig: VideoVariantConfig["poster"],
+) {
     const framePath = outputPath.replace(/\.webp$/, ".jpg");
     await runFfmpeg([
         "-y",
@@ -108,10 +164,10 @@ async function extractPosterWebp(inputPath: string, outputPath: string) {
     const frame = await readFile(framePath);
     const poster = await sharp(frame)
         .resize({
-            width: HERO_VIDEO_VARIANTS.poster.width,
+            width: posterConfig.width,
             withoutEnlargement: true,
         })
-        .webp({ quality: HERO_VIDEO_VARIANTS.poster.quality })
+        .webp({ quality: posterConfig.quality })
         .toBuffer();
 
     await writeFile(outputPath, poster);
@@ -127,57 +183,70 @@ function assertMaxBytes(buffer: Buffer, maxBytes: number, label: string) {
     }
 }
 
-export async function processHeroVideo(input: Buffer): Promise<ProcessedHeroVideoResult> {
-    const workDir = join(tmpdir(), `hero-video-${randomUUID()}`);
+export async function processVideo(
+    input: Buffer,
+    options: {
+        maxDurationSec: number;
+        variants: VideoVariantConfig;
+        workDirPrefix: string;
+    },
+): Promise<ProcessedHeroVideoResult> {
+    const workDir = join(tmpdir(), `${options.workDirPrefix}-${randomUUID()}`);
     await mkdir(workDir, { recursive: true });
 
     const inputPath = join(workDir, "source.bin");
-    const mobilePath = join(workDir, HERO_VIDEO_VARIANTS.mobile.fileName);
-    const desktopPath = join(workDir, HERO_VIDEO_VARIANTS.desktop.fileName);
-    const posterPath = join(workDir, HERO_VIDEO_VARIANTS.poster.fileName);
+    const mobilePath = join(workDir, options.variants.mobile.fileName);
+    const desktopPath = join(workDir, options.variants.desktop.fileName);
+    const posterPath = join(workDir, options.variants.poster.fileName);
 
     try {
         await writeFile(inputPath, input);
 
         const duration = await probeVideoDurationSec(inputPath);
-        if (duration > HERO_VIDEO_MAX_DURATION_SEC + 1) {
+        if (duration > options.maxDurationSec + 1) {
             throw new Error(
-                `Hero videos must be ${HERO_VIDEO_MAX_DURATION_SEC} seconds or shorter.`,
+                `Videos must be ${options.maxDurationSec} seconds or shorter.`,
             );
         }
 
         await transcodeMp4({
             inputPath,
             outputPath: mobilePath,
-            maxWidth: HERO_VIDEO_VARIANTS.mobile.maxWidth,
-            crf: HERO_VIDEO_VARIANTS.mobile.crf,
-            maxRateKbps: HERO_VIDEO_VARIANTS.mobile.maxRateKbps,
+            maxWidth: options.variants.mobile.maxWidth,
+            crf: options.variants.mobile.crf,
+            maxRateKbps: options.variants.mobile.maxRateKbps,
+            maxDurationSec: options.maxDurationSec,
         });
         await transcodeMp4({
             inputPath,
             outputPath: desktopPath,
-            maxWidth: HERO_VIDEO_VARIANTS.desktop.maxWidth,
-            crf: HERO_VIDEO_VARIANTS.desktop.crf,
-            maxRateKbps: HERO_VIDEO_VARIANTS.desktop.maxRateKbps,
+            maxWidth: options.variants.desktop.maxWidth,
+            crf: options.variants.desktop.crf,
+            maxRateKbps: options.variants.desktop.maxRateKbps,
+            maxDurationSec: options.maxDurationSec,
         });
-        const posterBuffer = await extractPosterWebp(inputPath, posterPath);
+        const posterBuffer = await extractPosterWebp(
+            inputPath,
+            posterPath,
+            options.variants.poster,
+        );
 
         const mobileBuffer = await readFile(mobilePath);
         const desktopBuffer = await readFile(desktopPath);
 
         assertMaxBytes(
             mobileBuffer,
-            HERO_VIDEO_VARIANTS.mobile.maxBytes,
+            options.variants.mobile.maxBytes,
             "Mobile video",
         );
         assertMaxBytes(
             desktopBuffer,
-            HERO_VIDEO_VARIANTS.desktop.maxBytes,
+            options.variants.desktop.maxBytes,
             "Desktop video",
         );
         assertMaxBytes(
             posterBuffer,
-            HERO_VIDEO_VARIANTS.poster.maxBytes,
+            options.variants.poster.maxBytes,
             "Poster image",
         );
 
@@ -206,4 +275,22 @@ export async function processHeroVideo(input: Buffer): Promise<ProcessedHeroVide
     } finally {
         await rm(workDir, { recursive: true, force: true });
     }
+}
+
+export async function processHeroVideo(input: Buffer): Promise<ProcessedHeroVideoResult> {
+    return processVideo(input, {
+        maxDurationSec: HERO_VIDEO_MAX_DURATION_SEC,
+        variants: HERO_VIDEO_VARIANTS,
+        workDirPrefix: "hero-video",
+    });
+}
+
+export async function processApartmentVideo(
+    input: Buffer,
+): Promise<ProcessedHeroVideoResult> {
+    return processVideo(input, {
+        maxDurationSec: APARTMENT_VIDEO_MAX_DURATION_SEC,
+        variants: APARTMENT_VIDEO_VARIANTS,
+        workDirPrefix: "apartment-video",
+    });
 }

@@ -27,24 +27,40 @@ const initialImageSets = {
   'lofty-lumen-suite': [],
 }
 
+const initialVideoSummaries = {
+  'lofty-horizon-suite': {
+    apartmentId: 'lofty-horizon-suite',
+    posterUrl: 'https://example.com/poster.jpg',
+  },
+}
+
 describe('Apartments Page', () => {
   it('renders the page heading', () => {
     renderWithQueryClient(
-      <ApartmentsPageClient initialImageSets={initialImageSets} />,
+      <ApartmentsPageClient
+        initialImageSets={initialImageSets}
+        initialVideoSummaries={initialVideoSummaries}
+      />,
     )
     expect(screen.getByText('Our Apartments')).toBeInTheDocument()
   })
 
   it('renders the page description', () => {
     renderWithQueryClient(
-      <ApartmentsPageClient initialImageSets={initialImageSets} />,
+      <ApartmentsPageClient
+        initialImageSets={initialImageSets}
+        initialVideoSummaries={initialVideoSummaries}
+      />,
     )
     expect(screen.getByText(/Premium shortlet suites in Wuye, Abuja/i)).toBeInTheDocument()
   })
 
   it('renders apartment cards', () => {
     renderWithQueryClient(
-      <ApartmentsPageClient initialImageSets={initialImageSets} />,
+      <ApartmentsPageClient
+        initialImageSets={initialImageSets}
+        initialVideoSummaries={initialVideoSummaries}
+      />,
     )
     const apartmentCards = screen.getAllByText(/Suite/i)
     expect(apartmentCards.length).toBeGreaterThan(0)

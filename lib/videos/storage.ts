@@ -1,6 +1,6 @@
 import { createServerSupabaseClient } from "@/lib/supabase/server";
 import { ensureApartmentImagesBucket } from "@/lib/images/bucket";
-import { HERO_STORAGE_PREFIX, HERO_VIDEO_BUCKET } from "./constants";
+import { HERO_STORAGE_PREFIX, HERO_VIDEO_BUCKET, APARTMENT_VIDEO_STORAGE_PREFIX } from "./constants";
 import type { HeroVideoUrls } from "./types";
 
 function requireSupabaseUploadEnv() {
@@ -147,5 +147,114 @@ export async function deleteHeroRawUpload(heroId: string) {
     const { error } = await supabase.storage.from(HERO_VIDEO_BUCKET).remove([path]);
     if (error) {
         throw new Error(`Failed to delete temporary hero upload: ${error.message}`);
+    }
+}
+
+export function buildApartmentVideoStorageKeyBase(apartmentId: string, videoId: string) {
+    return `${APARTMENT_VIDEO_STORAGE_PREFIX}/${apartmentId}/tour/${videoId}`;
+}
+
+export function buildApartmentVideoRawUploadKey(apartmentId: string, videoId: string) {
+    return `${buildApartmentVideoStorageKeyBase(apartmentId, videoId)}/raw-upload`;
+}
+
+export async function uploadApartmentVideoVariants(args: {
+    apartmentId: string;
+    videoId: string;
+    variants: {
+        mobile: Buffer;
+        desktop: Buffer;
+        poster: Buffer;
+    };
+}): Promise<HeroVideoUrls & { storageKeyBase: string }> {
+    await ensureApartmentImagesBucket();
+    const storageKeyBase = buildApartmentVideoStorageKeyBase(
+        args.apartmentId,
+        args.videoId,
+    );
+
+    await uploadBinaryObject(
+        `${storageKeyBase}/mobile.mp4`,
+        args.variants.mobile,
+        "video/mp4",
+    );
+    await uploadBinaryObject(
+        `${storageKeyBase}/desktop.mp4`,
+        args.variants.desktop,
+        "video/mp4",
+    );
+    await uploadBinaryObject(
+        `${storageKeyBase}/poster.webp`,
+        args.variants.poster,
+        "image/webp",
+    );
+
+    return {
+        storageKeyBase,
+        mobileMp4Url: buildPublicHeroStorageUrl(`${storageKeyBase}/mobile.mp4`),
+        desktopMp4Url: buildPublicHeroStorageUrl(`${storageKeyBase}/desktop.mp4`),
+        posterUrl: buildPublicHeroStorageUrl(`${storageKeyBase}/poster.webp`),
+    };
+}
+
+export async function deleteApartmentVideoStorage(storageKeyBase: string) {
+    const supabase = createServerSupabaseClient();
+    const keys = [
+        `${storageKeyBase}/mobile.mp4`,
+        `${storageKeyBase}/desktop.mp4`,
+        `${storageKeyBase}/poster.webp`,
+        `${storageKeyBase}/raw-upload`,
+    ];
+    const { error } = await supabase.storage.from(HERO_VIDEO_BUCKET).remove(keys);
+    if (error) {
+        throw new Error(`Failed to delete apartment video files: ${error.message}`);
+    }
+}
+
+export async function downloadApartmentVideoRawUpload(args: {
+    apartmentId: string;
+    videoId: string;
+}): Promise<Buffer> {
+    const { supabaseUrl, serviceKey } = requireSupabaseUploadEnv();
+    const storageKey = buildApartmentVideoRawUploadKey(args.apartmentId, args.videoId);
+    const response = await fetch(
+        `${supabaseUrl}/storage/v1/object/${HERO_VIDEO_BUCKET}/${storageKey}`,
+        { headers: { Authorization: `Bearer ${serviceKey}` } },
+    );
+    if (!response.ok) {
+        throw new Error(`Failed to download raw apartment video: ${response.statusText}`);
+    }
+    return Buffer.from(await response.arrayBuffer());
+}
+
+export async function createApartmentVideoRawUploadSignedUrl(args: {
+    apartmentId: string;
+    videoId: string;
+}) {
+    await ensureApartmentImagesBucket();
+    const supabase = createServerSupabaseClient();
+    const path = buildApartmentVideoRawUploadKey(args.apartmentId, args.videoId);
+    const { data, error } = await supabase.storage
+        .from(HERO_VIDEO_BUCKET)
+        .createSignedUploadUrl(path);
+
+    if (error || !data) {
+        throw new Error(
+            `Failed to create apartment video upload URL: ${error?.message ?? "unknown error"}`,
+        );
+    }
+
+    return { path: data.path, token: data.token };
+}
+
+export async function deleteApartmentVideoRawUpload(args: {
+    apartmentId: string;
+    videoId: string;
+}) {
+    const supabase = createServerSupabaseClient();
+    const path = buildApartmentVideoRawUploadKey(args.apartmentId, args.videoId);
+    const { error } = await supabase.storage.from(HERO_VIDEO_BUCKET).remove([path]);
+    if (error) {
+        throw new Error(`Failed to delete temporary apartment video upload: ${error.message}`);
     }
 }

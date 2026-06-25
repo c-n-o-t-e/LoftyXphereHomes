@@ -3,11 +3,15 @@ import { ArrowRight } from "lucide-react";
 import ApartmentCard from "@/components/ApartmentCard";
 import { getFeaturedApartments } from "@/lib/data/apartments";
 import { getAllApartmentImageSetsMap } from "@/lib/data/getApartmentImages";
+import { getApartmentVideoSummariesMap } from "@/lib/data/getApartmentVideos";
 import { Button } from "@/components/ui/button";
 
 export async function FeaturedApartmentsSection() {
     const featuredApartments = getFeaturedApartments(2);
-    const imageSetsByApartment = await getAllApartmentImageSetsMap();
+    const [imageSetsByApartment, videoSummariesByApartment] = await Promise.all([
+        getAllApartmentImageSetsMap(),
+        getApartmentVideoSummariesMap(),
+    ]);
 
     return (
         <section className="py-12 sm:py-16 md:py-24 bg-white">
@@ -28,6 +32,7 @@ export async function FeaturedApartmentsSection() {
                             apartment={apartment}
                             index={index}
                             imageSets={imageSetsByApartment[apartment.id]}
+                            hasVideoTour={Boolean(videoSummariesByApartment[apartment.id])}
                         />
                     ))}
                 </div>

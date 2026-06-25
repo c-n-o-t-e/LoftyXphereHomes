@@ -149,6 +149,21 @@ model ApartmentImage {
   @@index([apartmentId, displayOrder])
 }
 
+// --- Apartment tour video (one optimized tour per listing) ---
+
+model ApartmentVideo {
+  id             String   @id @default(cuid())
+  apartmentId    String   @unique
+  mobileMp4Url   String
+  desktopMp4Url  String
+  posterUrl      String
+  storageKeyBase String
+  createdAt      DateTime @default(now())
+  updatedAt      DateTime @updatedAt
+
+  @@index([apartmentId])
+}
+
 // --- Shared property amenities (pool, gym, bar, outdoor — separate from unit photos) ---
 
 model PropertyAmenity {

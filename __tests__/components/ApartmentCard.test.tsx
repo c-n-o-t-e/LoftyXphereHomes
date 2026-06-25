@@ -116,4 +116,15 @@ describe('ApartmentCard', () => {
     expect(screen.queryByAltText(/Test Apartment - Image 1/)).not.toBeInTheDocument()
     expect(screen.queryByLabelText('Photo coming soon')).not.toBeInTheDocument()
   })
+
+  it('shows tour badge when apartment has a video tour', () => {
+    render(
+      <ApartmentCard
+        apartment={mockApartment}
+        imageSets={[mockImageSet]}
+        hasVideoTour
+      />,
+    )
+    expect(screen.getByText('Tour')).toBeInTheDocument()
+  })
 })

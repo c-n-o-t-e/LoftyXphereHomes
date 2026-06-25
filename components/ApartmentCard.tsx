@@ -5,7 +5,7 @@ import Link from "next/link";
 import { ResponsiveApartmentImage } from "@/components/ResponsiveApartmentImage";
 import { ApartmentImagePlaceholder } from "@/components/ApartmentImagePlaceholder";
 import { motion, AnimatePresence } from "framer-motion";
-import { ChevronLeft, ChevronRight, MapPin, Users, Bed, Bath } from "lucide-react";
+import { ChevronLeft, ChevronRight, MapPin, Users, Bed, Bath, Play } from "lucide-react";
 import { Apartment } from "@/lib/types";
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -17,6 +17,7 @@ interface ApartmentCardProps {
   index?: number;
   imageSets?: ApartmentImageSet[];
   imagesLoading?: boolean;
+  hasVideoTour?: boolean;
 }
 
 export default function ApartmentCard({
@@ -24,6 +25,7 @@ export default function ApartmentCard({
   index = 0,
   imageSets,
   imagesLoading = false,
+  hasVideoTour = false,
 }: ApartmentCardProps) {
   const comingSoon = apartment.status === "coming_soon";
   const [imageIndex, setImageIndex] = useState(0);
@@ -133,6 +135,13 @@ export default function ApartmentCard({
             {comingSoon ? (
               <div className="absolute top-4 left-4 z-10 rounded-full bg-black/75 px-3 py-1 text-xs font-semibold text-white">
                 Coming soon
+              </div>
+            ) : null}
+
+            {hasVideoTour && !comingSoon ? (
+              <div className="absolute top-4 right-4 z-10 flex items-center gap-1.5 rounded-full bg-black/70 px-3 py-1 text-xs font-semibold text-white">
+                <Play className="h-3.5 w-3.5" aria-hidden />
+                Tour
               </div>
             ) : null}
           </div>

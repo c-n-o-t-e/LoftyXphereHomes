@@ -8,14 +8,19 @@ import { getActiveApartments } from "@/lib/data/apartments";
 import ApartmentCard from "@/components/ApartmentCard";
 import { filterApartments, SearchFilters, calculateNights } from "@/lib/utils/search";
 import type { ApartmentImageSet } from "@/lib/images/types";
+import type { ApartmentVideoSummary } from "@/lib/videos/types";
 import { Info, Loader2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 
 type ApartmentsPageClientProps = {
     initialImageSets: Record<string, ApartmentImageSet[]>;
+    initialVideoSummaries: Record<string, ApartmentVideoSummary>;
 };
 
-function ApartmentsContent({ initialImageSets }: ApartmentsPageClientProps) {
+function ApartmentsContent({
+    initialImageSets,
+    initialVideoSummaries,
+}: ApartmentsPageClientProps) {
   const searchParams = useSearchParams();
 
   const filters: SearchFilters = useMemo(() => {
@@ -39,6 +44,18 @@ function ApartmentsContent({ initialImageSets }: ApartmentsPageClientProps) {
       return data.images ?? initialImageSets;
     },
     initialData: initialImageSets,
+    staleTime: 300_000,
+  });
+
+  const { data: videoSummariesByApartment } = useQuery({
+    queryKey: ["apartment-videos"],
+    queryFn: async (): Promise<Record<string, ApartmentVideoSummary>> => {
+      const res = await fetch("/api/apartments/videos");
+      const data = await res.json().catch(() => ({}));
+      if (!res.ok) return initialVideoSummaries;
+      return data.videos ?? initialVideoSummaries;
+    },
+    initialData: initialVideoSummaries,
     staleTime: 300_000,
   });
 
@@ -213,6 +230,7 @@ function ApartmentsContent({ initialImageSets }: ApartmentsPageClientProps) {
                 apartment={apartment}
                 index={index}
                 imageSets={imageSetsByApartment[apartment.id]}
+                hasVideoTour={Boolean(videoSummariesByApartment[apartment.id])}
               />
             ))}
           </div>
@@ -242,7 +260,10 @@ function ApartmentsContent({ initialImageSets }: ApartmentsPageClientProps) {
   );
 }
 
-export function ApartmentsPageClient({ initialImageSets }: ApartmentsPageClientProps) {
+export function ApartmentsPageClient({
+    initialImageSets,
+    initialVideoSummaries,
+}: ApartmentsPageClientProps) {
   return (
     <Suspense fallback={
       <div className="pt-20 pb-20 bg-gray-50 min-h-screen">
@@ -258,7 +279,10 @@ export function ApartmentsPageClient({ initialImageSets }: ApartmentsPageClientP
         </div>
       </div>
     }>
-      <ApartmentsContent initialImageSets={initialImageSets} />
+      <ApartmentsContent
+        initialImageSets={initialImageSets}
+        initialVideoSummaries={initialVideoSummaries}
+      />
     </Suspense>
   );
 }

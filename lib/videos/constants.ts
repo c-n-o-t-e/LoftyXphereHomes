@@ -40,3 +40,35 @@ export const HERO_VIDEO_VARIANTS = {
 } as const;
 
 export const HERO_STORAGE_PREFIX = "site/hero";
+
+export const APARTMENT_VIDEO_MAX_BYTES =
+    (Number.parseInt(process.env.APARTMENT_VIDEO_MAX_MB ?? "80", 10) || 80) *
+    1024 *
+    1024;
+
+export const APARTMENT_VIDEO_MAX_DURATION_SEC = 45;
+
+export const APARTMENT_VIDEO_STORAGE_PREFIX = "apartments";
+
+export const APARTMENT_VIDEO_VARIANTS = {
+    mobile: {
+        fileName: "mobile.mp4",
+        maxWidth: 1280,
+        crf: 28,
+        maxRateKbps: 1000,
+        maxBytes: 3 * 1024 * 1024,
+    },
+    desktop: {
+        fileName: "desktop.mp4",
+        maxWidth: 1920,
+        crf: 24,
+        maxRateKbps: 2000,
+        maxBytes: 6 * 1024 * 1024,
+    },
+    poster: {
+        fileName: "poster.webp",
+        width: 1920,
+        quality: 72,
+        maxBytes: 200 * 1024,
+    },
+} as const;

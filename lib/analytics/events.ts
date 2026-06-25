@@ -82,6 +82,36 @@ export function trackApartmentImageInteraction(params: {
   });
 }
 
+export function trackApartmentVideoTourOpen(params: {
+  apartmentId: string;
+  apartmentName: string;
+  source: "hero_tile" | "lightbox";
+}): void {
+  trackEvent({
+    action: "apartment_video_tour_open",
+    category: "apartment",
+    label: params.apartmentName,
+    apartment_id: params.apartmentId,
+    apartment_name: params.apartmentName,
+    video_source: params.source,
+  });
+}
+
+export function trackApartmentVideoTourProgress(params: {
+  apartmentId: string;
+  apartmentName: string;
+  milestone: "start" | "complete";
+}): void {
+  trackEvent({
+    action: "apartment_video_tour_progress",
+    category: "apartment",
+    label: params.apartmentName,
+    apartment_id: params.apartmentId,
+    apartment_name: params.apartmentName,
+    video_milestone: params.milestone,
+  });
+}
+
 export function trackInquirySubmit(params: {
   category: string;
   label?: string;

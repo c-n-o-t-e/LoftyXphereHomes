@@ -7,6 +7,7 @@ import { useAuth } from "@/components/AuthProvider";
 import { useAdminMe } from "@/hooks/useAdminMe";
 import { getApartmentById } from "@/lib/data/apartments";
 import { ApartmentImageManager } from "@/components/admin/ApartmentImageManager";
+import { ApartmentVideoManager } from "@/components/admin/ApartmentVideoManager";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 
@@ -67,7 +68,7 @@ export default function AdminApartmentImagesPage() {
             <div className="max-w-6xl mx-auto px-4 py-10">
                 <div className="flex items-start justify-between gap-4 flex-wrap mb-8">
                     <div>
-                        <p className="text-sm text-gray-500">Apartment images</p>
+                        <p className="text-sm text-gray-500">Apartment media</p>
                         <h1 className="text-2xl font-bold text-gray-900">
                             {apartment.name}
                         </h1>
@@ -76,6 +77,11 @@ export default function AdminApartmentImagesPage() {
                         <Link href="/admin/apartments">All apartments</Link>
                     </Button>
                 </div>
+
+                <ApartmentVideoManager
+                    apartmentId={apartment.id}
+                    apartmentName={apartment.name}
+                />
 
                 <ApartmentImageManager
                     apartmentId={apartment.id}

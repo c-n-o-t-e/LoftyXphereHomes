@@ -2,6 +2,7 @@ import { Metadata } from "next";
 import { notFound } from "next/navigation";
 import { getApartmentById, isApartmentBookable } from "@/lib/data/apartments";
 import { getApartmentImageSets } from "@/lib/data/getApartmentImages";
+import { getPublicApartmentVideo } from "@/lib/admin/apartmentVideo";
 import { MapPin, Check } from "lucide-react";
 import { YourReservationCard } from "@/components/YourReservationCard";
 import { ApartmentImageGallery } from "@/components/ApartmentImageGallery";
@@ -46,6 +47,7 @@ export default async function ApartmentDetailPage({ params }: PageProps) {
   }
 
   const imageSets = await getApartmentImageSets(id);
+  const apartmentVideo = await getPublicApartmentVideo(id);
 
   return (
     <div className="pt-20 pb-12 sm:pb-16 md:pb-24 bg-white min-h-screen">
@@ -72,6 +74,7 @@ export default async function ApartmentDetailPage({ params }: PageProps) {
           images={imageSets}
           name={apartment.name}
           apartmentId={apartment.id}
+          video={apartmentVideo}
         />
 
         <IncludedWithStayStrip />

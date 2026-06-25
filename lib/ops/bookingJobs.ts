@@ -22,6 +22,22 @@ function computeNextRunAt(attempts: number): Date {
     return new Date(Date.now() + minutes * 60 * 1000);
 }
 
+/** Reset orphaned PROCESSING rows so invoice/email/sheets jobs can run again. */
+async function recoverStaleProcessingJobs(): Promise<void> {
+    const { prisma } = await import("@/lib/db");
+    try {
+        await prisma.bookingJob.updateMany({
+            where: { status: "PROCESSING" },
+            data: { status: "PENDING", updatedAt: new Date() },
+        });
+    } catch (err) {
+        console.warn(
+            "[booking-jobs] PROCESSING recovery skipped:",
+            err instanceof Error ? err.message : err,
+        );
+    }
+}
+
 export async function enqueuePostBookingJobs(bookingId: string) {
     const { prisma } = await import("@/lib/db");
     await prisma.bookingJob.createMany({
@@ -318,6 +334,8 @@ export async function processPostBookingJobs(args?: {
     const respectBackoff =
         args?.respectBackoff ?? (args?.bookingId ? false : true);
 
+    await recoverStaleProcessingJobs();
+
     const nextRunOr = respectBackoff
         ? [{ nextRunAt: null }, { nextRunAt: { lte: now } }]
         : [
@@ -354,18 +372,6 @@ export async function processPostBookingJobs(args?: {
     );
 
     for (const job of orderedJobs) {
-        const claimed = await prisma.bookingJob.updateMany({
-            where: {
-                id: job.id,
-                status: { in: ["PENDING", "FAILED"] },
-                attempts: { lt: MAX_ATTEMPTS },
-            },
-            data: { status: "PROCESSING", updatedAt: new Date() },
-        });
-        if (claimed.count === 0) {
-            continue;
-        }
-
         try {
             await runJob(job.bookingId, job.type as BookingJobType);
             await prisma.bookingJob.update({

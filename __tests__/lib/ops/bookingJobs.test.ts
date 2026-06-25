@@ -56,10 +56,6 @@ jest.mock("@/lib/email/admin-alerts", () => ({
 describe("bookingJobs", () => {
     beforeEach(() => {
         jest.clearAllMocks();
-        const { prisma } = require("@/lib/db");
-        (prisma.bookingJob.updateMany as jest.Mock).mockResolvedValue({
-            count: 1,
-        });
     });
 
     it("enqueues invoice + guest email + sheets jobs (deduped)", async () => {
@@ -493,71 +489,18 @@ describe("bookingJobs", () => {
         errSpy.mockRestore();
     });
 
-    it("skips processing when another worker already claimed the job", async () => {
+    it("resets orphaned PROCESSING jobs before draining the queue", async () => {
         const { prisma } = await import("@/lib/db");
-        const { generateInvoicePdf } = await import("@/lib/ops/invoicePdf");
+        (prisma.bookingJob.findMany as jest.Mock).mockResolvedValueOnce([]);
 
-        (prisma.bookingJob.findMany as jest.Mock).mockResolvedValueOnce([
-            {
-                id: "j1",
-                bookingId: "b1",
-                type: "INVOICE_PDF",
-                attempts: 0,
-                adminAlertSentAt: null,
-            },
-        ]);
-        (prisma.bookingJob.updateMany as jest.Mock).mockResolvedValueOnce({
-            count: 0,
-        });
-
-        const result = await processPostBookingJobs({ limit: 10 });
-
-        expect(result).toEqual(
-            expect.objectContaining({ processed: 1, succeeded: 0, failed: 0 }),
-        );
-        expect(generateInvoicePdf).not.toHaveBeenCalled();
-        expect(prisma.bookingJob.update).not.toHaveBeenCalled();
-    });
-
-    it("claims a job atomically before running it", async () => {
-        const { prisma } = await import("@/lib/db");
-        const { generateInvoicePdf } = await import("@/lib/ops/invoicePdf");
-
-        (prisma.bookingJob.findMany as jest.Mock).mockResolvedValueOnce([
-            {
-                id: "j1",
-                bookingId: "b1",
-                type: "INVOICE_PDF",
-                attempts: 0,
-                adminAlertSentAt: null,
-            },
-        ]);
-        (prisma.booking.findUnique as jest.Mock).mockResolvedValueOnce({
-            id: "b1",
-            apartmentId: "lofty-wuye-01",
-            bookerName: "Jane",
-            bookerPhone: "0800",
-            bookerEmail: "jane@example.com",
-            checkIn: new Date("2026-01-01T00:00:00.000Z"),
-            checkOut: new Date("2026-01-02T00:00:00.000Z"),
-            amountPaid: 1000,
-            invoiceId: "LXH-EXISTING",
-            invoicePdfPath: "booking/b1/LXH-EXISTING.pdf",
-            createdAt: new Date("2026-01-01T12:00:00.000Z"),
-        });
-
-        await processPostBookingJobs({ limit: 10 });
+        await processPostBookingJobs({ limit: 5 });
 
         expect(prisma.bookingJob.updateMany).toHaveBeenCalledWith(
             expect.objectContaining({
-                where: expect.objectContaining({
-                    id: "j1",
-                    status: { in: ["PENDING", "FAILED"] },
-                }),
-                data: expect.objectContaining({ status: "PROCESSING" }),
+                where: { status: "PROCESSING" },
+                data: expect.objectContaining({ status: "PENDING" }),
             }),
         );
-        expect(generateInvoicePdf).not.toHaveBeenCalled();
     });
 
     describe("flushPostBookingJobsForBooking", () => {

@@ -31,7 +31,7 @@ async function processRequest(request: NextRequest) {
     const bookingId =
         request.nextUrl.searchParams.get("bookingId")?.trim() || undefined;
     const result = await processPostBookingJobs({
-        limit: bookingId ? 2 : 20,
+        limit: bookingId ? 3 : 20,
         bookingId,
         respectBackoff: !immediate,
     });

@@ -9,9 +9,13 @@
 
 ## Required GitHub secret
 
-Add **`DIRECT_URL`** in the repository settings (Settings → Secrets and variables → Actions).
+Add **`DIRECT_URL`** as a **repository** secret (Settings → Secrets and variables → Actions → Repository secrets), or as an environment secret if the job declares `environment: <name>` (see [`.github/workflows/migrate.yml`](../.github/workflows/migrate.yml) — default `production`; rename to match yours).
 
 Use the same Supabase session-pooler Postgres URL as local `.env` / [`.env.example`](../.env.example) — see [`prisma.config.ts`](../prisma.config.ts).
+
+**Important:** `npm ci` runs `prisma generate` via `postinstall`, so `DIRECT_URL` must be available for the **entire** migrate job, not only the `migrate deploy` step.
+
+If your password contains special characters (e.g. `$`), URL-encode them (`$` → `%24`).
 
 ## Branch protection (recommended)
 

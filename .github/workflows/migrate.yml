@@ -12,6 +12,10 @@ concurrency:
 jobs:
   migrate:
     runs-on: ubuntu-latest
+    # Must match the GitHub Environment name where DIRECT_URL is stored.
+    environment: production
+    env:
+      DIRECT_URL: ${{ secrets.DIRECT_URL }}
     steps:
       - uses: actions/checkout@v4
 
@@ -24,5 +28,3 @@ jobs:
 
       - name: Apply Prisma migrations
         run: npx prisma migrate deploy
-        env:
-          DIRECT_URL: ${{ secrets.DIRECT_URL }}

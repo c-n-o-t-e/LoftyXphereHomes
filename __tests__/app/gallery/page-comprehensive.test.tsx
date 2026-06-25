@@ -1,17 +1,28 @@
 import { render, screen } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
 import { GalleryClient } from '@/components/GalleryClient'
-import { apartments } from '@/lib/data/apartments'
-import { legacyUrlsToImageSets } from '@/lib/images/urls'
 import type { GalleryImageItem } from '@/lib/data/getApartmentImages'
 
-const mockItems: GalleryImageItem[] = apartments.flatMap((apt) =>
-  legacyUrlsToImageSets(apt.images).map((image) => ({
-    image,
-    apartment: apt.name,
-    apartmentId: apt.id,
-  })),
-)
+const mockItems: GalleryImageItem[] = [
+  {
+    apartment: 'The Horizon Suite',
+    apartmentId: 'lofty-horizon-suite',
+    image: {
+      thumbnail: 'https://example.com/thumb-1.jpg',
+      medium: 'https://example.com/medium-1.jpg',
+      large: 'https://example.com/large-1.jpg',
+    },
+  },
+  {
+    apartment: 'The Skyline Suite',
+    apartmentId: 'lofty-skyline-suite',
+    image: {
+      thumbnail: 'https://example.com/thumb-2.jpg',
+      medium: 'https://example.com/medium-2.jpg',
+      large: 'https://example.com/large-2.jpg',
+    },
+  },
+]
 
 describe('Gallery Page - Comprehensive Coverage', () => {
   it('opens lightbox when image is clicked', async () => {

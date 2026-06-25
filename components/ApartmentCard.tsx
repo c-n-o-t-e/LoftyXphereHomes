@@ -3,7 +3,7 @@
 import { useState } from "react";
 import Link from "next/link";
 import { ResponsiveApartmentImage } from "@/components/ResponsiveApartmentImage";
-import { legacyUrlsToImageSets } from "@/lib/images/urls";
+import { ApartmentImagePlaceholder } from "@/components/ApartmentImagePlaceholder";
 import { motion, AnimatePresence } from "framer-motion";
 import { ChevronLeft, ChevronRight, MapPin, Users, Bed, Bath } from "lucide-react";
 import { Apartment } from "@/lib/types";
@@ -12,23 +12,23 @@ import { Button } from "@/components/ui/button";
 
 import type { ApartmentImageSet } from "@/lib/images/types";
 
-const FALLBACK_IMAGE = "https://images.unsplash.com/photo-1522708323590-d24dbb6b0267?w=800&q=80";
-
 interface ApartmentCardProps {
   apartment: Apartment;
   index?: number;
   imageSets?: ApartmentImageSet[];
+  imagesLoading?: boolean;
 }
 
-export default function ApartmentCard({ apartment, index = 0, imageSets }: ApartmentCardProps) {
+export default function ApartmentCard({
+  apartment,
+  index = 0,
+  imageSets,
+  imagesLoading = false,
+}: ApartmentCardProps) {
   const comingSoon = apartment.status === "coming_soon";
   const [imageIndex, setImageIndex] = useState(0);
-  const sets =
-    imageSets && imageSets.length > 0
-      ? imageSets
-      : legacyUrlsToImageSets(
-          apartment.images?.length ? apartment.images : [FALLBACK_IMAGE],
-        );
+  const sets = imageSets ?? [];
+  const hasImages = sets.length > 0;
   const hasMultipleImages = sets.length > 1;
 
   const goPrev = (e: React.MouseEvent) => {
@@ -61,67 +61,73 @@ export default function ApartmentCard({ apartment, index = 0, imageSets }: Apart
       <Card className={`overflow-hidden rounded-2xl border-0 shadow-lg hover:shadow-xl transition-shadow duration-300 group ${comingSoon ? "opacity-90" : ""}`}>
         <Link href={`/apartments/${apartment.id}`} className="block">
           <div className={`relative h-64 overflow-hidden bg-black/5 ${comingSoon ? "grayscale-[35%]" : ""}`}>
-            <AnimatePresence mode="wait">
-              <motion.div
-                key={imageIndex}
-                initial={{ opacity: 0 }}
-                animate={{ opacity: 1 }}
-                exit={{ opacity: 0 }}
-                transition={{ duration: 0.3 }}
-                className="absolute inset-0"
-              >
-                <ResponsiveApartmentImage
-                  image={sets[imageIndex]}
-                  alt={`${apartment.name} - Image ${imageIndex + 1}`}
-                  fill
-                  variant="medium"
-                  className="object-cover group-hover:scale-105 transition-transform duration-500"
-                  sizes="(max-width: 768px) 100vw, (max-width: 1200px) 50vw, 33vw"
-                />
-              </motion.div>
-            </AnimatePresence>
-
-            {/* Carousel arrows - only show when multiple images */}
-            {hasMultipleImages && (
+            {imagesLoading ? (
+              <ApartmentImagePlaceholder loading className="absolute inset-0" />
+            ) : hasImages ? (
               <>
-                <button
-                  type="button"
-                  onClick={goPrev}
-                  className="absolute left-2 top-1/2 -translate-y-1/2 z-10 p-2 rounded-full bg-white/90 hover:bg-white shadow-md opacity-80 md:opacity-0 md:group-hover:opacity-100 transition-opacity focus:opacity-100 focus:outline-none"
-                  aria-label="Previous image"
-                >
-                  <ChevronLeft className="h-5 w-5 text-black" />
-                </button>
-                <button
-                  type="button"
-                  onClick={goNext}
-                  className="absolute right-2 top-1/2 -translate-y-1/2 z-10 p-2 rounded-full bg-white/90 hover:bg-white shadow-md opacity-80 md:opacity-0 md:group-hover:opacity-100 transition-opacity focus:opacity-100 focus:outline-none"
-                  aria-label="Next image"
-                >
-                  <ChevronRight className="h-5 w-5 text-black" />
-                </button>
-              </>
-            )}
+                <AnimatePresence mode="wait">
+                  <motion.div
+                    key={imageIndex}
+                    initial={{ opacity: 0 }}
+                    animate={{ opacity: 1 }}
+                    exit={{ opacity: 0 }}
+                    transition={{ duration: 0.3 }}
+                    className="absolute inset-0"
+                  >
+                    <ResponsiveApartmentImage
+                      image={sets[imageIndex]!}
+                      alt={`${apartment.name} - Image ${imageIndex + 1}`}
+                      fill
+                      variant="medium"
+                      className="object-cover group-hover:scale-105 transition-transform duration-500"
+                      sizes="(max-width: 768px) 100vw, (max-width: 1200px) 50vw, 33vw"
+                    />
+                  </motion.div>
+                </AnimatePresence>
 
-            {/* Dot indicators */}
-            {hasMultipleImages && (
-              <div className="absolute bottom-3 left-1/2 -translate-x-1/2 z-10 flex gap-1.5">
-                {sets.map((_, i) => (
-                  <button
-                    key={i}
-                    type="button"
-                    onClick={(e) => {
-                      e.preventDefault();
-                      e.stopPropagation();
-                      setImageIndex(i);
-                    }}
-                    className={`w-2 h-2 rounded-full transition-all ${
-                      i === imageIndex ? "bg-white w-4" : "bg-white/60 hover:bg-white/80"
-                    }`}
-                    aria-label={`Go to image ${i + 1}`}
-                  />
-                ))}
-              </div>
+                {hasMultipleImages && (
+                  <>
+                    <button
+                      type="button"
+                      onClick={goPrev}
+                      className="absolute left-2 top-1/2 -translate-y-1/2 z-10 p-2 rounded-full bg-white/90 hover:bg-white shadow-md opacity-80 md:opacity-0 md:group-hover:opacity-100 transition-opacity focus:opacity-100 focus:outline-none"
+                      aria-label="Previous image"
+                    >
+                      <ChevronLeft className="h-5 w-5 text-black" />
+                    </button>
+                    <button
+                      type="button"
+                      onClick={goNext}
+                      className="absolute right-2 top-1/2 -translate-y-1/2 z-10 p-2 rounded-full bg-white/90 hover:bg-white shadow-md opacity-80 md:opacity-0 md:group-hover:opacity-100 transition-opacity focus:opacity-100 focus:outline-none"
+                      aria-label="Next image"
+                    >
+                      <ChevronRight className="h-5 w-5 text-black" />
+                    </button>
+                  </>
+                )}
+
+                {hasMultipleImages && (
+                  <div className="absolute bottom-3 left-1/2 -translate-x-1/2 z-10 flex gap-1.5">
+                    {sets.map((_, i) => (
+                      <button
+                        key={i}
+                        type="button"
+                        onClick={(e) => {
+                          e.preventDefault();
+                          e.stopPropagation();
+                          setImageIndex(i);
+                        }}
+                        className={`w-2 h-2 rounded-full transition-all ${
+                          i === imageIndex ? "bg-white w-4" : "bg-white/60 hover:bg-white/80"
+                        }`}
+                        aria-label={`Go to image ${i + 1}`}
+                      />
+                    ))}
+                  </div>
+                )}
+              </>
+            ) : (
+              <ApartmentImagePlaceholder className="absolute inset-0" />
             )}
 
             {comingSoon ? (
@@ -195,4 +201,3 @@ export default function ApartmentCard({ apartment, index = 0, imageSets }: Apart
     </motion.div>
   );
 }
-

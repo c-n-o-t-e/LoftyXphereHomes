@@ -31,7 +31,7 @@ export async function generateMetadata({ params }: PageProps): Promise<Metadata>
     openGraph: {
       title: apartment.name,
       description: apartment.shortDescription,
-      images: ogImages.length > 0 ? ogImages : apartment.images,
+      images: ogImages.length > 0 ? ogImages : undefined,
     },
   };
 }

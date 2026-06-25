@@ -13,6 +13,16 @@ jest.mock('next/navigation', () => ({
   notFound: jest.fn(),
 }))
 
+jest.mock('@/lib/data/getApartmentImages', () => ({
+  getApartmentImageSets: jest.fn(async () => [
+    {
+      thumbnail: 'https://example.com/thumb.jpg',
+      medium: 'https://example.com/medium.jpg',
+      large: 'https://example.com/large.jpg',
+    },
+  ]),
+}))
+
 describe('Apartment Detail Page - Extended Coverage', () => {
   const waitForReservationCard = () =>
     waitFor(() => expect(screen.getByText('Book Apartment')).toBeInTheDocument())
@@ -83,13 +93,14 @@ describe('Apartment Detail Page - Extended Coverage', () => {
     expect(screen.getByText('Book Apartment')).toBeInTheDocument()
   })
 
-  it('uses fallback image when apartment has no images', async () => {
+  it('shows placeholder when apartment has no uploaded images', async () => {
+    const { getApartmentImageSets } = jest.requireMock('@/lib/data/getApartmentImages')
+    getApartmentImageSets.mockResolvedValueOnce([])
+
     const params = Promise.resolve({ id: 'lofty-skyline-suite' })
     renderWithQueryClient(await ApartmentDetailPage({ params }))
     await waitForReservationCard()
-    // Should render images (or fallback)
-    const images = screen.getAllByRole('img')
-    expect(images.length).toBeGreaterThan(0)
+    expect(screen.getByLabelText('Photo coming soon')).toBeInTheDocument()
   })
 })
 

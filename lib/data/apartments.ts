@@ -27,20 +27,6 @@ const SHARED_HOUSE_RULES = [
     "Respect neighbors (noise control after 10PM)",
 ] as const;
 
-const PLACEHOLDER_IMAGES = {
-    oneBed: [
-        "https://images.unsplash.com/photo-1522708323590-d24dbb6b0267?w=1200&q=80",
-        "https://images.unsplash.com/photo-1502672260266-1c1ef2d93688?w=1200&q=80",
-        "https://images.unsplash.com/photo-1484154218962-a197022b5858?w=1200&q=80",
-    ],
-    twoBed: [
-        "https://images.unsplash.com/photo-1512918728675-ed5a9ecdebfd?w=1200&q=80",
-        "https://images.unsplash.com/photo-1502672260266-1c1ef2d93688?w=1200&q=80",
-        "https://images.unsplash.com/photo-1560448204-e02f11c3d0e2?w=1200&q=80",
-        "https://images.unsplash.com/photo-1522771739844-6a9f6d5f14af?w=1200&q=80",
-    ],
-} as const;
-
 const ONE_BED_PRICE = 100_000;
 const TWO_BED_PRICE = 200_000;
 
@@ -52,7 +38,7 @@ export const apartments: Apartment[] = [
             "Elegant 1-bedroom suite in Wuye — perfect for couples, solo travelers, and business stays.",
         location: LOCATION,
         pricePerNight: ONE_BED_PRICE,
-        images: [...PLACEHOLDER_IMAGES.oneBed],
+        images: [],
         amenities: [...SHARED_AMENITIES],
         houseRules: [...SHARED_HOUSE_RULES],
         capacity: 2,
@@ -70,7 +56,7 @@ export const apartments: Apartment[] = [
             "Spacious 2-bedroom apartment with skyline views, ideal for families and small groups.",
         location: LOCATION,
         pricePerNight: TWO_BED_PRICE,
-        images: [...PLACEHOLDER_IMAGES.twoBed],
+        images: [],
         amenities: [...TWO_BED_AMENITIES],
         houseRules: [...SHARED_HOUSE_RULES],
         capacity: 4,
@@ -88,7 +74,7 @@ export const apartments: Apartment[] = [
             "Premium 2-bedroom suite with modern finishes and a calm, residential feel in Wuye.",
         location: LOCATION,
         pricePerNight: TWO_BED_PRICE,
-        images: [...PLACEHOLDER_IMAGES.twoBed],
+        images: [],
         amenities: [...TWO_BED_AMENITIES],
         houseRules: [...SHARED_HOUSE_RULES],
         capacity: 4,
@@ -106,7 +92,7 @@ export const apartments: Apartment[] = [
             "Bright 2-bedroom apartment with airy living spaces and everything you need for a comfortable stay.",
         location: LOCATION,
         pricePerNight: TWO_BED_PRICE,
-        images: [...PLACEHOLDER_IMAGES.twoBed],
+        images: [],
         amenities: [...TWO_BED_AMENITIES],
         houseRules: [...SHARED_HOUSE_RULES],
         capacity: 4,
@@ -124,7 +110,7 @@ export const apartments: Apartment[] = [
             "An elevated 2-bedroom suite — finishing touches underway. Join the waitlist for launch updates.",
         location: LOCATION,
         pricePerNight: TWO_BED_PRICE,
-        images: [...PLACEHOLDER_IMAGES.twoBed],
+        images: [],
         amenities: [...TWO_BED_AMENITIES],
         houseRules: [...SHARED_HOUSE_RULES],
         capacity: 4,
@@ -141,7 +127,7 @@ export const apartments: Apartment[] = [
             "A flowing 2-bedroom layout designed for comfort — currently being prepared for guests.",
         location: LOCATION,
         pricePerNight: TWO_BED_PRICE,
-        images: [...PLACEHOLDER_IMAGES.twoBed],
+        images: [],
         amenities: [...TWO_BED_AMENITIES],
         houseRules: [...SHARED_HOUSE_RULES],
         capacity: 4,
@@ -158,7 +144,7 @@ export const apartments: Apartment[] = [
             "Intimate 1-bedroom suite coming soon — perfect for short business trips and weekend escapes.",
         location: LOCATION,
         pricePerNight: ONE_BED_PRICE,
-        images: [...PLACEHOLDER_IMAGES.oneBed],
+        images: [],
         amenities: [...SHARED_AMENITIES],
         houseRules: [...SHARED_HOUSE_RULES],
         capacity: 2,
@@ -175,7 +161,7 @@ export const apartments: Apartment[] = [
             "Light-filled 2-bedroom apartment with an open feel — launching soon at Lofty Xphere Homes.",
         location: LOCATION,
         pricePerNight: TWO_BED_PRICE,
-        images: [...PLACEHOLDER_IMAGES.twoBed],
+        images: [],
         amenities: [...TWO_BED_AMENITIES],
         houseRules: [...SHARED_HOUSE_RULES],
         capacity: 4,
@@ -192,7 +178,7 @@ export const apartments: Apartment[] = [
             "Warm, welcoming 2-bedroom suite — currently under fit-out. Register interest to be notified first.",
         location: LOCATION,
         pricePerNight: TWO_BED_PRICE,
-        images: [...PLACEHOLDER_IMAGES.twoBed],
+        images: [],
         amenities: [...TWO_BED_AMENITIES],
         houseRules: [...SHARED_HOUSE_RULES],
         capacity: 4,

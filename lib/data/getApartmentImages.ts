@@ -1,17 +1,31 @@
-import { getApartmentById, apartments, getActiveApartments } from "@/lib/data/apartments";
+import { getActiveApartments, apartments } from "@/lib/data/apartments";
 import { prisma } from "@/lib/db";
-import { legacyUrlsToImageSets } from "@/lib/images/urls";
 import type { ApartmentImageSet } from "@/lib/images/types";
 import type { Apartment } from "@/lib/types";
-
-const FALLBACK_IMAGE =
-    "https://images.unsplash.com/photo-1522708323590-d24dbb6b0267?w=1200&q=80";
 
 export type GalleryImageItem = {
     image: ApartmentImageSet;
     apartment: string;
     apartmentId: string;
 };
+
+function mapRowsToImageSets(
+    rows: Array<{
+        thumbnailUrl: string;
+        mediumUrl: string;
+        largeUrl: string;
+        blurDataUrl: string | null;
+        altText: string | null;
+    }>,
+): ApartmentImageSet[] {
+    return rows.map((row) => ({
+        thumbnail: row.thumbnailUrl,
+        medium: row.mediumUrl,
+        large: row.largeUrl,
+        blurDataUrl: row.blurDataUrl,
+        altText: row.altText,
+    }));
+}
 
 export async function getApartmentImageSets(
     apartmentId: string,
@@ -30,24 +44,13 @@ export async function getApartmentImageSets(
         });
 
         if (rows.length > 0) {
-            return rows.map((row) => ({
-                thumbnail: row.thumbnailUrl,
-                medium: row.mediumUrl,
-                large: row.largeUrl,
-                blurDataUrl: row.blurDataUrl,
-                altText: row.altText,
-            }));
+            return mapRowsToImageSets(rows);
         }
     } catch (err) {
         console.error(`Failed to load images for ${apartmentId}:`, err);
     }
 
-    const apartment = getApartmentById(apartmentId);
-    if (!apartment?.images?.length) {
-        return legacyUrlsToImageSets([FALLBACK_IMAGE]);
-    }
-
-    return legacyUrlsToImageSets(apartment.images);
+    return [];
 }
 
 /** Flat URL list for components that still expect string[]. Prefers large variant. */
@@ -77,40 +80,39 @@ export async function getApartmentImageSetsMap(
     apartmentIds: string[],
 ): Promise<Record<string, ApartmentImageSet[]>> {
     const uniqueIds = [...new Set(apartmentIds)];
-    const rows = await prisma.apartmentImage.findMany({
-        where: { apartmentId: { in: uniqueIds } },
-        orderBy: [{ apartmentId: "asc" }, { displayOrder: "asc" }],
-        select: {
-            apartmentId: true,
-            thumbnailUrl: true,
-            mediumUrl: true,
-            largeUrl: true,
-            blurDataUrl: true,
-            altText: true,
-        },
-    });
+    const map: Record<string, ApartmentImageSet[]> = Object.fromEntries(
+        uniqueIds.map((id) => [id, []]),
+    );
 
-    const map: Record<string, ApartmentImageSet[]> = {};
-    for (const id of uniqueIds) {
-        map[id] = [];
+    if (uniqueIds.length === 0) {
+        return map;
     }
-    for (const row of rows) {
-        map[row.apartmentId]?.push({
-            thumbnail: row.thumbnailUrl,
-            medium: row.mediumUrl,
-            large: row.largeUrl,
-            blurDataUrl: row.blurDataUrl,
-            altText: row.altText,
+
+    try {
+        const rows = await prisma.apartmentImage.findMany({
+            where: { apartmentId: { in: uniqueIds } },
+            orderBy: [{ apartmentId: "asc" }, { displayOrder: "asc" }],
+            select: {
+                apartmentId: true,
+                thumbnailUrl: true,
+                mediumUrl: true,
+                largeUrl: true,
+                blurDataUrl: true,
+                altText: true,
+            },
         });
-    }
 
-    for (const id of uniqueIds) {
-        if (map[id]!.length > 0) continue;
-        const apartment = getApartmentById(id);
-        map[id] =
-            apartment?.images?.length
-                ? legacyUrlsToImageSets(apartment.images)
-                : legacyUrlsToImageSets([FALLBACK_IMAGE]);
+        for (const row of rows) {
+            map[row.apartmentId]?.push({
+                thumbnail: row.thumbnailUrl,
+                medium: row.mediumUrl,
+                large: row.largeUrl,
+                blurDataUrl: row.blurDataUrl,
+                altText: row.altText,
+            });
+        }
+    } catch (err) {
+        console.error("Failed to batch-load apartment images:", err);
     }
 
     return map;
@@ -149,10 +151,9 @@ export async function getAllApartmentImageSetsMap(): Promise<
     Record<string, ApartmentImageSet[]>
 > {
     const activeApartments = getActiveApartments();
-    const map: Record<string, ApartmentImageSet[]> = {};
-    for (const apartment of activeApartments) {
-        map[apartment.id] = legacyUrlsToImageSets(apartment.images);
-    }
+    const map: Record<string, ApartmentImageSet[]> = Object.fromEntries(
+        activeApartments.map((apartment) => [apartment.id, []]),
+    );
 
     try {
         const rows = await prisma.apartmentImage.findMany({
@@ -168,10 +169,6 @@ export async function getAllApartmentImageSetsMap(): Promise<
             },
         });
 
-        for (const apartment of activeApartments) {
-            map[apartment.id] = [];
-        }
-
         for (const row of rows) {
             map[row.apartmentId] ??= [];
             map[row.apartmentId].push({
@@ -181,12 +178,6 @@ export async function getAllApartmentImageSetsMap(): Promise<
                 blurDataUrl: row.blurDataUrl,
                 altText: row.altText,
             });
-        }
-
-        for (const apartment of activeApartments) {
-            if (map[apartment.id].length === 0) {
-                map[apartment.id] = legacyUrlsToImageSets(apartment.images);
-            }
         }
     } catch (err) {
         console.error("Failed to load apartment image map:", err);

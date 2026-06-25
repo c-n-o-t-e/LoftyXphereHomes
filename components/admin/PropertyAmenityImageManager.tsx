@@ -407,14 +407,21 @@ export function PropertyAmenityImageManager({
             )}
 
             {isLoading ? (
-                <div className="flex items-center gap-2 text-gray-600">
-                    <Loader2 className="h-4 w-4 animate-spin" />
-                    Loading images...
+                <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
+                    {[0, 1, 2].map((i) => (
+                        <Card key={i} className="overflow-hidden animate-pulse">
+                            <div className="aspect-[4/3] bg-gray-100" />
+                            <div className="p-3 space-y-2">
+                                <div className="h-4 w-24 bg-gray-100 rounded" />
+                                <div className="h-9 w-full bg-gray-100 rounded" />
+                            </div>
+                        </Card>
+                    ))}
                 </div>
             ) : sortedImages.length === 0 ? (
                 <Card className="p-6 text-sm text-gray-600">
-                    No photos yet. Upload images to show this amenity on the homepage and
-                    Experience page.
+                    No photos uploaded yet. Use the upload area above to add images for
+                    this amenity.
                 </Card>
             ) : (
                 <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">

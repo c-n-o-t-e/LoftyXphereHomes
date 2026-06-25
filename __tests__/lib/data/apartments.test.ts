@@ -60,10 +60,9 @@ describe('apartments data', () => {
     })
   })
 
-  it('apartment has at least one image', () => {
+  it('apartment images is an array', () => {
     apartments.forEach((apartment) => {
       expect(Array.isArray(apartment.images)).toBe(true)
-      expect(apartment.images.length).toBeGreaterThan(0)
     })
   })
 

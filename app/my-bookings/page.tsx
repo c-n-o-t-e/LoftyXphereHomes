@@ -4,12 +4,14 @@ import { useEffect, useMemo } from "react";
 import { useRouter } from "next/navigation";
 import Image from "next/image";
 import Link from "next/link";
-import { useInfiniteQuery } from "@tanstack/react-query";
+import { useInfiniteQuery, useQuery } from "@tanstack/react-query";
 import { useAuth } from "@/components/AuthProvider";
 import { getSupabaseClient } from "@/lib/supabase/client";
 import { apartments } from "@/lib/data/apartments";
 import { Calendar, MapPin, Clock, ChevronRight, Loader2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
+import { ApartmentImagePlaceholder } from "@/components/ApartmentImagePlaceholder";
+import type { ApartmentImageSet } from "@/lib/images/types";
 
 interface Booking {
   id: string;
@@ -111,6 +113,18 @@ export default function MyBookingsPage() {
       };
     },
     getNextPageParam: (lastPage) => lastPage.nextCursor ?? undefined,
+  });
+
+  const { data: imageSetsByApartment } = useQuery({
+    queryKey: ["apartment-images"],
+    queryFn: async (): Promise<Record<string, ApartmentImageSet[]>> => {
+      const res = await fetch("/api/apartments/images");
+      const data = await res.json().catch(() => ({}));
+      if (!res.ok) return {};
+      return data.images ?? {};
+    },
+    enabled: Boolean(user) && !authLoading,
+    staleTime: 300_000,
   });
 
   useEffect(() => {
@@ -281,7 +295,13 @@ export default function MyBookingsPage() {
                 </h2>
                 <div className="space-y-4">
                   {activeBookings.map((booking) => (
-                    <BookingCard key={booking.id} booking={booking} />
+                    <BookingCard
+                      key={booking.id}
+                      booking={booking}
+                      coverImageUrl={getCoverImageUrl(
+                        imageSetsByApartment?.[booking.apartmentId],
+                      )}
+                    />
                   ))}
                 </div>
               </section>
@@ -296,7 +316,13 @@ export default function MyBookingsPage() {
                 </h2>
                 <div className="space-y-4">
                   {upcomingBookings.map((booking) => (
-                    <BookingCard key={booking.id} booking={booking} />
+                    <BookingCard
+                      key={booking.id}
+                      booking={booking}
+                      coverImageUrl={getCoverImageUrl(
+                        imageSetsByApartment?.[booking.apartmentId],
+                      )}
+                    />
                   ))}
                 </div>
               </section>
@@ -310,7 +336,14 @@ export default function MyBookingsPage() {
                 </h2>
                 <div className="space-y-4">
                   {pastBookings.map((booking) => (
-                    <BookingCard key={booking.id} booking={booking} isPast />
+                    <BookingCard
+                      key={booking.id}
+                      booking={booking}
+                      isPast
+                      coverImageUrl={getCoverImageUrl(
+                        imageSetsByApartment?.[booking.apartmentId],
+                      )}
+                    />
                   ))}
                 </div>
               </section>
@@ -342,7 +375,21 @@ export default function MyBookingsPage() {
   );
 }
 
-function BookingCard({ booking, isPast = false }: { booking: Booking; isPast?: boolean }) {
+function getCoverImageUrl(imageSets?: ApartmentImageSet[]): string | undefined {
+  const first = imageSets?.[0];
+  if (!first) return undefined;
+  return first.medium || first.large || first.thumbnail;
+}
+
+function BookingCard({
+  booking,
+  isPast = false,
+  coverImageUrl,
+}: {
+  booking: Booking;
+  isPast?: boolean;
+  coverImageUrl?: string;
+}) {
   const apartment = getApartmentById(booking.apartmentId);
   const status = getBookingStatus(booking.checkIn, booking.checkOut, booking.status);
 
@@ -398,12 +445,17 @@ function BookingCard({ booking, isPast = false }: { booking: Booking; isPast?: b
       <div className="flex flex-col md:flex-row">
         {/* Image */}
         <div className="relative w-full md:w-48 h-40 md:h-auto shrink-0">
-          <Image
-            src={apartment.images[0]}
-            alt={apartment.name}
-            fill
-            className="object-cover"
-          />
+          {coverImageUrl ? (
+            <Image
+              src={coverImageUrl}
+              alt={apartment.name}
+              fill
+              className="object-cover"
+              unoptimized={coverImageUrl.includes(".supabase.co/storage/")}
+            />
+          ) : (
+            <ApartmentImagePlaceholder className="h-full min-h-[10rem]" />
+          )}
         </div>
 
         {/* Content */}

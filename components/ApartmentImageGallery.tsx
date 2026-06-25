@@ -4,15 +4,7 @@ import { useState, useEffect } from "react";
 import { X, ChevronLeft, ChevronRight, Grid2x2 } from "lucide-react";
 import type { ApartmentImageSet } from "@/lib/images/types";
 import { ResponsiveApartmentImage } from "@/components/ResponsiveApartmentImage";
-
-const FALLBACK_IMAGE: ApartmentImageSet = {
-    thumbnail:
-        "https://images.unsplash.com/photo-1522708323590-d24dbb6b0267?w=300&q=80",
-    medium:
-        "https://images.unsplash.com/photo-1522708323590-d24dbb6b0267?w=800&q=80",
-    large:
-        "https://images.unsplash.com/photo-1522708323590-d24dbb6b0267?w=1600&q=80",
-};
+import { ApartmentImagePlaceholder } from "@/components/ApartmentImagePlaceholder";
 
 interface ApartmentImageGalleryProps {
     images: ApartmentImageSet[];
@@ -22,8 +14,8 @@ interface ApartmentImageGalleryProps {
 export function ApartmentImageGallery({ images, name }: ApartmentImageGalleryProps) {
     const [selectedIndex, setSelectedIndex] = useState<number | null>(null);
 
-    const allImages = images.length > 0 ? images : [FALLBACK_IMAGE];
-    const heroImage = allImages[0]!;
+    const allImages = images;
+    const heroImage = allImages[0];
     const gridImages = allImages.slice(1, 5);
     const extraCount = Math.max(0, allImages.length - 5);
 
@@ -66,6 +58,16 @@ export function ApartmentImageGallery({ images, name }: ApartmentImageGalleryPro
         };
     }, [selectedIndex, allImages.length]);
 
+    if (allImages.length === 0) {
+        return (
+            <div className="relative mb-8 sm:mb-12">
+                <div className="relative h-64 sm:h-80 md:h-[28rem] rounded-2xl overflow-hidden">
+                    <ApartmentImagePlaceholder className="h-full w-full" />
+                </div>
+            </div>
+        );
+    }
+
     return (
         <>
             <div className="relative mb-8 sm:mb-12">
@@ -78,9 +80,9 @@ export function ApartmentImageGallery({ images, name }: ApartmentImageGalleryPro
                             aria-label={`View ${name} - cover photo`}
                         >
                             <ResponsiveApartmentImage
-                                image={heroImage}
+                                image={heroImage!}
                                 variant="large"
-                                alt={heroImage.altText ?? name}
+                                alt={heroImage?.altText ?? name}
                                 fill
                                 className="object-cover"
                                 priority

@@ -3,6 +3,7 @@
 import Link from "next/link";
 import { useCallback, useEffect, useState } from "react";
 import { useParams, useRouter } from "next/navigation";
+import { Loader2 } from "lucide-react";
 import { useAuth } from "@/components/AuthProvider";
 import { useAdminMe } from "@/hooks/useAdminMe";
 import { getSupabaseClient } from "@/lib/supabase/client";
@@ -20,24 +21,40 @@ export default function AdminPropertyAmenityImagesPage() {
         user?.id,
     );
     const [amenityName, setAmenityName] = useState<string | null>(null);
+    const [isAmenityLoading, setIsAmenityLoading] = useState(true);
+    const [amenityNotFound, setAmenityNotFound] = useState(false);
 
     const loadAmenity = useCallback(async () => {
+        setIsAmenityLoading(true);
+        setAmenityNotFound(false);
+
         const supabase = getSupabaseClient();
         const {
             data: { session },
         } = await supabase.auth.getSession();
         const token = session?.access_token;
-        if (!token) return;
+        if (!token) {
+            setIsAmenityLoading(false);
+            return;
+        }
 
-        const res = await fetch(`/api/admin/property-amenities/${amenityId}`, {
-            headers: { Authorization: `Bearer ${token}` },
-        });
-        const data = (await res.json()) as {
-            amenity?: { name: string };
-            error?: string;
-        };
-        if (res.ok && data.amenity) {
-            setAmenityName(data.amenity.name);
+        try {
+            const res = await fetch(`/api/admin/property-amenities/${amenityId}`, {
+                headers: { Authorization: `Bearer ${token}` },
+            });
+            const data = (await res.json()) as {
+                amenity?: { name: string };
+                error?: string;
+            };
+            if (res.ok && data.amenity) {
+                setAmenityName(data.amenity.name);
+            } else {
+                setAmenityNotFound(true);
+            }
+        } catch {
+            setAmenityNotFound(true);
+        } finally {
+            setIsAmenityLoading(false);
         }
     }, [amenityId]);
 
@@ -71,7 +88,24 @@ export default function AdminPropertyAmenityImagesPage() {
         );
     }
 
-    if (!amenityName) {
+    if (isAmenityLoading) {
+        return (
+            <div className="min-h-screen bg-gray-50 pt-20">
+                <div className="max-w-6xl mx-auto px-4 py-10">
+                    <div className="flex items-center gap-2 text-gray-600 mb-8">
+                        <Loader2 className="h-5 w-5 animate-spin" />
+                        Loading amenity...
+                    </div>
+                    <PropertyAmenityImageManager
+                        amenityId={amenityId}
+                        amenityName="Property amenity"
+                    />
+                </div>
+            </div>
+        );
+    }
+
+    if (amenityNotFound || !amenityName) {
         return (
             <div className="min-h-screen bg-gray-50 pt-20">
                 <div className="max-w-3xl mx-auto px-4 py-10">

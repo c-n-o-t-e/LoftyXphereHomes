@@ -11,9 +11,17 @@ import {
     View,
     renderToBuffer,
 } from "@react-pdf/renderer";
-import { SITE_URL } from "@/lib/constants";
-import { SITE_URL } from "@/lib/constants";
+import {
+    INVOICE_CURRENCY_CODE,
+    INVOICE_WEBSITE_DISPLAY,
+    SITE_URL,
+} from "@/lib/constants";
 import { formatNightsLabel } from "./dates";
+import {
+    formatNgnAmount,
+    resolveInvoiceFinancials,
+} from "./invoiceAmounts";
+import { makeInvoiceId } from "./invoiceId";
 
 export type InvoiceData = {
     name: string;
@@ -26,8 +34,51 @@ export type InvoiceData = {
     invoiceId?: string;
 };
 
-function naira(display: string) {
-    return `₦${display}`;
+function isLocalDevHost(host: string): boolean {
+    const h = host.toLowerCase();
+    return (
+        h === "localhost" ||
+        h.startsWith("localhost:") ||
+        h === "127.0.0.1" ||
+        h.startsWith("127.0.0.1:") ||
+        h.endsWith(".local")
+    );
+}
+
+function formatInvoiceWebsite(raw: string): string {
+    const trimmed = raw.trim();
+    if (!trimmed) return INVOICE_WEBSITE_DISPLAY;
+    try {
+        const withProtocol = /^https?:\/\//i.test(trimmed)
+            ? trimmed
+            : `https://${trimmed}`;
+        const host = new URL(withProtocol).hostname.replace(/^www\./i, "");
+        return host || INVOICE_WEBSITE_DISPLAY;
+    } catch {
+        return (
+            trimmed
+                .replace(/^https?:\/\//i, "")
+                .replace(/^www\./i, "")
+                .replace(/\/+$/, "")
+                .split("/")[0] || INVOICE_WEBSITE_DISPLAY
+        );
+    }
+}
+
+/** Prefer explicit business website; never surface localhost on guest invoices. */
+function resolveInvoiceWebsite(): string {
+    const candidates = [
+        process.env.BUSINESS_WEBSITE?.trim(),
+        process.env.NEXT_PUBLIC_SITE_URL?.trim(),
+        SITE_URL,
+    ].filter((value): value is string => Boolean(value));
+
+    for (const raw of candidates) {
+        const host = formatInvoiceWebsite(raw);
+        if (!isLocalDevHost(host)) return host;
+    }
+
+    return INVOICE_WEBSITE_DISPLAY;
 }
 
 function formatDateDisplay(date: Date) {
@@ -417,14 +468,14 @@ function InvoiceDocument(props: {
     businessInstagram: string;
     websiteUrl: string;
 }) {
-    const lineAmount = naira(props.lineItemDisplay);
-    const subtotal = naira(props.subtotalDisplay);
+    const lineAmount = props.lineItemDisplay;
+    const subtotal = props.subtotalDisplay;
     const discount =
         props.hasDiscount && props.discountDisplay !== "0"
-            ? `−${naira(props.discountDisplay)}`
-            : naira("0");
-    const accommodation = naira(props.accommodationDisplay);
-    const amountPaid = naira(props.amountPaidDisplay);
+            ? `-${props.discountDisplay}`
+            : props.discountDisplay;
+    const accommodation = props.accommodationDisplay;
+    const amountPaid = props.amountPaidDisplay;
     return (
         <Document>
             <Page size="A4" style={styles.page}>
@@ -495,7 +546,9 @@ function InvoiceDocument(props: {
                 <View style={styles.table}>
                     <View style={styles.tableHead}>
                         <Text style={styles.th}>Description</Text>
-                        <Text style={[styles.th, styles.thAmount]}>Amount</Text>
+                        <Text style={[styles.th, styles.thAmount]}>
+                            Amount ({INVOICE_CURRENCY_CODE})
+                        </Text>
                     </View>
                     <View style={styles.tableRow}>
                         <View style={styles.td}>
@@ -522,7 +575,13 @@ function InvoiceDocument(props: {
                                 <Text>Subtotal</Text>
                                 <Text>{subtotal}</Text>
                             </View>
-                            <View style={[styles.totalsRow, props.hasDiscount ? styles.discountRow : undefined]}>
+                            <View
+                                style={
+                                    props.hasDiscount
+                                        ? [styles.totalsRow, styles.discountRow]
+                                        : styles.totalsRow
+                                }
+                            >
                                 <Text>Discount applied</Text>
                                 <Text>{discount}</Text>
                             </View>
@@ -533,7 +592,7 @@ function InvoiceDocument(props: {
                         </View>
                         {props.hasProcessingFee ? (
                             <Text style={styles.paymentNote}>
-                                Amount paid: {amountPaid} (includes {naira(props.processingFeeDisplay)}{" "}
+                                Amount paid: {amountPaid} (includes {props.processingFeeDisplay}{" "}
                                 payment processing — not part of accommodation total above).
                             </Text>
                         ) : null}
@@ -609,13 +668,10 @@ export async function generateInvoicePdf(data: InvoiceData): Promise<{
 
     const lineItemDetail =
         financials.rackRateNgn != null && financials.nights != null
-            ? `${naira(formatNgnAmount(financials.rackRateNgn))} × ${financials.nights} night${financials.nights === 1 ? "" : "s"}`
+            ? `${formatNgnAmount(financials.rackRateNgn)} × ${financials.nights} night${financials.nights === 1 ? "" : "s"}`
             : `Stay total before discount`;
 
-    const websiteUrl =
-        process.env.NEXT_PUBLIC_SITE_URL?.trim() ||
-        process.env.BUSINESS_WEBSITE?.trim() ||
-        SITE_URL;
+    const websiteUrl = resolveInvoiceWebsite();
 
     const issueDate = formatDateDisplay(data.bookingDate);
 

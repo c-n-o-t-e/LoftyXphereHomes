@@ -61,6 +61,10 @@ export const SITE_NAME = "LoftyXphereHomes";
 export const SITE_DESCRIPTION = "Premium shortlet apartment rentals in Nigeria. Experience luxury, comfort, and exceptional service.";
 export const SITE_URL = process.env.NEXT_PUBLIC_SITE_URL || "https://loftyxpherehomes.com";
 
+/** Public website shown on guest-facing invoices (never localhost). */
+export const INVOICE_WEBSITE_DISPLAY = "loftyxpherehomes.com";
+export const INVOICE_CURRENCY_CODE = "NGN";
+
 /** Pre-filled message when visitors tap the site-wide WhatsApp button. */
 export const WHATSAPP_DEFAULT_MESSAGE =
   "Hello, I'm interested in booking your apartment.";

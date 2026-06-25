@@ -5,12 +5,15 @@ import {
     Image,
     Page,
     StyleSheet,
+    Svg,
+    Circle,
     Text,
     View,
     renderToBuffer,
 } from "@react-pdf/renderer";
+import { SITE_URL } from "@/lib/constants";
+import { SITE_URL } from "@/lib/constants";
 import { formatNightsLabel } from "./dates";
-import { makeInvoiceId } from "./invoiceId";
 
 export type InvoiceData = {
     name: string;
@@ -23,8 +26,8 @@ export type InvoiceData = {
     invoiceId?: string;
 };
 
-function forReplace(value: unknown) {
-    return String(value ?? "").replace(/\$/g, "$$");
+function naira(display: string) {
+    return `₦${display}`;
 }
 
 function formatDateDisplay(date: Date) {
@@ -79,12 +82,18 @@ const SURFACE = "#faf7f7";
 
 const styles = StyleSheet.create({
     page: {
-        paddingTop: 48,
+        paddingTop: 40,
         paddingBottom: 48,
-        paddingHorizontal: 54,
-        fontSize: 10.5,
+        paddingHorizontal: 51,
+        fontSize: 10.75,
         fontFamily: "Helvetica",
         color: "#111827",
+        position: "relative",
+    },
+    watermark: {
+        position: "absolute",
+        top: 62,
+        right: -40,
     },
     headerRow: {
         flexDirection: "row",
@@ -92,18 +101,19 @@ const styles = StyleSheet.create({
         alignItems: "flex-start",
         borderBottomWidth: 1,
         borderBottomColor: LINE,
-        paddingBottom: 14,
+        paddingBottom: 16,
         marginBottom: 18,
         gap: 18,
     },
     brandCol: {
         flex: 1,
         flexShrink: 0,
-        maxWidth: 340,
+        minWidth: 0,
+        maxWidth: 360,
     },
     logo: {
-        width: 340,
-        height: 119,
+        width: 360,
+        height: 126,
         objectFit: "contain",
         objectPosition: "left center",
     },
@@ -132,14 +142,15 @@ const styles = StyleSheet.create({
     },
     badge: {
         marginTop: 10,
-        paddingVertical: 5,
+        paddingVertical: 6,
         paddingHorizontal: 10,
         borderWidth: 1,
-        borderColor: "#e5e7eb",
+        borderColor: LINE,
         borderRadius: 999,
         flexDirection: "row",
         alignItems: "center",
-        gap: 6,
+        gap: 8,
+        backgroundColor: "#fff",
     },
     badgeDot: {
         width: 8,
@@ -178,8 +189,8 @@ const styles = StyleSheet.create({
     },
     grid2: {
         flexDirection: "row",
-        gap: 12,
-        marginBottom: 16,
+        gap: 14,
+        marginBottom: 18,
     },
     panel: {
         flex: 1,
@@ -291,7 +302,13 @@ const styles = StyleSheet.create({
     },
     split: {
         flexDirection: "row",
-        gap: 12,
+        gap: 14,
+    },
+    summaryPanel: {
+        flex: 1.1,
+    },
+    supportPanel: {
+        flex: 0.9,
     },
     totalsWrap: {
         marginTop: 8,
@@ -333,7 +350,37 @@ const styles = StyleSheet.create({
         fontSize: 9,
         color: "#4b5563",
     },
+    discountRow: {
+        color: BRAND_RED,
+    },
+    paymentNote: {
+        marginTop: 8,
+        fontSize: 8.5,
+        color: "#4b5563",
+        lineHeight: 1.4,
+    },
+    websiteLink: {
+        fontSize: 9.5,
+        color: BRAND_RED,
+        marginTop: 4,
+    },
 });
+
+function Watermark() {
+    return (
+        <View style={styles.watermark} fixed>
+            <Svg width={340} height={340} viewBox="0 0 340 340">
+                <Circle
+                    cx={170}
+                    cy={170}
+                    r={170}
+                    fill="#c62828"
+                    opacity={0.07}
+                />
+            </Svg>
+        </View>
+    );
+}
 
 function PanelHeading({ title }: { title: string }) {
     return (
@@ -355,15 +402,33 @@ function InvoiceDocument(props: {
     checkIn: string;
     checkOut: string;
     nightsLabel: string;
-    amountDisplay: string;
+    lineItemDetail: string;
+    subtotalDisplay: string;
+    discountDisplay: string;
+    accommodationDisplay: string;
+    amountPaidDisplay: string;
+    lineItemDisplay: string;
+    hasDiscount: boolean;
+    hasProcessingFee: boolean;
+    processingFeeDisplay: string;
     businessName: string;
     businessPhone: string;
     businessEmail: string;
+    businessInstagram: string;
+    websiteUrl: string;
 }) {
-    const amount = `₦${props.amountDisplay}`;
+    const lineAmount = naira(props.lineItemDisplay);
+    const subtotal = naira(props.subtotalDisplay);
+    const discount =
+        props.hasDiscount && props.discountDisplay !== "0"
+            ? `−${naira(props.discountDisplay)}`
+            : naira("0");
+    const accommodation = naira(props.accommodationDisplay);
+    const amountPaid = naira(props.amountPaidDisplay);
     return (
         <Document>
             <Page size="A4" style={styles.page}>
+                <Watermark />
                 <View style={styles.headerRow}>
                     <View style={styles.brandCol}>
                         {props.logoSrc ? (
@@ -438,35 +503,48 @@ function InvoiceDocument(props: {
                                 Accommodation — {props.apartment}
                             </Text>
                             <Text style={styles.descSecondary}>
+                                {props.lineItemDetail}
+                            </Text>
+                            <Text style={styles.descSecondary}>
                                 Stay from {props.checkIn} to {props.checkOut} ·{" "}
                                 {props.nightsLabel}
                             </Text>
                         </View>
-                        <Text style={styles.tdAmount}>{amount}</Text>
+                        <Text style={styles.tdAmount}>{lineAmount}</Text>
                     </View>
                 </View>
 
                 <View style={styles.split}>
-                    <View style={styles.panel}>
+                    <View style={[styles.panel, styles.summaryPanel]}>
                         <PanelHeading title="Summary" />
                         <View style={styles.totalsWrap}>
                             <View style={styles.totalsRow}>
                                 <Text>Subtotal</Text>
-                                <Text>{amount}</Text>
+                                <Text>{subtotal}</Text>
                             </View>
-                            <View style={styles.totalsRow}>
+                            <View style={[styles.totalsRow, props.hasDiscount ? styles.discountRow : undefined]}>
                                 <Text>Discount applied</Text>
-                                <Text>₦0</Text>
+                                <Text>{discount}</Text>
                             </View>
                             <View style={[styles.totalsRow, styles.totalsDue]}>
                                 <Text>Total due</Text>
-                                <Text>{amount}</Text>
+                                <Text>{accommodation}</Text>
                             </View>
                         </View>
+                        {props.hasProcessingFee ? (
+                            <Text style={styles.paymentNote}>
+                                Amount paid: {amountPaid} (includes {naira(props.processingFeeDisplay)}{" "}
+                                payment processing — not part of accommodation total above).
+                            </Text>
+                        ) : null}
                     </View>
-                    <View style={styles.panel}>
+                    <View style={[styles.panel, styles.supportPanel]}>
                         <PanelHeading title="Support" />
                         <Text style={styles.lead}>{props.businessName}</Text>
+                        <Text style={styles.kv}>
+                            <Text style={styles.strong}>Website</Text>{" "}
+                            {props.websiteUrl}
+                        </Text>
                         <Text style={styles.kv}>
                             <Text style={styles.strong}>Phone</Text>{" "}
                             {props.businessPhone}
@@ -476,7 +554,8 @@ function InvoiceDocument(props: {
                             {props.businessEmail}
                         </Text>
                         <Text style={styles.kv}>
-                            <Text style={styles.strong}>IG:</Text> loftyxpherehome
+                            <Text style={styles.strong}>IG:</Text>{" "}
+                            {props.businessInstagram}
                         </Text>
                         <Text style={styles.hint}>
                             Please include your <Text style={styles.strong}>invoice #</Text>{" "}
@@ -511,12 +590,34 @@ export async function generateInvoicePdf(data: InvoiceData): Promise<{
     const businessPhone =
         process.env.BUSINESS_PHONE || process.env.CONTACT_PHONE || "08161122328";
     const businessEmail = process.env.BUSINESS_EMAIL || "hello@loftyxpherehomes.com";
+    const businessInstagram =
+        process.env.BUSINESS_INSTAGRAM?.trim() || "loftyxpherehome";
 
-    const amountDisplay = Number.isFinite(data.amountNgn)
-        ? Math.round(data.amountNgn).toLocaleString("en-NG")
-        : forReplace(data.amountNgn);
+    const financials = resolveInvoiceFinancials({
+        apartmentId: data.apartment,
+        checkIn: data.checkIn,
+        checkOut: data.checkOut,
+        amountPaidNgn: data.amountNgn,
+    });
 
-    const issueDate = formatDateDisplay(new Date());
+    const subtotalDisplay = formatNgnAmount(financials.subtotalNgn);
+    const discountDisplay = formatNgnAmount(financials.discountNgn);
+    const accommodationDisplay = formatNgnAmount(financials.accommodationNgn);
+    const amountPaidDisplay = formatNgnAmount(financials.amountPaidNgn);
+    const lineItemDisplay = formatNgnAmount(financials.lineItemNgn);
+    const processingFeeDisplay = formatNgnAmount(financials.processingFeeNgn);
+
+    const lineItemDetail =
+        financials.rackRateNgn != null && financials.nights != null
+            ? `${naira(formatNgnAmount(financials.rackRateNgn))} × ${financials.nights} night${financials.nights === 1 ? "" : "s"}`
+            : `Stay total before discount`;
+
+    const websiteUrl =
+        process.env.NEXT_PUBLIC_SITE_URL?.trim() ||
+        process.env.BUSINESS_WEBSITE?.trim() ||
+        SITE_URL;
+
+    const issueDate = formatDateDisplay(data.bookingDate);
 
     const logoPath = resolveInvoiceLogoPath();
     const logoSrc = logoPath ? logoPathToDataUri(logoPath) ?? undefined : undefined;
@@ -533,10 +634,20 @@ export async function generateInvoicePdf(data: InvoiceData): Promise<{
             checkIn={data.checkIn}
             checkOut={data.checkOut}
             nightsLabel={formatNightsLabel(data.checkIn, data.checkOut)}
-            amountDisplay={amountDisplay}
+            lineItemDetail={lineItemDetail}
+            subtotalDisplay={subtotalDisplay}
+            discountDisplay={discountDisplay}
+            accommodationDisplay={accommodationDisplay}
+            amountPaidDisplay={amountPaidDisplay}
+            lineItemDisplay={lineItemDisplay}
+            hasDiscount={financials.discountNgn > 0}
+            hasProcessingFee={financials.processingFeeNgn > 0}
+            processingFeeDisplay={processingFeeDisplay}
             businessName={businessName}
             businessPhone={businessPhone}
             businessEmail={businessEmail}
+            businessInstagram={businessInstagram}
+            websiteUrl={websiteUrl}
         />,
     );
 

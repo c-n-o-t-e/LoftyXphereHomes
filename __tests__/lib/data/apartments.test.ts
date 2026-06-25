@@ -39,7 +39,7 @@ describe('apartments data', () => {
     getActiveApartments()
       .filter((apt) => apt.beds === 1)
       .forEach((apt) => {
-        expect(apt.pricePerNight).toBe(100_000)
+        expect(apt.pricePerNight).toBe(120_000)
       })
   })
 
@@ -47,7 +47,7 @@ describe('apartments data', () => {
     getActiveApartments()
       .filter((apt) => apt.beds === 2)
       .forEach((apt) => {
-        expect(apt.pricePerNight).toBe(200_000)
+        expect(apt.pricePerNight).toBe(250_000)
       })
   })
 

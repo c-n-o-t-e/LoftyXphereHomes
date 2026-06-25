@@ -59,10 +59,46 @@ export const VIDEO_COMPRESS_TOOL_MAX_INPUT_BYTES =
     1024 *
     1024;
 
-/** Target output size for the compress tool — slightly under the upload cap for headroom. */
-export const VIDEO_COMPRESS_TOOL_TARGET_BYTES = Math.floor(
+/** Hard ceiling for temp tool output — must stay under the Supabase upload cap. */
+export const VIDEO_COMPRESS_TOOL_UPLOAD_CAP_BYTES = Math.floor(
     HERO_VIDEO_MAX_BYTES * 0.92,
 );
+
+const MB = 1024 * 1024;
+
+/** Pick a web-ready target size based on clip length (not the full upload cap). */
+export function resolveCompressToolTargetBytes(args: {
+    durationSec: number;
+    hasAudio: boolean;
+}) {
+    const envMb = Number.parseInt(
+        process.env.VIDEO_COMPRESS_TOOL_TARGET_MB ?? "",
+        10,
+    );
+    if (Number.isFinite(envMb) && envMb > 0) {
+        return Math.min(envMb * MB, VIDEO_COMPRESS_TOOL_UPLOAD_CAP_BYTES);
+    }
+
+    const durationSec = Math.max(1, args.durationSec);
+
+    // Hero-style loops — match HERO_VIDEO_VARIANTS desktop budget (~3–4 MB).
+    if (durationSec <= 15) {
+        return Math.min(VIDEO_COMPRESS_TOOL_UPLOAD_CAP_BYTES, 4 * MB);
+    }
+
+    // Short tours.
+    if (durationSec <= 45) {
+        return Math.min(VIDEO_COMPRESS_TOOL_UPLOAD_CAP_BYTES, 6 * MB);
+    }
+
+    // Long apartment tours — scale with length, cap before admin splits mobile/desktop.
+    const audioHeadroomMb = args.hasAudio ? 1.6 : 0;
+    const videoMb = (durationSec / 60) * 4.5;
+    const targetMb = Math.ceil(videoMb + audioHeadroomMb);
+    const clampedMb = Math.min(12, Math.max(6, targetMb));
+
+    return Math.min(VIDEO_COMPRESS_TOOL_UPLOAD_CAP_BYTES, clampedMb * MB);
+}
 
 /** Max clip length accepted by the temporary compress tool (default: 100s). */
 export const VIDEO_COMPRESS_TOOL_MAX_DURATION_SEC =

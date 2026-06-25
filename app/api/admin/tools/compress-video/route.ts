@@ -85,6 +85,7 @@ export async function POST(request: NextRequest) {
                 "Content-Type": "video/mp4",
                 "Content-Disposition": `attachment; filename="${downloadName}"`,
                 "X-Compressed-Bytes": String(result.bytes),
+                "X-Target-Bytes": String(result.targetMaxBytes),
                 "X-Upload-Limit-Bytes": String(HERO_VIDEO_MAX_BYTES),
                 "X-Output-Width": String(result.outputWidth),
                 "X-Output-Crf": String(result.crf),
@@ -106,8 +107,7 @@ export async function GET() {
         maxInputMb: Math.round(VIDEO_COMPRESS_TOOL_MAX_INPUT_BYTES / (1024 * 1024)),
         maxDurationSec: VIDEO_COMPRESS_TOOL_MAX_DURATION_SEC,
         uploadLimitMb: Math.round(HERO_VIDEO_MAX_BYTES / (1024 * 1024)),
-        targetOutputMb: Math.round(
-            (HERO_VIDEO_MAX_BYTES * 0.92) / (1024 * 1024),
-        ),
+        typicalHeroTargetMb: 4,
+        typicalTourTargetMb: 10,
     });
 }

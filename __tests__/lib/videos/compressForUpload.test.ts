@@ -1,13 +1,35 @@
 import {
-    HERO_VIDEO_MAX_BYTES,
-    VIDEO_COMPRESS_TOOL_TARGET_BYTES,
+    resolveCompressToolTargetBytes,
+    VIDEO_COMPRESS_TOOL_UPLOAD_CAP_BYTES,
 } from '@/lib/videos/constants'
 
-describe('video compress tool constants', () => {
-    it('targets output slightly below the upload cap', () => {
-        expect(VIDEO_COMPRESS_TOOL_TARGET_BYTES).toBeLessThan(HERO_VIDEO_MAX_BYTES)
-        expect(VIDEO_COMPRESS_TOOL_TARGET_BYTES).toBeGreaterThan(
-            HERO_VIDEO_MAX_BYTES * 0.85,
-        )
+describe('resolveCompressToolTargetBytes', () => {
+    const mb = (n: number) => n * 1024 * 1024
+
+    it('targets ~4 MB for short hero-style clips', () => {
+        expect(
+            resolveCompressToolTargetBytes({ durationSec: 8, hasAudio: true }),
+        ).toBe(4 * mb(1))
+    })
+
+    it('targets ~6 MB for medium clips', () => {
+        expect(
+            resolveCompressToolTargetBytes({ durationSec: 30, hasAudio: true }),
+        ).toBe(6 * mb(1))
+    })
+
+    it('targets ~10 MB for long tours with audio', () => {
+        const target = resolveCompressToolTargetBytes({
+            durationSec: 100,
+            hasAudio: true,
+        })
+        expect(target).toBeGreaterThanOrEqual(8 * mb(1))
+        expect(target).toBeLessThanOrEqual(12 * mb(1))
+    })
+
+    it('never exceeds the upload cap', () => {
+        expect(
+            resolveCompressToolTargetBytes({ durationSec: 100, hasAudio: true }),
+        ).toBeLessThanOrEqual(VIDEO_COMPRESS_TOOL_UPLOAD_CAP_BYTES)
     })
 })

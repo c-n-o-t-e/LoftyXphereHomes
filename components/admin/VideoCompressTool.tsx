@@ -11,7 +11,8 @@ type ToolConfig = {
     maxInputMb?: number;
     maxDurationSec?: number;
     uploadLimitMb?: number;
-    targetOutputMb?: number;
+    typicalHeroTargetMb?: number;
+    typicalTourTargetMb?: number;
 };
 
 type CompressResult = {
@@ -167,12 +168,12 @@ export function VideoCompressTool() {
                         Upload your large source file (up to{" "}
                         <strong>{config.maxInputMb} MB</strong>,{" "}
                         <strong>{config.maxDurationSec} seconds</strong> max). We
-                        re-encode it to under{" "}
-                        <strong>{config.targetOutputMb} MB</strong> so it passes the{" "}
-                        <strong>{config.uploadLimitMb} MB</strong> upload limit.
-                        Original audio is kept when present. Then upload the downloaded
-                        file via <strong>Admin → Hero video</strong> or apartment tour
-                        video.
+                        re-encode to a web-ready size — about{" "}
+                        <strong>{config.typicalHeroTargetMb} MB</strong> for short hero
+                        loops or <strong>~{config.typicalTourTargetMb} MB</strong> for
+                        long tours (not the full {config.uploadLimitMb} MB upload cap).
+                        Original audio is kept when present. Admin then creates the final
+                        mobile + desktop streams when you publish.
                     </p>
                     <p className="text-sm text-gray-600 mt-2">
                         Run this on your local machine (<code>npm run dev</code>) for

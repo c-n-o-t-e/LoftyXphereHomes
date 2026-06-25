@@ -4,8 +4,8 @@ import { join } from "path";
 import { tmpdir } from "os";
 import {
     ALLOWED_HERO_VIDEO_MIME_TYPES,
+    resolveCompressToolTargetBytes,
     VIDEO_COMPRESS_TOOL_MAX_DURATION_SEC,
-    VIDEO_COMPRESS_TOOL_TARGET_BYTES,
 } from "./constants";
 import {
     appendVideoTranscodeArgs,
@@ -23,6 +23,7 @@ export type CompressVideoForUploadResult = {
     outputWidth: number;
     crf: number;
     hasAudio: boolean;
+    targetMaxBytes: number;
 };
 
 const WIDTH_STEPS = [1920, 1280, 960] as const;
@@ -80,8 +81,6 @@ export async function compressVideoForUpload(
         fileName?: string;
     },
 ): Promise<CompressVideoForUploadResult> {
-    const targetMaxBytes =
-        options?.targetMaxBytes ?? VIDEO_COMPRESS_TOOL_TARGET_BYTES;
     const maxDurationSec =
         options?.maxDurationSec ?? VIDEO_COMPRESS_TOOL_MAX_DURATION_SEC;
 
@@ -114,6 +113,12 @@ export async function compressVideoForUpload(
 
         const hasAudio = await probeHasAudioStream(inputPath);
         const effectiveDuration = Math.max(1, Math.min(durationSec, maxDurationSec));
+        const targetMaxBytes =
+            options?.targetMaxBytes ??
+            resolveCompressToolTargetBytes({
+                durationSec: effectiveDuration,
+                hasAudio,
+            });
         const maxRateKbps = estimateVideoBitrateKbps({
             targetBytes: targetMaxBytes,
             durationSec: effectiveDuration,
@@ -141,6 +146,7 @@ export async function compressVideoForUpload(
                         outputWidth: maxWidth,
                         crf,
                         hasAudio,
+                        targetMaxBytes,
                     };
                 }
             }

@@ -1,20 +1,33 @@
 export const CHECK_IN_TIME = "2:00 PM";
 export const CHECK_OUT_TIME = "11:00 AM";
 
-/**
- * Length-of-stay discounts: NGN off the daily rate, per night.
- * 3–6 nights: ₦10,000/night | 7–21 nights: ₦20,000/night | 28+ nights: ₦30,000/night
- */
-export const DISCOUNT_PER_NIGHT_3_6 = 10_000;   // 3–6 nights
-export const DISCOUNT_PER_NIGHT_1_WEEK_TO_3_WEEKS = 20_000; // 7–21 nights
-export const DISCOUNT_PER_NIGHT_1_MONTH_PLUS = 30_000;      // 28+ nights
+/** Rack rates (full single-night price before length-of-stay reductions). */
+export const ONE_BED_RACK_RATE_NGN = 120_000;
+export const TWO_BED_RACK_RATE_NGN = 250_000;
 
-/** Returns discount per night in NGN for a given stay length (0 if under 3 nights). */
+/**
+ * Length-of-stay savings off the rack nightly rate (same absolute amounts for all units).
+ * Effective nightly rate = rack rate − discount per night for the whole stay tier.
+ *
+ * 1 night: full rack | 2 nights: −₦10k/night | 3–6: −₦20k | 7–21: −₦30k | 28+: −₦40k
+ */
+export const DISCOUNT_PER_NIGHT_2_NIGHTS = 10_000;
+export const DISCOUNT_PER_NIGHT_3_6 = 20_000;
+export const DISCOUNT_PER_NIGHT_1_WEEK_TO_3_WEEKS = 30_000;
+export const DISCOUNT_PER_NIGHT_1_MONTH_PLUS = 40_000;
+
+/** Per-night discount (NGN) for a stay of `nights` length. */
 export function getStayDiscountPerNight(nights: number): number {
-  if (nights < 3) return 0;
+  if (nights <= 1) return 0;
+  if (nights === 2) return DISCOUNT_PER_NIGHT_2_NIGHTS;
   if (nights <= 6) return DISCOUNT_PER_NIGHT_3_6;
   if (nights <= 21) return DISCOUNT_PER_NIGHT_1_WEEK_TO_3_WEEKS;
   return DISCOUNT_PER_NIGHT_1_MONTH_PLUS;
+}
+
+/** Effective nightly rate after length-of-stay discount. */
+export function getEffectiveNightlyRate(rackRateNgn: number, nights: number): number {
+  return Math.max(0, rackRateNgn - getStayDiscountPerNight(nights));
 }
 
 /** Total stay discount in NGN (discount per night × nights). */
@@ -83,4 +96,3 @@ export function getWhatsAppChatUrl(
   const text = encodeURIComponent(message);
   return `https://wa.me/${digits}?text=${text}`;
 }
-

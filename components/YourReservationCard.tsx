@@ -8,8 +8,9 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { PAYSTACK_FEE } from "@/lib/constants";
-import { computeBookingQuote } from "@/lib/pricing";
+import { computeBookingQuote, getStayDiscountTiers } from "@/lib/pricing";
 import { DatePickerCalendar } from "@/components/DatePickerCalendar";
+import { StayDiscountPromo } from "@/components/StayDiscountPromo";
 import {
   formatDateForInput,
   formatDisplayDate,
@@ -220,6 +221,7 @@ export function YourReservationCard({
   return (
     <div className="sticky top-24 bg-white border border-black/10 rounded-2xl p-6 shadow-lg">
       <h2 className="text-lg font-medium text-black/70 mb-4">Your Reservation</h2>
+      <StayDiscountPromo rackRateNgn={pricePerNight} className="mb-4" />
       <div className="border-b border-black/10 pb-4 mb-4">
         {calculation ? (
           <p className="text-2xl font-bold text-black">
@@ -328,7 +330,7 @@ export function YourReservationCard({
         <div className="space-y-2 mb-6 text-sm">
           <div className="flex justify-between text-black/80">
             <span>
-              {formatPrice(pricePerNight)} × {calculation.nights} day
+              {formatPrice(pricePerNight)} × {calculation.nights} night
               {calculation.nights !== 1 ? "s" : ""}
             </span>
             <span>{formatPrice(calculation.subtotal)}</span>
@@ -339,23 +341,31 @@ export function YourReservationCard({
                 Stay discount
                 <span className="relative group">
                   <Info className="h-4 w-4 text-black/40 cursor-help shrink-0" aria-label="Discount breakdown" />
-                  <span className="absolute left-0 bottom-full mb-1 hidden group-hover:block z-10 w-64 p-3 text-left text-xs font-normal text-white bg-gray-900 rounded-lg shadow-lg">
+                  <span className="absolute left-0 bottom-full mb-1 hidden group-hover:block z-10 w-72 p-3 text-left text-xs font-normal text-white bg-gray-900 rounded-lg shadow-lg">
                     <p className="text-white/95 font-semibold">Length-of-stay discount</p>
                     <p className="mt-1.5 text-white/80 leading-relaxed">
-                      We apply a discount to your daily rate based on how long you stay. The discount is given per night and increases with longer stays.
+                      Your nightly rate drops the longer you stay. Savings apply to every night in your booking.
                     </p>
                     <ul className="mt-2.5 space-y-1.5 text-white/90 border-t border-white/20 pt-2">
-                      <li><strong>3–6 nights:</strong> {formatPrice(10_000)} off each night</li>
-                      <li><strong>1 week – 3 weeks:</strong> {formatPrice(20_000)} off each night</li>
-                      <li><strong>1 month or more:</strong> {formatPrice(30_000)} off each night</li>
+                      {getStayDiscountTiers(pricePerNight)
+                        .filter((t) => t.savingsPerNightNgn > 0)
+                        .map((tier) => (
+                          <li key={tier.label}>
+                            <strong>{tier.label}:</strong>{" "}
+                            {formatPrice(tier.effectiveNightlyRateNgn)}/night
+                          </li>
+                        ))}
                     </ul>
-                    <p className="mt-2 text-white/70 text-[11px]">Minimum 3-night stay required for discount.</p>
                   </span>
                 </span>
               </span>
               <span>-{formatPrice(calculation.discountAmount)}</span>
             </div>
           )}
+          <div className="flex justify-between text-black/80">
+            <span>Accommodation</span>
+            <span>{formatPrice(calculation.subtotal - calculation.discountAmount)}</span>
+          </div>
           <div className="flex justify-between text-black/80">
             <span>Paystack Fee</span>
             <span>{formatPrice(PAYSTACK_FEE)}</span>

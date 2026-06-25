@@ -89,7 +89,7 @@ function makeWebhookRequest(reference: string) {
 
 const checkIn = "2026-08-10";
 const checkOut = "2026-08-14";
-const quote = computeBookingQuote(100_000, checkIn, checkOut);
+const quote = computeBookingQuote(120_000, checkIn, checkOut);
 if (!quote) throw new Error("test quote setup failed");
 
 const paystackPayload = {

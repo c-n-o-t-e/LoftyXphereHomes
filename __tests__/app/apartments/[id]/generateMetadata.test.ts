@@ -1,5 +1,15 @@
-import ApartmentDetailPage, { generateMetadata } from '@/app/apartments/[id]/page'
+import { generateMetadata } from '@/app/apartments/[id]/page'
 import { getApartmentById } from '@/lib/data/apartments'
+
+jest.mock('@/lib/data/getApartmentImages', () => ({
+  getApartmentImageSets: jest.fn(async () => [
+    {
+      thumbnail: 'https://example.com/thumb.jpg',
+      medium: 'https://example.com/medium.jpg',
+      large: 'https://example.com/large.jpg',
+    },
+  ]),
+}))
 
 describe('Apartment Detail Page - generateMetadata', () => {
   it('returns metadata when apartment exists', async () => {

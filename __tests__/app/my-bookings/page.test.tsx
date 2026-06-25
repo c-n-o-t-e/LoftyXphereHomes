@@ -33,6 +33,10 @@ describe("MyBookingsPage", () => {
         });
     });
 
+    afterEach(() => {
+        jest.restoreAllMocks();
+    });
+
     it("redirects unauthenticated users to login", async () => {
         (useAuth as jest.Mock).mockReturnValue({
             user: null,
@@ -52,10 +56,19 @@ describe("MyBookingsPage", () => {
             isLoading: false,
         });
 
-        jest.spyOn(globalThis, "fetch").mockResolvedValueOnce({
-            ok: true,
-            json: async () => ({ bookings: [], nextCursor: null }),
-        } as Response);
+        jest.spyOn(globalThis, "fetch").mockImplementation(async (input) => {
+            const url = String(input);
+            if (url.includes("/api/apartments/images")) {
+                return {
+                    ok: true,
+                    json: async () => ({ images: {} }),
+                } as Response;
+            }
+            return {
+                ok: true,
+                json: async () => ({ bookings: [], nextCursor: null }),
+            } as Response;
+        });
 
         renderWithQueryClient(<MyBookingsPage />);
 
@@ -77,27 +90,46 @@ describe("MyBookingsPage", () => {
         const futureCheckOut = new Date(futureCheckIn);
         futureCheckOut.setDate(futureCheckOut.getDate() + 3);
 
-        jest.spyOn(globalThis, "fetch").mockResolvedValueOnce({
-            ok: true,
-            json: async () => ({
-                bookings: [
-                    {
-                        id: "bk_1",
-                        reference: "ref_1",
-                        apartmentId: "lofty-horizon-suite",
-                        checkIn: futureCheckIn.toISOString().slice(0, 10),
-                        checkOut: futureCheckOut.toISOString().slice(0, 10),
-                        nights: 3,
-                        amountPaid: 300_000,
-                        status: "PAID",
-                        bookerName: "Jane Doe",
-                        createdAt: new Date().toISOString(),
-                        invoiceReady: false,
-                    },
-                ],
-                nextCursor: null,
-            }),
-        } as Response);
+        jest.spyOn(globalThis, "fetch").mockImplementation(async (input) => {
+            const url = String(input);
+            if (url.includes("/api/apartments/images")) {
+                return {
+                    ok: true,
+                    json: async () => ({
+                        images: {
+                            "lofty-horizon-suite": [
+                                {
+                                    thumbnail: "https://example.com/thumb.jpg",
+                                    medium: "https://example.com/medium.jpg",
+                                    large: "https://example.com/large.jpg",
+                                },
+                            ],
+                        },
+                    }),
+                } as Response;
+            }
+            return {
+                ok: true,
+                json: async () => ({
+                    bookings: [
+                        {
+                            id: "bk_1",
+                            reference: "ref_1",
+                            apartmentId: "lofty-horizon-suite",
+                            checkIn: futureCheckIn.toISOString().slice(0, 10),
+                            checkOut: futureCheckOut.toISOString().slice(0, 10),
+                            nights: 3,
+                            amountPaid: 300_000,
+                            status: "PAID",
+                            bookerName: "Jane Doe",
+                            createdAt: new Date().toISOString(),
+                            invoiceReady: false,
+                        },
+                    ],
+                    nextCursor: null,
+                }),
+            } as Response;
+        });
 
         renderWithQueryClient(<MyBookingsPage />);
 

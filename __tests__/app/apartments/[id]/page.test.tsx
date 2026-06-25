@@ -13,6 +13,16 @@ jest.mock('next/navigation', () => ({
   notFound: jest.fn(),
 }))
 
+jest.mock('@/lib/data/getApartmentImages', () => ({
+  getApartmentImageSets: jest.fn(async () => [
+    {
+      thumbnail: 'https://example.com/thumb.jpg',
+      medium: 'https://example.com/medium.jpg',
+      large: 'https://example.com/large.jpg',
+    },
+  ]),
+}))
+
 describe('Apartment Detail Page', () => {
   const waitForReservationCard = () =>
     waitFor(() => expect(screen.getByText('Book Apartment')).toBeInTheDocument())

@@ -203,3 +203,14 @@ model ContactMessage {
   @@index([email])
   @@index([category])
 }
+
+// --- Shared rate-limit counters (serverless-safe; all instances read/write Postgres) ---
+model RateLimitBucket {
+  bucketKey   String   @id @map("bucket_key")
+  count       Int      @default(1)
+  windowStart DateTime @map("window_start")
+  expiresAt   DateTime @map("expires_at")
+
+  @@index([expiresAt])
+  @@map("rate_limit_buckets")
+}

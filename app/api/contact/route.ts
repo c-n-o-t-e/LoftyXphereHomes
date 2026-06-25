@@ -1,32 +1,8 @@
 import { NextRequest, NextResponse, after } from "next/server";
 import { contactMessageBodySchema } from "@/lib/validation/schemas";
 import { prisma } from "@/lib/db";
-
-type RateLimitEntry = { count: number; windowStartMs: number };
-const RATE_LIMIT_WINDOW_MS = 10 * 60 * 1000; // 10 minutes
-const RATE_LIMIT_MAX = 5; // per IP per window
-const rateLimit = new Map<string, RateLimitEntry>();
-
-function getClientIp(request: NextRequest): string {
-    const xff = request.headers.get("x-forwarded-for")?.split(",")[0]?.trim();
-    const realIp = request.headers.get("x-real-ip")?.trim();
-    return xff || realIp || "unknown";
-}
-
-function isRateLimited(ip: string): boolean {
-    const now = Date.now();
-    const entry = rateLimit.get(ip);
-    if (!entry) {
-        rateLimit.set(ip, { count: 1, windowStartMs: now });
-        return false;
-    }
-    if (now - entry.windowStartMs > RATE_LIMIT_WINDOW_MS) {
-        rateLimit.set(ip, { count: 1, windowStartMs: now });
-        return false;
-    }
-    entry.count += 1;
-    return entry.count > RATE_LIMIT_MAX;
-}
+import { getClientIp } from "@/lib/http/client-ip";
+import { checkContactRateLimit } from "@/lib/rate-limit/contact";
 
 export async function POST(request: NextRequest) {
     // Parse raw body first so honeypot can short-circuit even if other fields are invalid.
@@ -60,7 +36,22 @@ export async function POST(request: NextRequest) {
     const data = parsed.data;
 
     const ip = getClientIp(request);
-    if (isRateLimited(ip)) {
+
+    let rateLimit: { limited: boolean };
+    try {
+        rateLimit = await checkContactRateLimit(ip, data.email);
+    } catch (err) {
+        console.error("contact: rate limit check failed", err);
+        return NextResponse.json(
+            {
+                error: "We couldn’t send your message right now. Please try again later.",
+                code: "CONTACT_DELIVERY_FAILED",
+            },
+            { status: 503 },
+        );
+    }
+
+    if (rateLimit.limited) {
         return NextResponse.json(
             {
                 error: "Too many requests. Please wait a few minutes and try again.",

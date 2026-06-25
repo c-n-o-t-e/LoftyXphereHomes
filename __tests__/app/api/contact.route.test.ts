@@ -18,6 +18,10 @@ jest.mock("@/lib/email/contact-notifications", () => ({
   sendContactFormEmails: jest.fn().mockResolvedValue(undefined),
 }));
 
+jest.mock("@/lib/rate-limit/contact", () => ({
+  checkContactRateLimit: jest.fn().mockResolvedValue({ limited: false, count: 1 }),
+}));
+
 jest.mock("@/lib/db", () => ({
   prisma: {
     contactMessage: {
@@ -31,6 +35,7 @@ const { prisma } = require("@/lib/db");
 const {
   sendContactFormEmails,
 } = require("@/lib/email/contact-notifications");
+const { checkContactRateLimit } = require("@/lib/rate-limit/contact");
 
 function makeReq(body: unknown, headers?: Record<string, string>): NextRequest {
   const hdrs = new Map(Object.entries(headers ?? {}).map(([k, v]) => [k.toLowerCase(), v]));
@@ -98,6 +103,61 @@ describe("POST /api/contact", () => {
     expect(json).toEqual({ ok: true });
     expect(prisma.contactMessage.create).not.toHaveBeenCalled();
     expect(sendContactFormEmails).not.toHaveBeenCalled();
+  });
+
+  it("returns 429 when the shared Postgres rate limit is exceeded", async () => {
+    (checkContactRateLimit as jest.Mock).mockResolvedValueOnce({
+      limited: true,
+      count: 6,
+    });
+
+    const res = await POST(
+      makeReq(
+        {
+          name: "Jane Doe",
+          email: "jane@example.com",
+          phone: "+2348161122328",
+          category: "booking",
+          message: "Hello again",
+          website: "",
+        },
+        { "x-forwarded-for": "1.2.3.4" },
+      ),
+    );
+    const json = await res.json();
+
+    expect(res.status).toBe(429);
+    expect(json.code).toBe("RATE_LIMITED");
+    expect(prisma.contactMessage.create).not.toHaveBeenCalled();
+    expect(checkContactRateLimit).toHaveBeenCalledWith(
+      "1.2.3.4",
+      "jane@example.com",
+    );
+  });
+
+  it("fails closed when the rate limit check errors", async () => {
+    (checkContactRateLimit as jest.Mock).mockRejectedValueOnce(
+      new Error("db unavailable"),
+    );
+
+    const res = await POST(
+      makeReq(
+        {
+          name: "Jane Doe",
+          email: "jane@example.com",
+          phone: "+2348161122328",
+          category: "booking",
+          message: "Hello, I need help with a booking.",
+          website: "",
+        },
+        { "x-forwarded-for": "1.2.3.4" },
+      ),
+    );
+    const json = await res.json();
+
+    expect(res.status).toBe(503);
+    expect(json.code).toBe("CONTACT_DELIVERY_FAILED");
+    expect(prisma.contactMessage.create).not.toHaveBeenCalled();
   });
 });
 

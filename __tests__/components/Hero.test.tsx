@@ -28,11 +28,12 @@ describe('Hero', () => {
     expect(screen.getByText('Stay Different.')).toBeVisible()
   })
 
-  it('renders video visible immediately with eager preload', () => {
+  it('renders video with metadata preload and poster for LCP', () => {
     const { container } = render(<Hero heroVideo={mockHeroVideo} />)
     const video = container.querySelector('video')
     expect(video).toBeInTheDocument()
-    expect(video).toHaveAttribute('preload', 'auto')
+    expect(video).toHaveAttribute('preload', 'metadata')
+    expect(video).toHaveAttribute('poster', mockHeroVideo.posterUrl)
     expect(video).not.toHaveClass('opacity-0')
 
     const sources = video?.querySelectorAll('source')

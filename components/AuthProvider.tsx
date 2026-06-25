@@ -147,15 +147,18 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     const loadInitialSession = async () => {
       try {
         const {
-          data: { session: initialSession },
+          data: { user: initialUser },
           error,
-        } = await supabase.auth.getSession();
+        } = await supabase.auth.getUser();
         if (cancelled) return;
         if (error) throw error;
+        const initialSession = initialUser
+          ? (await supabase.auth.getSession()).data.session
+          : null;
         setSession(initialSession);
-        setUser(initialSession?.user ?? null);
-        if (initialSession?.user?.id) {
-          ensureSessionTimeoutStorageInitialized(initialSession.user.id);
+        setUser(initialUser ?? null);
+        if (initialUser?.id) {
+          ensureSessionTimeoutStorageInitialized(initialUser.id);
         }
       } catch (err) {
         if (cancelled) return;

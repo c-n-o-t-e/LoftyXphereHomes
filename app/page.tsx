@@ -17,20 +17,12 @@ export default async function Home() {
 
   return (
     <>
-      {heroVideo?.mobileMp4Url ? (
+      {heroVideo?.posterUrl ? (
         <link
           rel="preload"
-          as="video"
-          href={heroVideo.mobileMp4Url}
-          media="(max-width: 768px)"
-        />
-      ) : null}
-      {heroVideo?.desktopMp4Url ? (
-        <link
-          rel="preload"
-          as="video"
-          href={heroVideo.desktopMp4Url}
-          media="(min-width: 769px)"
+          as="image"
+          href={heroVideo.posterUrl}
+          fetchPriority="high"
         />
       ) : null}
 

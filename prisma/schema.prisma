@@ -42,6 +42,11 @@ model Booking {
   // Optional: Link to Supabase Auth user (set when user verifies email)
   userId       String?  // Supabase auth.users.id
 
+  // Paystack refund state for date-conflict / overlap cancellations
+  refundStatus            BookingRefundStatus @default(NONE)
+  paystackRefundReference String?
+  refundedAt              DateTime?
+
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 
@@ -64,6 +69,13 @@ enum BookingStatus {
   PENDING   // payment initiated, not yet confirmed
   PAID      // Paystack charge successful
   CANCELLED
+}
+
+enum BookingRefundStatus {
+  NONE
+  PENDING
+  REFUNDED
+  FAILED
 }
 
 enum BookingSource {
@@ -99,6 +111,7 @@ enum BookingJobType {
 
 enum BookingJobStatus {
   PENDING
+  PROCESSING
   SUCCESS
   FAILED
 }

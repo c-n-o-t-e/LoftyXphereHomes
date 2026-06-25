@@ -11,6 +11,8 @@ import {
     formatBookingConflictMessage,
 } from "@/lib/booking";
 import { computeBookingQuote, nightsBetweenStayDates, totalNgnToKobo } from "@/lib/pricing";
+import { getClientIp } from "@/lib/http/client-ip";
+import { checkPaystackInitRateLimit } from "@/lib/rate-limit/paystack";
 import { parseJsonBody } from "@/lib/validation/http";
 import { paystackInitializeBodySchema } from "@/lib/validation/schemas";
 
@@ -35,6 +37,29 @@ export async function POST(request: NextRequest) {
 
     const { email, name, phone, apartmentId, checkIn, checkOut } =
         parsedBody.data;
+
+    const ip = getClientIp(request);
+    try {
+        const rateLimit = await checkPaystackInitRateLimit(ip, email);
+        if (rateLimit.limited) {
+            return NextResponse.json(
+                {
+                    error: "Too many payment attempts. Please wait a few minutes and try again.",
+                    code: "RATE_LIMITED",
+                },
+                { status: 429 },
+            );
+        }
+    } catch (rateLimitError) {
+        console.error("paystack initialize: rate limit check failed", rateLimitError);
+        return NextResponse.json(
+            {
+                error: "Payment is temporarily unavailable. Please try again shortly.",
+                code: "RATE_LIMIT_UNAVAILABLE",
+            },
+            { status: 503 },
+        );
+    }
 
     const apartment = getApartmentById(apartmentId);
     if (!apartment) {

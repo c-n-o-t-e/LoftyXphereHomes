@@ -28,6 +28,10 @@ jest.mock("@/lib/paystack", () => ({
   verifyWebhookSignature: jest.fn(),
 }));
 
+jest.mock("@/lib/rate-limit/paystack", () => ({
+  checkPaystackInitRateLimit: jest.fn().mockResolvedValue({ limited: false, count: 1 }),
+}));
+
 jest.mock("@/lib/booking", () => {
   const actual = jest.requireActual("@/lib/booking");
   return {

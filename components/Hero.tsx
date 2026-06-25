@@ -22,7 +22,8 @@ export default function Hero({ heroVideo = null }: HeroProps) {
             muted
             loop
             playsInline
-            preload="auto"
+            preload="metadata"
+            poster={heroVideo.posterUrl || undefined}
             className="absolute inset-0 h-full w-full object-cover"
           >
             {heroVideo.mobileMp4Url ? (

@@ -3,6 +3,7 @@ import Image from "next/image";
 import Link from "next/link";
 import { notFound } from "next/navigation";
 import { getBlogPostById } from "@/lib/data/blog";
+import { sanitizeBlogHtml } from "@/lib/sanitize/html";
 import { ArrowLeft, Calendar, Clock, User } from "lucide-react";
 
 interface PageProps {
@@ -37,6 +38,8 @@ export default async function BlogPostPage({ params }: PageProps) {
   if (!post) {
     notFound();
   }
+
+  const safeContent = sanitizeBlogHtml(post.content);
 
   const formatDate = (dateString: string) => {
     const date = new Date(dateString);
@@ -92,7 +95,7 @@ export default async function BlogPostPage({ params }: PageProps) {
         <article className="prose prose-lg max-w-none">
           <div
             className="text-black/80 leading-relaxed"
-            dangerouslySetInnerHTML={{ __html: post.content }}
+            dangerouslySetInnerHTML={{ __html: safeContent }}
           />
 
           {/* Tags */}

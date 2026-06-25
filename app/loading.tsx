@@ -1,3 +1,5 @@
+import { FeaturedApartmentsSkeleton } from "@/components/home/FeaturedApartmentsSkeleton";
+
 export default function Loading() {
-  return null;
+  return <FeaturedApartmentsSkeleton />;
 }

@@ -1,17 +1,18 @@
 import { NextRequest, NextResponse } from "next/server";
 import { processPostBookingJobs } from "@/lib/ops/bookingJobs";
+import { timingSafeEqualAny } from "@/lib/security/timing";
 
 function isAuthorized(request: NextRequest): boolean {
     const allowedSecrets = [
         process.env.BOOKING_JOBS_SECRET?.trim(),
         process.env.CRON_SECRET?.trim(),
-    ].filter(Boolean);
+    ].filter((value): value is string => Boolean(value));
     if (allowedSecrets.length === 0) return false;
 
     const header =
         request.headers.get("x-booking-jobs-secret") ||
         request.headers.get("authorization")?.replace(/^Bearer\s+/i, "");
-    return Boolean(header && allowedSecrets.includes(header));
+    return timingSafeEqualAny(header, allowedSecrets);
 }
 
 function wantsImmediateRun(request: NextRequest): boolean {

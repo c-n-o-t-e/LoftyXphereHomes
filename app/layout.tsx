@@ -1,5 +1,6 @@
 import type { Metadata } from "next";
 import { Inter, Playfair_Display } from "next/font/google";
+import Link from "next/link";
 import "./globals.css";
 import Navbar from "@/components/Navbar";
 import Footer from "@/components/Footer";
@@ -74,10 +75,18 @@ export default function RootLayout({
       <body
         className={`${inter.variable} ${playfair.variable} font-sans antialiased overflow-x-hidden`}
       >
+        <Link
+          href="#main-content"
+          className="sr-only focus:not-sr-only focus:absolute focus:top-4 focus:left-4 focus:z-[100] focus:rounded-md focus:bg-white focus:px-4 focus:py-2 focus:text-sm focus:font-medium focus:text-black focus:shadow-lg"
+        >
+          Skip to main content
+        </Link>
         <QueryProvider>
           <AuthProvider>
             <Navbar />
-            <main className="min-h-screen">{children}</main>
+            <main id="main-content" className="min-h-screen">
+              {children}
+            </main>
             <Footer />
             <WhatsAppFloatButton />
             <Toaster richColors position="top-center" />

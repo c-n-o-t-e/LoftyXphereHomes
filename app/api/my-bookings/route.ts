@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { createClient } from "@supabase/supabase-js";
+import { myBookingsWhereForUser } from "@/lib/booking/myBookings";
 import { parseHeaders, parseSearchParams } from "@/lib/validation/http";
 import {
     bearerAuthHeaderSchema,
@@ -24,7 +25,7 @@ const BOOKING_LIST_SELECT = {
 
 /**
  * GET /api/my-bookings?limit=50&cursor=<bookingId>
- * Returns paginated bookings for the authenticated user (by email).
+ * Returns paginated bookings for the authenticated user (userId + email).
  */
 export async function GET(request: NextRequest) {
     const parsedHeaders = parseHeaders(request, bearerAuthHeaderSchema);
@@ -62,7 +63,7 @@ export async function GET(request: NextRequest) {
         error: authError,
     } = await supabase.auth.getUser(token);
 
-    if (authError || !user?.email) {
+    if (authError || !user?.email || !user.id) {
         console.warn("my-bookings: invalid token", {
             hasUser: Boolean(user),
             hasEmail: Boolean(user?.email),
@@ -81,10 +82,10 @@ export async function GET(request: NextRequest) {
         const { prisma } = await import("@/lib/db");
 
         const bookings = await prisma.booking.findMany({
-            where: {
-                bookerEmail: user.email,
-                status: { in: ["PAID", "PENDING"] },
-            },
+            where: myBookingsWhereForUser({
+                id: user.id,
+                email: user.email,
+            }),
             orderBy: [{ checkIn: "desc" }, { id: "desc" }],
             take: limit + 1,
             ...(cursor

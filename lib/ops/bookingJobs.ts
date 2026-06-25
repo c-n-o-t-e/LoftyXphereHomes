@@ -354,6 +354,18 @@ export async function processPostBookingJobs(args?: {
     );
 
     for (const job of orderedJobs) {
+        const claimed = await prisma.bookingJob.updateMany({
+            where: {
+                id: job.id,
+                status: { in: ["PENDING", "FAILED"] },
+                attempts: { lt: MAX_ATTEMPTS },
+            },
+            data: { status: "PROCESSING", updatedAt: new Date() },
+        });
+        if (claimed.count === 0) {
+            continue;
+        }
+
         try {
             await runJob(job.bookingId, job.type as BookingJobType);
             await prisma.bookingJob.update({

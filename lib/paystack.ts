@@ -1,4 +1,5 @@
 import crypto from "crypto";
+import { timingSafeEqualHex } from "@/lib/security/timing";
 
 const PAYSTACK_VERIFY = "https://api.paystack.co/transaction/verify";
 const PAYSTACK_REFUND = "https://api.paystack.co/refund";
@@ -43,7 +44,7 @@ export function verifyWebhookSignature(payload: string, signature: string): bool
     .createHmac("sha512", secretKey)
     .update(payload)
     .digest("hex");
-  return hash === signature;
+  return timingSafeEqualHex(hash, signature);
 }
 
 export interface PaystackRefundResult {

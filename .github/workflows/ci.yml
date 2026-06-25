@@ -29,4 +29,8 @@ jobs:
 
       - run: npm test -- --ci
 
+      - name: Dependency audit (advisory)
+        run: npm audit --audit-level=high
+        continue-on-error: true
+
       - run: npm run build

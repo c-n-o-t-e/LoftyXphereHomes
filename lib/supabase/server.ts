@@ -49,19 +49,16 @@ export async function sendMagicLink(email: string, nextPath?: string | null) {
 }
 
 /**
- * Get user by email from Supabase Auth.
+ * Get user by email from Supabase Auth (paginated lookup).
  */
 export async function getUserByEmail(email: string) {
-    const supabase = createServerSupabaseClient();
-
-    const { data, error } = await supabase.auth.admin.listUsers();
-
-    if (error) {
-        console.error("Error listing users:", error);
+    try {
+        const { getSupabaseUserByEmail } = await import("@/lib/supabase/adminUsers");
+        return await getSupabaseUserByEmail(email);
+    } catch (error) {
+        console.error("Error looking up user by email:", error);
         return null;
     }
-
-    return data.users.find((user) => user.email === email) || null;
 }
 
 /**

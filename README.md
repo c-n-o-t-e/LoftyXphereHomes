@@ -14,48 +14,39 @@ A production-ready website for LoftyXphereHomes, a premium shortlet apartment re
 
 ## 🛠 Tech Stack
 
-- **Next.js 14+** (App Router)
+- **Next.js 16** (App Router, Server Components)
 - **TypeScript**
-- **Tailwind CSS**
-- **ShadCN/UI** (Form, Modal, Carousel, Navigation)
-- **Framer Motion** (Animations)
-- **React Hook Form** + **Zod** (Form validation)
-- **next/image** (Optimized images)
+- **Tailwind CSS 4**
+- **Prisma 7** + **Supabase** (Postgres, Auth, Storage)
+- **Paystack** (payments + webhooks)
+- **Resend** (transactional email)
+- **ShadCN/UI**, **Framer Motion**, **TanStack Query**
+- **React Hook Form** + **Zod** (shared API + form validation)
+- **Jest** + Testing Library (80% coverage target)
 
 ## 📁 Project Structure
 
 ```
-├── app/
-│   ├── apartments/          # Apartment listing and detail pages
-│   ├── about/              # About page
-│   ├── booking/            # Booking success (Paystack redirect)
-│   ├── contact/            # Contact page
-│   ├── gallery/            # Image gallery
-│   ├── terms/              # Terms & conditions
-│   ├── privacy/            # Privacy policy
-│   ├── layout.tsx          # Root layout with Navbar & Footer
-│   ├── page.tsx            # Homepage
-│   ├── sitemap.ts          # SEO sitemap
-│   └── robots.ts            # SEO robots.txt
-├── components/
-│   ├── ui/                 # ShadCN UI components
-│   ├── Navbar.tsx          # Navigation bar
-│   ├── Footer.tsx           # Footer component
-│   ├── Hero.tsx             # Homepage hero section
-│   ├── ApartmentCard.tsx    # Apartment card component
-│   ├── TrustSignals.tsx     # Trust signals section
-│   ├── TestimonialSlider.tsx # Testimonials carousel
-│   ├── AmenitiesSection.tsx  # Amenities display
-│   └── ContactForm.tsx       # Contact form
+├── app/                    # Routes (pages + API route handlers)
+│   ├── api/                # REST endpoints (paystack, admin, bookings, …)
+│   ├── admin/              # Staff dashboard (shared AdminAuthGate layout)
+│   └── …                   # Public marketing + booking pages
+├── components/             # UI (home/, admin/, shared)
+├── hooks/                  # Client data hooks (React Query)
 ├── lib/
-│   ├── data/
-│   │   ├── apartments.ts    # Apartment data
-│   │   └── testimonials.ts  # Testimonial data
-│   ├── types.ts             # TypeScript types
-│   └── constants.ts         # App constants
-└── public/
-    └── apartments/          # Apartment images
+│   ├── booking/            # Holds, overlap checks, my-bookings queries
+│   ├── admin/              # Staff auth, images, hero video
+│   ├── ops/                # Invoices, Google Sheets, background jobs
+│   ├── images/ & videos/   # Upload + Sharp / FFmpeg pipelines
+│   ├── validation/         # Zod schemas + parse helpers
+│   ├── rate-limit/         # Postgres-backed distributed limits
+│   └── data/               # Static catalog (apartments, blog, …)
+├── prisma/                 # Schema + migrations
+├── __tests__/              # Mirrors lib/ and critical app routes
+└── docs/                   # OPERATIONS.md, Supabase setup guides
 ```
+
+See `docs/OPERATIONS.md` for backups, cron jobs, and incident response.
 
 ## 🚦 Getting Started
 
@@ -90,12 +81,11 @@ A production-ready website for LoftyXphereHomes, a premium shortlet apartment re
     - Follow naming convention: `{city}-{id}-{number}.jpg`
     - Example: `abuja-01-1.jpg`, `lagos-01-1.jpg`
 
-5. **Booking flow (Supabase + Prisma + Paystack) – optional:**
-    - Create a [Supabase](https://supabase.com) project and copy the **Connection string (URI)** from Project Settings → Database. Use the **Transaction** pooler (port 6543) for Prisma.
-    - In `.env`, set `DATABASE_URL` to that URI and keep `PAYSTACK_SECRET_KEY` for payments.
-    - Run Prisma: `npx prisma generate` then `npx prisma db push` (or `npx prisma migrate dev`) to create the `Booking` table.
-    - When a user completes Paystack payment, they are redirected to `/booking/success?reference=...`. The success page verifies the transaction with Paystack and upserts a booking (booker email, apartment, dates, amount) into Supabase via Prisma.
-    - For reliability, set Paystack **Webhook URL** (Settings → Webhooks) to `https://your-domain.com/api/paystack/webhook` and subscribe to **charge.success** so bookings are saved even if the user closes the browser before the success page loads.
+5. **Booking flow (Supabase + Prisma + Paystack):**
+    - Create a [Supabase](https://supabase.com) project and set `DIRECT_URL` to the **session pooler** URI (see `.env.example`).
+    - Run `npx prisma migrate deploy` (production) or `npx prisma migrate dev` (local).
+    - Set `PAYSTACK_SECRET_KEY`, `NEXT_PUBLIC_SITE_URL`, and webhook URL → `/api/paystack/webhook`.
+    - Checkout creates a **PENDING hold**; webhook/success page confirms as **PAID** with overlap protection (`lib/booking/`).
 
 6. **Run the development server:**
 

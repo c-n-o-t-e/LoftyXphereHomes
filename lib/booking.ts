@@ -13,6 +13,10 @@ import {
     isExclusionConstraintViolation,
     withApartmentBookingTransaction,
 } from "./booking/conflict";
+import {
+    finalizeRefundResult,
+    tryClaimRefundProcessing,
+} from "./booking/refund";
 import { sendAdminAlertBookingConflictRefund } from "./email/admin-alerts";
 
 export { BookingDateConflictError } from "./booking/conflict";
@@ -115,25 +119,49 @@ async function handleBookingDateConflict(
     data: PaystackVerifyData,
     validated: ReturnType<typeof validatePaystackBookingInput>,
 ): Promise<never> {
+    const auditArgs = {
+        data,
+        apartmentId: validated.apartmentId,
+        checkIn: validated.checkIn,
+        checkOut: validated.checkOut,
+        nights: validated.nights,
+        amountPaidNgn: validated.amountPaidNgn,
+        email: validated.email,
+        bookerName: validated.meta.booker_name ?? null,
+        bookerPhone: validated.meta.booker_phone ?? null,
+    };
+
+    try {
+        await persistConflictAuditBooking(auditArgs);
+    } catch (auditErr) {
+        console.error("Failed to persist conflict audit booking:", auditErr);
+    }
+
+    const claim = await tryClaimRefundProcessing(data.reference);
+
+    if (claim.action === "already_refunded") {
+        throw new BookingDateConflictError(
+            "Requested dates are no longer available for this apartment",
+            { refundInitiated: true },
+        );
+    }
+
+    if (claim.action === "blocked") {
+        throw new BookingDateConflictError(
+            "Requested dates are no longer available for this apartment",
+            { refundInitiated: false },
+        );
+    }
+
     const refund = await initiateRefund({
         transaction: data.reference,
         amount: data.amount,
     });
 
     try {
-        await persistConflictAuditBooking({
-            data,
-            apartmentId: validated.apartmentId,
-            checkIn: validated.checkIn,
-            checkOut: validated.checkOut,
-            nights: validated.nights,
-            amountPaidNgn: validated.amountPaidNgn,
-            email: validated.email,
-            bookerName: validated.meta.booker_name ?? null,
-            bookerPhone: validated.meta.booker_phone ?? null,
-        });
-    } catch (auditErr) {
-        console.error("Failed to persist conflict audit booking:", auditErr);
+        await finalizeRefundResult({ reference: data.reference, refund });
+    } catch (finalizeErr) {
+        console.error("Failed to persist refund result:", finalizeErr);
     }
 
     await sendAdminAlertBookingConflictRefund({

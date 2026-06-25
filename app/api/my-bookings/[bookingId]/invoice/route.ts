@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { createClient } from "@supabase/supabase-js";
+import { myBookingsWhereForUser } from "@/lib/booking/myBookings";
 import { parseHeaders } from "@/lib/validation/http";
 import { bearerAuthHeaderSchema } from "@/lib/validation/schemas";
 
@@ -37,13 +38,19 @@ export async function GET(
         error: authError,
     } = await supabase.auth.getUser(token);
 
-    if (authError || !user?.email) {
+    if (authError || !user?.email || !user.id) {
         return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
     }
 
     const { prisma } = await import("@/lib/db");
     const booking = await prisma.booking.findFirst({
-        where: { id: bookingId, bookerEmail: user.email },
+        where: {
+            id: bookingId,
+            ...myBookingsWhereForUser({
+                id: user.id,
+                email: user.email,
+            }),
+        },
         select: {
             id: true,
             invoiceId: true,

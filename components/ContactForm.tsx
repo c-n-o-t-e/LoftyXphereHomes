@@ -2,9 +2,10 @@
 
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
-import * as z from "zod";
 import { useEffect, useMemo, useState } from "react";
 import { useSearchParams } from "next/navigation";
+import { contactMessageBodySchema } from "@/lib/validation/schemas";
+import type { z } from "zod";
 import { Button } from "@/components/ui/button";
 import {
   Form,
@@ -24,20 +25,7 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 
-const contactFormSchema = z.object({
-  name: z.string().min(2, "Name must be at least 2 characters"),
-  email: z.string().email("Please enter a valid email address"),
-  phone: z.string().min(10, "Please enter a valid phone number"),
-  category: z.enum(["booking", "partnership", "long-stay", "complaints"]).refine(
-    (val) => val !== undefined,
-    { message: "Please select an inquiry category" }
-  ),
-  message: z.string().min(10, "Message must be at least 10 characters"),
-  // Honeypot: should remain empty (hidden from humans)
-  website: z.string().optional(),
-});
-
-type ContactFormData = z.infer<typeof contactFormSchema>;
+type ContactFormInput = z.input<typeof contactMessageBodySchema>;
 
 export function ContactForm() {
   const searchParams = useSearchParams();
@@ -52,14 +40,14 @@ export function ContactForm() {
     return {
       category:
         category && allowed.has(category)
-          ? (category as ContactFormData["category"])
+          ? (category as ContactFormInput["category"])
           : undefined,
       message: typeof message === "string" && message.trim() ? message : "",
     };
   }, [searchParams]);
 
-  const form = useForm<ContactFormData>({
-    resolver: zodResolver(contactFormSchema),
+  const form = useForm<ContactFormInput>({
+    resolver: zodResolver(contactMessageBodySchema),
     defaultValues: {
       name: '',
       email: '',
@@ -81,7 +69,7 @@ export function ContactForm() {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [prefill.category, prefill.message]);
 
-  const onSubmit = async (data: ContactFormData) => {
+  const onSubmit = async (data: ContactFormInput) => {
     setIsSubmitting(true);
     setSubmitError(null);
 

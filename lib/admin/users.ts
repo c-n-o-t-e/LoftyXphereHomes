@@ -1,6 +1,7 @@
 import type { AdminRole } from "@/lib/admin/auth";
 import { buildAuthEmailRedirectUrl } from "@/lib/security/redirect";
 import { createServerSupabaseClient } from "@/lib/supabase/server";
+import { getSupabaseUserByEmail } from "@/lib/supabase/adminUsers";
 
 type SupabaseAuthUser = {
     id: string;
@@ -9,20 +10,6 @@ type SupabaseAuthUser = {
 
 function normalizeEmail(email: string): string {
     return email.trim().toLowerCase();
-}
-
-async function getSupabaseUserByEmail(
-    email: string,
-): Promise<SupabaseAuthUser | null> {
-    const supabase = createServerSupabaseClient();
-    const { data, error } = await supabase.auth.admin.listUsers();
-    if (error) throw new Error(`Supabase listUsers failed: ${error.message}`);
-    const normalized = normalizeEmail(email);
-    return (
-        data.users.find(
-            (u) => (u.email ?? "").trim().toLowerCase() === normalized,
-        ) ?? null
-    );
 }
 
 async function inviteSupabaseUserByEmail(

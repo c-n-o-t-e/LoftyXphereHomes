@@ -18,6 +18,8 @@ jest.mock("@/lib/db", () => ({
         booking: {
             upsert: jest.fn(),
             updateMany: jest.fn(),
+            findUnique: jest.fn(),
+            update: jest.fn(),
         },
     },
 }));
@@ -205,8 +207,13 @@ describe("upsertBookingFromPaystack", () => {
             id: "bk_other",
             reference: "ref_other",
         });
-        initiateRefund.mockResolvedValueOnce({ ok: true });
         prisma.booking.upsert.mockResolvedValueOnce({ id: "audit" });
+        prisma.booking.updateMany.mockResolvedValueOnce({ count: 1 });
+        prisma.booking.update.mockResolvedValueOnce({ id: "audit" });
+        initiateRefund.mockResolvedValueOnce({
+            ok: true,
+            data: { id: "rf_123" },
+        });
 
         await expect(upsertBookingFromPaystack(data)).rejects.toBeInstanceOf(
             BookingDateConflictError,
@@ -216,11 +223,64 @@ describe("upsertBookingFromPaystack", () => {
             transaction: "ref_conflict",
             amount: kobo,
         });
+        expect(prisma.booking.update).toHaveBeenCalledWith(
+            expect.objectContaining({
+                where: { reference: "ref_conflict" },
+                data: expect.objectContaining({
+                    refundStatus: "REFUNDED",
+                    paystackRefundReference: "rf_123",
+                }),
+            }),
+        );
         expect(sendAdminAlertBookingConflictRefund).toHaveBeenCalledWith(
             expect.objectContaining({
                 reference: "ref_conflict",
                 refundInitiated: true,
             }),
         );
+    });
+
+    it("does not call Paystack refund again when refund is already REFUNDED", async () => {
+        const checkIn = "2026-03-20";
+        const checkOut = "2026-03-24";
+        const quote = computeBookingQuote(100_000, checkIn, checkOut);
+        expect(quote).not.toBeNull();
+        const kobo = totalNgnToKobo(quote!.totalNgn);
+
+        const data: PaystackVerifyData = {
+            reference: "ref_replay",
+            status: "success",
+            amount: kobo,
+            metadata: {
+                apartment_id: "lofty-horizon-suite",
+                check_in: checkIn,
+                check_out: checkOut,
+            },
+            customer: { email: "a@b.com" },
+        };
+
+        mockTx.booking.findUnique.mockResolvedValueOnce({
+            id: "bk_pending",
+            status: "PENDING",
+            expiresAt: new Date(Date.now() + 60_000),
+            bookerName: null,
+            bookerPhone: null,
+        });
+        findOverlappingBooking.mockResolvedValueOnce({
+            id: "bk_other",
+            reference: "ref_other",
+        });
+        prisma.booking.upsert.mockResolvedValueOnce({ id: "audit" });
+        prisma.booking.updateMany.mockResolvedValue({ count: 0 });
+        prisma.booking.findUnique.mockResolvedValueOnce({
+            refundStatus: "REFUNDED",
+        });
+
+        await expect(upsertBookingFromPaystack(data)).rejects.toBeInstanceOf(
+            BookingDateConflictError,
+        );
+
+        expect(initiateRefund).not.toHaveBeenCalled();
+        expect(sendAdminAlertBookingConflictRefund).not.toHaveBeenCalled();
     });
 });

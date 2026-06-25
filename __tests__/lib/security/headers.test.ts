@@ -19,6 +19,23 @@ describe("buildContentSecurityPolicy", () => {
         expect(csp).not.toContain("'unsafe-eval'");
     });
 
+    it("includes Google Analytics hosts when GA measurement ID is configured", () => {
+        const previous = process.env.NEXT_PUBLIC_GA_MEASUREMENT_ID;
+        process.env.NEXT_PUBLIC_GA_MEASUREMENT_ID = "G-TEST123";
+
+        const csp = buildContentSecurityPolicy(false);
+
+        expect(csp).toContain("https://www.googletagmanager.com");
+        expect(csp).toContain("https://www.google-analytics.com");
+        expect(csp).toContain("https://*.analytics.google.com");
+
+        if (previous === undefined) {
+            delete process.env.NEXT_PUBLIC_GA_MEASUREMENT_ID;
+        } else {
+            process.env.NEXT_PUBLIC_GA_MEASUREMENT_ID = previous;
+        }
+    });
+
     it("allows unsafe-eval in development for Next.js HMR", () => {
         const csp = buildContentSecurityPolicy(true);
 

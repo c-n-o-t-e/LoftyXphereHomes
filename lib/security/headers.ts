@@ -4,17 +4,52 @@ export type SecurityHeader = {
 };
 
 export function buildContentSecurityPolicy(isDev: boolean): string {
-    const scriptSrc = isDev
-        ? "script-src 'self' 'unsafe-inline' 'unsafe-eval'"
-        : "script-src 'self' 'unsafe-inline'";
+    const gaEnabled = Boolean(process.env.NEXT_PUBLIC_GA_MEASUREMENT_ID?.trim());
+
+    const scriptSrcParts = ["'self'", "'unsafe-inline'"];
+    if (isDev) {
+        scriptSrcParts.push("'unsafe-eval'");
+    }
+    if (gaEnabled) {
+        scriptSrcParts.push("https://www.googletagmanager.com");
+    }
+
+    const connectSrcParts = [
+        "'self'",
+        "https://*.supabase.co",
+        "wss://*.supabase.co",
+    ];
+    if (gaEnabled) {
+        connectSrcParts.push(
+            "https://www.google-analytics.com",
+            "https://*.google-analytics.com",
+            "https://*.analytics.google.com",
+            "https://www.googletagmanager.com",
+            "https://stats.g.doubleclick.net",
+        );
+    }
+
+    const imgSrcParts = [
+        "'self'",
+        "data:",
+        "blob:",
+        "https://images.unsplash.com",
+        "https://*.supabase.co",
+    ];
+    if (gaEnabled) {
+        imgSrcParts.push(
+            "https://www.google-analytics.com",
+            "https://www.googletagmanager.com",
+        );
+    }
 
     const directives = [
         "default-src 'self'",
-        scriptSrc,
+        `script-src ${scriptSrcParts.join(" ")}`,
         "style-src 'self' 'unsafe-inline'",
-        "img-src 'self' data: blob: https://images.unsplash.com https://*.supabase.co",
+        `img-src ${imgSrcParts.join(" ")}`,
         "font-src 'self' data:",
-        "connect-src 'self' https://*.supabase.co wss://*.supabase.co",
+        `connect-src ${connectSrcParts.join(" ")}`,
         "frame-src 'self' https://www.google.com",
         "media-src 'self' https://*.supabase.co",
         "object-src 'none'",

@@ -1,6 +1,9 @@
+"use client";
+
 import { FaWhatsapp } from "react-icons/fa";
 import { cn } from "@/lib/utils";
 import { getWhatsAppChatUrl, WHATSAPP_DEFAULT_MESSAGE } from "@/lib/constants";
+import { trackWhatsAppClick } from "@/lib/analytics/conversions";
 
 type WhatsAppFloatButtonProps = {
   className?: string;
@@ -34,6 +37,12 @@ export default function WhatsAppFloatButton({ className }: WhatsAppFloatButtonPr
       )}
       aria-label="Message us on WhatsApp. Opens in a new tab."
       title="Message us on WhatsApp"
+      onClick={() => {
+        trackWhatsAppClick({
+          label: "Site-wide WhatsApp Float Button",
+          category: "engagement",
+        });
+      }}
     >
       <FaWhatsapp className="size-6 shrink-0" aria-hidden />
       <span className="max-sm:sr-only">Message us</span>

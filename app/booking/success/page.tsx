@@ -13,6 +13,7 @@ import {
   enqueuePostBookingJobs,
   flushPostBookingJobsForBooking,
 } from "@/lib/ops/bookingJobs";
+import { BookingSuccessTracker } from "@/components/analytics/BookingSuccessTracker";
 
 export const metadata: Metadata = {
   title: "Booking Successful",
@@ -84,6 +85,7 @@ export default async function BookingSuccessPage({
 
   return (
     <div className="min-h-screen pt-24 pb-16 px-4 bg-linear-to-b from-gray-50 via-white to-white">
+      <BookingSuccessTracker isConfirmed={isConfirmed} reference={reference} />
       <div className="max-w-2xl mx-auto">
         <div className="bg-white rounded-2xl border border-gray-100 shadow-sm overflow-hidden">
           <div className="p-8 sm:p-10 text-center">

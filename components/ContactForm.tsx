@@ -24,6 +24,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
+import { trackContactFormConversion } from "@/lib/analytics/conversions";
 
 type ContactFormInput = z.input<typeof contactMessageBodySchema>;
 
@@ -88,6 +89,10 @@ export function ContactForm() {
       }
 
       setIsSubmitted(true);
+      trackContactFormConversion({
+        inquiryCategory: data.category,
+        label: "Contact Form",
+      });
       form.reset({
         name: "",
         email: "",

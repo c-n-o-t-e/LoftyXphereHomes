@@ -2,6 +2,7 @@ import Link from "next/link";
 import Image from "next/image";
 import { Mail, Phone, MapPin } from "lucide-react";
 import { SiFacebook, SiInstagram, SiX } from "react-icons/si";
+import { TrackedPhoneLink } from "@/components/analytics/TrackedPhoneLink";
 
 export default function Footer() {
   const currentYear = new Date().getFullYear();
@@ -109,9 +110,13 @@ export default function Footer() {
             <ul className="space-y-3">
               <li className="flex items-start space-x-3">
                 <Phone className="h-5 w-5 mt-0.5 shrink-0 text-white/80" />
-                <a href="tel:+2348000000000" className="hover:text-[#FA5C5C] transition-colors text-sm text-white/80">
+                <TrackedPhoneLink
+                  href="tel:+2348161122328"
+                  trackingLabel="Footer Phone Link"
+                  className="hover:text-[#FA5C5C] transition-colors text-sm text-white/80"
+                >
                   +234 8161122328
-                </a>
+                </TrackedPhoneLink>
               </li>
               <li className="flex items-start space-x-3">
                 <Mail className="h-5 w-5 mt-0.5 shrink-0 text-white/80" />

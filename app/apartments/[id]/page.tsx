@@ -5,6 +5,7 @@ import { getApartmentImageSets } from "@/lib/data/getApartmentImages";
 import { MapPin, Check } from "lucide-react";
 import { YourReservationCard } from "@/components/YourReservationCard";
 import { ApartmentImageGallery } from "@/components/ApartmentImageGallery";
+import { ApartmentPageTracker } from "@/components/analytics/ApartmentPageTracker";
 import { IncludedWithStayStrip } from "@/components/IncludedWithStayStrip";
 import { CHECK_IN_TIME, CHECK_OUT_TIME } from "@/lib/constants";
 
@@ -48,6 +49,10 @@ export default async function ApartmentDetailPage({ params }: PageProps) {
 
   return (
     <div className="pt-20 pb-12 sm:pb-16 md:pb-24 bg-white min-h-screen">
+      <ApartmentPageTracker
+        apartmentId={apartment.id}
+        apartmentName={apartment.name}
+      />
       <div className="container mx-auto px-4 sm:px-6 lg:px-8">
         {/* Header */}
         <div className="mb-8 sm:mb-12 pt-8 sm:pt-12">
@@ -66,6 +71,7 @@ export default async function ApartmentDetailPage({ params }: PageProps) {
         <ApartmentImageGallery
           images={imageSets}
           name={apartment.name}
+          apartmentId={apartment.id}
         />
 
         <IncludedWithStayStrip />

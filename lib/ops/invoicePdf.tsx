@@ -72,6 +72,11 @@ function logoPathToDataUri(filePath: string): string | null {
     }
 }
 
+const BRAND_RED = "#c62828";
+const BRAND_BLACK = "#111111";
+const LINE = "#e5e7eb";
+const SURFACE = "#faf7f7";
+
 const styles = StyleSheet.create({
     page: {
         paddingTop: 48,
@@ -86,32 +91,39 @@ const styles = StyleSheet.create({
         justifyContent: "space-between",
         alignItems: "flex-start",
         borderBottomWidth: 1,
-        borderBottomColor: "#e5e7eb",
+        borderBottomColor: LINE,
         paddingBottom: 14,
-        marginBottom: 16,
-        gap: 16,
+        marginBottom: 18,
+        gap: 18,
+    },
+    brandCol: {
+        flex: 1,
+        flexShrink: 0,
+        maxWidth: 340,
     },
     logo: {
-        width: 260,
-        height: 90,
+        width: 340,
+        height: 119,
         objectFit: "contain",
+        objectPosition: "left center",
     },
     docMeta: {
         width: 180,
+        flexShrink: 0,
         alignItems: "flex-end",
     },
     kicker: {
         fontSize: 8,
         letterSpacing: 1.2,
         textTransform: "uppercase",
-        color: "#c62828",
+        color: BRAND_RED,
         marginBottom: 6,
         fontWeight: 700,
     },
     title: {
         fontSize: 18,
         fontWeight: 800,
-        color: "#111111",
+        color: BRAND_BLACK,
     },
     subline: {
         fontSize: 9,
@@ -133,7 +145,7 @@ const styles = StyleSheet.create({
         width: 8,
         height: 8,
         borderRadius: 999,
-        backgroundColor: "#c62828",
+        backgroundColor: BRAND_RED,
     },
     badgeText: {
         fontSize: 8,
@@ -170,20 +182,31 @@ const styles = StyleSheet.create({
         marginBottom: 16,
     },
     panel: {
-        flexGrow: 1,
+        flex: 1,
         borderWidth: 1,
-        borderColor: "#e5e7eb",
+        borderColor: LINE,
         borderRadius: 10,
-        padding: 12,
-        backgroundColor: "#faf7f7",
+        padding: 14,
+        backgroundColor: SURFACE,
+    },
+    panelHeadingRow: {
+        flexDirection: "row",
+        alignItems: "center",
+        marginBottom: 10,
+        gap: 10,
     },
     panelTitle: {
         fontSize: 8,
         letterSpacing: 1.2,
         textTransform: "uppercase",
         fontWeight: 800,
-        marginBottom: 8,
-        color: "#111111",
+        color: BRAND_BLACK,
+    },
+    panelTitleLine: {
+        flex: 1,
+        height: 2,
+        backgroundColor: BRAND_RED,
+        opacity: 0.85,
     },
     lead: {
         fontSize: 12,
@@ -196,9 +219,28 @@ const styles = StyleSheet.create({
         fontSize: 9.5,
         color: "#111827",
     },
+    chargesCaption: {
+        flexDirection: "row",
+        alignItems: "center",
+        marginBottom: 8,
+        gap: 8,
+    },
+    chargesCaptionDot: {
+        width: 8,
+        height: 8,
+        borderRadius: 999,
+        backgroundColor: BRAND_RED,
+    },
+    chargesCaptionText: {
+        fontSize: 8,
+        letterSpacing: 1.2,
+        textTransform: "uppercase",
+        fontWeight: 800,
+        color: BRAND_BLACK,
+    },
     table: {
         borderWidth: 1,
-        borderColor: "#e5e7eb",
+        borderColor: LINE,
         borderRadius: 10,
         overflow: "hidden",
         marginBottom: 14,
@@ -254,9 +296,10 @@ const styles = StyleSheet.create({
     totalsWrap: {
         marginTop: 8,
         borderWidth: 1,
-        borderColor: "#e5e7eb",
+        borderColor: LINE,
         borderRadius: 10,
         overflow: "hidden",
+        backgroundColor: "#fff",
     },
     totalsRow: {
         flexDirection: "row",
@@ -267,24 +310,39 @@ const styles = StyleSheet.create({
         fontSize: 10,
     },
     totalsDue: {
-        backgroundColor: "#c62828",
+        backgroundColor: BRAND_RED,
         color: "#fff",
         fontWeight: 800,
+        fontSize: 11,
     },
     footer: {
         marginTop: 18,
         paddingTop: 14,
         borderTopWidth: 1,
-        borderTopColor: "#e5e7eb",
+        borderTopColor: LINE,
         fontSize: 9,
         color: "#4b5563",
         gap: 6,
     },
     strong: {
         fontWeight: 800,
-        color: "#111111",
+        color: BRAND_BLACK,
+    },
+    hint: {
+        marginTop: 10,
+        fontSize: 9,
+        color: "#4b5563",
     },
 });
+
+function PanelHeading({ title }: { title: string }) {
+    return (
+        <View style={styles.panelHeadingRow}>
+            <Text style={styles.panelTitle}>{title}</Text>
+            <View style={styles.panelTitleLine} />
+        </View>
+    );
+}
 
 function InvoiceDocument(props: {
     logoSrc?: string;
@@ -307,7 +365,7 @@ function InvoiceDocument(props: {
         <Document>
             <Page size="A4" style={styles.page}>
                 <View style={styles.headerRow}>
-                    <View>
+                    <View style={styles.brandCol}>
                         {props.logoSrc ? (
                             // eslint-disable-next-line jsx-a11y/alt-text -- @react-pdf/renderer Image has no alt prop
                             <Image style={styles.logo} src={props.logoSrc} />
@@ -340,14 +398,14 @@ function InvoiceDocument(props: {
 
                 <View style={styles.grid2}>
                     <View style={styles.panel}>
-                        <Text style={styles.panelTitle}>Bill to</Text>
+                        <PanelHeading title="Bill to" />
                         <Text style={styles.lead}>{props.name}</Text>
                         <Text style={styles.kv}>
                             <Text style={styles.strong}>Phone</Text> {props.phone}
                         </Text>
                     </View>
                     <View style={styles.panel}>
-                        <Text style={styles.panelTitle}>Stay details</Text>
+                        <PanelHeading title="Stay details" />
                         <Text style={styles.kv}>
                             <Text style={styles.strong}>Property</Text> {props.apartment}
                         </Text>
@@ -363,6 +421,12 @@ function InvoiceDocument(props: {
                     </View>
                 </View>
 
+                <View style={styles.chargesCaption}>
+                    <View style={styles.chargesCaptionDot} />
+                    <Text style={styles.chargesCaptionText}>
+                        Charges for this booking
+                    </Text>
+                </View>
                 <View style={styles.table}>
                     <View style={styles.tableHead}>
                         <Text style={styles.th}>Description</Text>
@@ -384,7 +448,7 @@ function InvoiceDocument(props: {
 
                 <View style={styles.split}>
                     <View style={styles.panel}>
-                        <Text style={styles.panelTitle}>Summary</Text>
+                        <PanelHeading title="Summary" />
                         <View style={styles.totalsWrap}>
                             <View style={styles.totalsRow}>
                                 <Text>Subtotal</Text>
@@ -401,7 +465,7 @@ function InvoiceDocument(props: {
                         </View>
                     </View>
                     <View style={styles.panel}>
-                        <Text style={styles.panelTitle}>Support</Text>
+                        <PanelHeading title="Support" />
                         <Text style={styles.lead}>{props.businessName}</Text>
                         <Text style={styles.kv}>
                             <Text style={styles.strong}>Phone</Text>{" "}
@@ -412,11 +476,11 @@ function InvoiceDocument(props: {
                             {props.businessEmail}
                         </Text>
                         <Text style={styles.kv}>
-                            <Text style={styles.strong}>IG</Text> loftyxpherehome
+                            <Text style={styles.strong}>IG:</Text> loftyxpherehome
                         </Text>
-                        <Text style={[styles.kv, { marginTop: 10, color: "#4b5563" }]}>
+                        <Text style={styles.hint}>
                             Please include your <Text style={styles.strong}>invoice #</Text>{" "}
-                            for faster support.
+                            in your message for faster support.
                         </Text>
                     </View>
                 </View>
@@ -424,7 +488,7 @@ function InvoiceDocument(props: {
                 <View style={styles.footer}>
                     <Text>
                         <Text style={styles.strong}>
-                            Thank you for choosing Lofty Xphere Homes.
+                            Thank you for choosing {props.businessName}.
                         </Text>
                     </Text>
                     <Text>

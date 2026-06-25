@@ -1,17 +1,22 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, useCallback } from "react";
 import { X, ChevronLeft, ChevronRight, Grid2x2 } from "lucide-react";
 import type { ApartmentImageSet } from "@/lib/images/types";
 import { ResponsiveApartmentImage } from "@/components/ResponsiveApartmentImage";
 import { ApartmentImagePlaceholder } from "@/components/ApartmentImagePlaceholder";
+import {
+  trackApartmentGalleryOpen,
+  trackApartmentImageInteraction,
+} from "@/lib/analytics/events";
 
 interface ApartmentImageGalleryProps {
     images: ApartmentImageSet[];
     name: string;
+    apartmentId: string;
 }
 
-export function ApartmentImageGallery({ images, name }: ApartmentImageGalleryProps) {
+export function ApartmentImageGallery({ images, name, apartmentId }: ApartmentImageGalleryProps) {
     const [selectedIndex, setSelectedIndex] = useState<number | null>(null);
 
     const allImages = images;
@@ -19,20 +24,57 @@ export function ApartmentImageGallery({ images, name }: ApartmentImageGalleryPro
     const gridImages = allImages.slice(1, 5);
     const extraCount = Math.max(0, allImages.length - 5);
 
-    const openLightbox = (index: number) => setSelectedIndex(index);
+    const openLightbox = useCallback(
+        (index: number, source: "grid" | "show_all" | "hero") => {
+            setSelectedIndex(index);
+            trackApartmentGalleryOpen({
+                apartmentId,
+                apartmentName: name,
+                imageIndex: index,
+                source,
+            });
+        },
+        [apartmentId, name],
+    );
     const closeLightbox = () => setSelectedIndex(null);
 
     const goPrev = (e: React.MouseEvent) => {
         e.stopPropagation();
-        setSelectedIndex((i) =>
-            i === null ? null : i === 0 ? allImages.length - 1 : i - 1,
-        );
+        setSelectedIndex((i) => {
+            if (i === null) return null;
+            const nextIndex = i === 0 ? allImages.length - 1 : i - 1;
+            trackApartmentImageInteraction({
+                apartmentId,
+                apartmentName: name,
+                imageIndex: nextIndex,
+                interaction: "prev",
+            });
+            return nextIndex;
+        });
     };
     const goNext = (e: React.MouseEvent) => {
         e.stopPropagation();
-        setSelectedIndex((i) =>
-            i === null ? null : i === allImages.length - 1 ? 0 : i + 1,
-        );
+        setSelectedIndex((i) => {
+            if (i === null) return null;
+            const nextIndex = i === allImages.length - 1 ? 0 : i + 1;
+            trackApartmentImageInteraction({
+                apartmentId,
+                apartmentName: name,
+                imageIndex: nextIndex,
+                interaction: "next",
+            });
+            return nextIndex;
+        });
+    };
+
+    const selectThumbnail = (index: number) => {
+        setSelectedIndex(index);
+        trackApartmentImageInteraction({
+            apartmentId,
+            apartmentName: name,
+            imageIndex: index,
+            interaction: "thumbnail",
+        });
     };
 
     useEffect(() => {
@@ -40,14 +82,30 @@ export function ApartmentImageGallery({ images, name }: ApartmentImageGalleryPro
         const handleKey = (e: KeyboardEvent) => {
             if (e.key === "Escape") closeLightbox();
             if (e.key === "ArrowLeft") {
-                setSelectedIndex((i) =>
-                    i === null ? null : i === 0 ? allImages.length - 1 : i - 1,
-                );
+                setSelectedIndex((i) => {
+                    if (i === null) return null;
+                    const nextIndex = i === 0 ? allImages.length - 1 : i - 1;
+                    trackApartmentImageInteraction({
+                        apartmentId,
+                        apartmentName: name,
+                        imageIndex: nextIndex,
+                        interaction: "prev",
+                    });
+                    return nextIndex;
+                });
             }
             if (e.key === "ArrowRight") {
-                setSelectedIndex((i) =>
-                    i === null ? null : i === allImages.length - 1 ? 0 : i + 1,
-                );
+                setSelectedIndex((i) => {
+                    if (i === null) return null;
+                    const nextIndex = i === allImages.length - 1 ? 0 : i + 1;
+                    trackApartmentImageInteraction({
+                        apartmentId,
+                        apartmentName: name,
+                        imageIndex: nextIndex,
+                        interaction: "next",
+                    });
+                    return nextIndex;
+                });
             }
         };
         window.addEventListener("keydown", handleKey);
@@ -56,7 +114,7 @@ export function ApartmentImageGallery({ images, name }: ApartmentImageGalleryPro
             window.removeEventListener("keydown", handleKey);
             document.body.style.overflow = "";
         };
-    }, [selectedIndex, allImages.length]);
+    }, [selectedIndex, allImages.length, apartmentId, name]);
 
     if (allImages.length === 0) {
         return (
@@ -75,7 +133,7 @@ export function ApartmentImageGallery({ images, name }: ApartmentImageGalleryPro
                     <div className="md:col-span-2 md:row-span-2">
                         <button
                             type="button"
-                            onClick={() => openLightbox(0)}
+                            onClick={() => openLightbox(0, "hero")}
                             className="relative h-64 sm:h-80 md:h-[28rem] rounded-2xl overflow-hidden w-full cursor-pointer focus:outline-none focus:ring-2 focus:ring-[#FA5C5C] focus:ring-offset-2"
                             aria-label={`View ${name} - cover photo`}
                         >
@@ -94,7 +152,7 @@ export function ApartmentImageGallery({ images, name }: ApartmentImageGalleryPro
                         <button
                             key={`${image.large}-${index}`}
                             type="button"
-                            onClick={() => openLightbox(index + 1)}
+                            onClick={() => openLightbox(index + 1, "grid")}
                             className="relative h-40 sm:h-48 md:h-[13.5rem] rounded-2xl overflow-hidden w-full cursor-pointer focus:outline-none focus:ring-2 focus:ring-[#FA5C5C] focus:ring-offset-2"
                             aria-label={`View ${name} - Image ${index + 2}`}
                         >
@@ -120,7 +178,7 @@ export function ApartmentImageGallery({ images, name }: ApartmentImageGalleryPro
                 {allImages.length > 1 && (
                     <button
                         type="button"
-                        onClick={() => openLightbox(0)}
+                        onClick={() => openLightbox(0, "show_all")}
                         className="absolute bottom-4 right-4 z-10 flex items-center gap-2 rounded-lg bg-white px-4 py-2 text-sm font-medium text-black shadow-md hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-[#FA5C5C]"
                     >
                         <Grid2x2 className="h-4 w-4" />
@@ -202,7 +260,7 @@ export function ApartmentImageGallery({ images, name }: ApartmentImageGalleryPro
                                     <button
                                         key={`thumb-${image.thumbnail}-${index}`}
                                         type="button"
-                                        onClick={() => setSelectedIndex(index)}
+                                        onClick={() => selectThumbnail(index)}
                                         className={`relative h-16 w-24 shrink-0 rounded-lg overflow-hidden border-2 transition-colors ${
                                             index === selectedIndex
                                                 ? "border-white"

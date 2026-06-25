@@ -12,7 +12,7 @@ import {
     HERO_VIDEO_MAX_DURATION_SEC,
     HERO_VIDEO_VARIANTS,
 } from "./constants";
-import { probeVideoDurationSec, runFfmpeg } from "./ffmpeg";
+import { probeVideoDurationSec, runFfmpeg, appendVideoTranscodeArgs } from "./ffmpeg";
 import type { ProcessedHeroVideoResult, ProcessedHeroVideoVariant } from "./types";
 
 export type ValidateVideoInputResult =
@@ -113,13 +113,13 @@ async function transcodeMp4(args: {
     crf: number;
     maxRateKbps: number;
     maxDurationSec: number;
+    includeAudio?: boolean;
 }) {
     const scale = `scale='min(${args.maxWidth},iw)':-2`;
-    await runFfmpeg([
+    const ffmpegArgs = [
         "-y",
         "-i",
         args.inputPath,
-        "-an",
         "-vf",
         scale,
         "-c:v",
@@ -138,8 +138,15 @@ async function transcodeMp4(args: {
         "yuv420p",
         "-t",
         String(args.maxDurationSec),
-        args.outputPath,
-    ]);
+    ];
+
+    appendVideoTranscodeArgs({
+        ffmpegArgs,
+        includeAudio: args.includeAudio ?? false,
+    });
+    ffmpegArgs.push(args.outputPath);
+
+    await runFfmpeg(ffmpegArgs);
 }
 
 async function extractPosterWebp(
@@ -189,6 +196,7 @@ export async function processVideo(
         maxDurationSec: number;
         variants: VideoVariantConfig;
         workDirPrefix: string;
+        includeAudio?: boolean;
     },
 ): Promise<ProcessedHeroVideoResult> {
     const workDir = join(tmpdir(), `${options.workDirPrefix}-${randomUUID()}`);
@@ -216,6 +224,7 @@ export async function processVideo(
             crf: options.variants.mobile.crf,
             maxRateKbps: options.variants.mobile.maxRateKbps,
             maxDurationSec: options.maxDurationSec,
+            includeAudio: options.includeAudio,
         });
         await transcodeMp4({
             inputPath,
@@ -224,6 +233,7 @@ export async function processVideo(
             crf: options.variants.desktop.crf,
             maxRateKbps: options.variants.desktop.maxRateKbps,
             maxDurationSec: options.maxDurationSec,
+            includeAudio: options.includeAudio,
         });
         const posterBuffer = await extractPosterWebp(
             inputPath,
@@ -292,5 +302,6 @@ export async function processApartmentVideo(
         maxDurationSec: APARTMENT_VIDEO_MAX_DURATION_SEC,
         variants: APARTMENT_VIDEO_VARIANTS,
         workDirPrefix: "apartment-video",
+        includeAudio: true,
     });
 }

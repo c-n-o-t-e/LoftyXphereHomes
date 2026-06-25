@@ -169,9 +169,10 @@ export function VideoCompressTool() {
                         <strong>{config.maxDurationSec} seconds</strong> max). We
                         re-encode it to under{" "}
                         <strong>{config.targetOutputMb} MB</strong> so it passes the{" "}
-                        <strong>{config.uploadLimitMb} MB</strong> upload limit. Then
-                        upload the downloaded file via{" "}
-                        <strong>Admin → Hero video</strong> or apartment tour video.
+                        <strong>{config.uploadLimitMb} MB</strong> upload limit.
+                        Original audio is kept when present. Then upload the downloaded
+                        file via <strong>Admin → Hero video</strong> or apartment tour
+                        video.
                     </p>
                     <p className="text-sm text-gray-600 mt-2">
                         Run this on your local machine (<code>npm run dev</code>) for

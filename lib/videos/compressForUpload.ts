@@ -7,7 +7,13 @@ import {
     VIDEO_COMPRESS_TOOL_MAX_DURATION_SEC,
     VIDEO_COMPRESS_TOOL_TARGET_BYTES,
 } from "./constants";
-import { probeVideoDurationSec, runFfmpeg } from "./ffmpeg";
+import {
+    appendVideoTranscodeArgs,
+    estimateVideoBitrateKbps,
+    probeHasAudioStream,
+    probeVideoDurationSec,
+    runFfmpeg,
+} from "./ffmpeg";
 import { validateVideoUpload } from "./process";
 
 export type CompressVideoForUploadResult = {
@@ -16,6 +22,7 @@ export type CompressVideoForUploadResult = {
     durationSec: number;
     outputWidth: number;
     crf: number;
+    hasAudio: boolean;
 };
 
 const WIDTH_STEPS = [1920, 1280, 960] as const;
@@ -28,13 +35,13 @@ async function transcodeToTarget(args: {
     crf: number;
     maxDurationSec: number;
     maxRateKbps: number;
+    includeAudio: boolean;
 }) {
     const scale = `scale='min(${args.maxWidth},iw)':-2`;
-    await runFfmpeg([
+    const ffmpegArgs = [
         "-y",
         "-i",
         args.inputPath,
-        "-an",
         "-vf",
         scale,
         "-c:v",
@@ -53,14 +60,15 @@ async function transcodeToTarget(args: {
         "yuv420p",
         "-t",
         String(args.maxDurationSec),
-        args.outputPath,
-    ]);
-}
+    ];
 
-function estimateMaxRateKbps(targetBytes: number, durationSec: number) {
-    const bits = targetBytes * 8;
-    const kbps = Math.floor(bits / durationSec / 1000);
-    return Math.max(800, Math.min(6000, kbps));
+    appendVideoTranscodeArgs({
+        ffmpegArgs,
+        includeAudio: args.includeAudio,
+    });
+    ffmpegArgs.push(args.outputPath);
+
+    await runFfmpeg(ffmpegArgs);
 }
 
 export async function compressVideoForUpload(
@@ -104,8 +112,13 @@ export async function compressVideoForUpload(
             );
         }
 
+        const hasAudio = await probeHasAudioStream(inputPath);
         const effectiveDuration = Math.max(1, Math.min(durationSec, maxDurationSec));
-        const maxRateKbps = estimateMaxRateKbps(targetMaxBytes, effectiveDuration);
+        const maxRateKbps = estimateVideoBitrateKbps({
+            targetBytes: targetMaxBytes,
+            durationSec: effectiveDuration,
+            includeAudio: hasAudio,
+        });
 
         for (const maxWidth of WIDTH_STEPS) {
             for (const crf of CRF_STEPS) {
@@ -116,6 +129,7 @@ export async function compressVideoForUpload(
                     crf,
                     maxDurationSec,
                     maxRateKbps,
+                    includeAudio: hasAudio,
                 });
 
                 const buffer = await readFile(outputPath);
@@ -126,6 +140,7 @@ export async function compressVideoForUpload(
                         durationSec: effectiveDuration,
                         outputWidth: maxWidth,
                         crf,
+                        hasAudio,
                     };
                 }
             }

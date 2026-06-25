@@ -1,14 +1,26 @@
+"use client";
+
 import Script from "next/script";
+import { usePathname } from "next/navigation";
 import { getGaMeasurementId, isGaConfigured } from "@/lib/analytics/config";
+import { isAnalyticsExcludedPath } from "@/lib/analytics/paths";
 import { GoogleAnalyticsRouteTracker } from "@/components/analytics/GoogleAnalyticsRouteTracker";
 
 /**
- * Loads GA4 gtag.js and tracks route changes in the App Router.
- * Renders nothing when `NEXT_PUBLIC_GA_MEASUREMENT_ID` is unset.
+ * Loads GA4 gtag.js on public routes only and tracks App Router navigations.
+ * Admin routes (`/admin/*`) are excluded — no scripts, page views, or events.
  */
 export function GoogleAnalytics() {
+  const pathname = usePathname();
   const measurementId = getGaMeasurementId();
-  if (!isGaConfigured()) return null;
+
+  if (
+    !isGaConfigured() ||
+    !measurementId ||
+    isAnalyticsExcludedPath(pathname ?? "")
+  ) {
+    return null;
+  }
 
   return (
     <>

@@ -1,4 +1,5 @@
 import { getGaMeasurementId, isGaConfigured } from "@/lib/analytics/config";
+import { isAnalyticsExcludedPath } from "@/lib/analytics/paths";
 
 declare global {
   interface Window {
@@ -20,9 +21,18 @@ function getGtag(): Gtag.Gtag | undefined {
   return window.gtag;
 }
 
+function isTrackingAllowed(pathname?: string): boolean {
+  if (!isGaConfigured()) return false;
+  if (typeof window === "undefined") return false;
+
+  const path = pathname ?? window.location.pathname;
+  return !isAnalyticsExcludedPath(path);
+}
+
 /** Sends a GA4 page_view for client-side route changes. */
 export function pageview(url: string): void {
-  if (!isGaConfigured()) return;
+  const pagePath = url.split("?")[0] ?? url;
+  if (!isTrackingAllowed(pagePath)) return;
 
   getGtag()?.("config", getGaMeasurementId(), {
     page_path: url,
@@ -33,7 +43,7 @@ export function sendGaEvent(
   eventName: string,
   params?: Record<string, string | number | boolean | undefined>,
 ): void {
-  if (!isGaConfigured()) return;
+  if (!isTrackingAllowed()) return;
 
   const cleaned = params
     ? Object.fromEntries(

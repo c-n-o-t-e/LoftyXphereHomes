@@ -80,7 +80,8 @@ export function estimateVideoBitrateKbps(args: {
         args.targetBytes * 0.65,
     );
     const kbps = Math.floor((videoBudgetBytes * 8) / durationSec / 1000);
-    return Math.max(600, Math.min(6000, kbps));
+    // Allow low bitrates for long clips (e.g. 100s tour + audio in a 6 MB cap).
+    return Math.max(250, Math.min(6000, kbps));
 }
 
 export function appendVideoTranscodeArgs(args: {

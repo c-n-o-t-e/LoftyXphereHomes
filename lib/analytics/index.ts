@@ -4,6 +4,11 @@ export {
   isGaConfigured,
   isGoogleAdsConfigured,
 } from "@/lib/analytics/config";
+export {
+  ANALYTICS_EXCLUDED_PATH_PREFIXES,
+  isAnalyticsExcludedPath,
+  isAnalyticsAllowedPath,
+} from "@/lib/analytics/paths";
 export { pageview, sendGaEvent } from "@/lib/analytics/gtag";
 export {
   trackEvent,

@@ -6,6 +6,7 @@ beforeEach(() => {
   mockGtag.mockReset();
   window.gtag = mockGtag;
   process.env.NEXT_PUBLIC_GA_MEASUREMENT_ID = "G-TEST123";
+  window.history.pushState({}, "", "/");
 });
 
 afterEach(() => {
@@ -29,6 +30,17 @@ describe("trackEvent", () => {
 
   it("does nothing when GA is not configured", () => {
     delete process.env.NEXT_PUBLIC_GA_MEASUREMENT_ID;
+
+    trackEvent({
+      action: "whatsapp_click",
+      category: "engagement",
+    });
+
+    expect(mockGtag).not.toHaveBeenCalled();
+  });
+
+  it("does nothing on admin routes", () => {
+    window.history.pushState({}, "", "/admin/bookings");
 
     trackEvent({
       action: "whatsapp_click",

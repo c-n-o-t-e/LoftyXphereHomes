@@ -12,7 +12,13 @@ import {
     HERO_VIDEO_MAX_DURATION_SEC,
     HERO_VIDEO_VARIANTS,
 } from "./constants";
-import { probeVideoDurationSec, runFfmpeg, appendVideoTranscodeArgs } from "./ffmpeg";
+import {
+    appendVideoTranscodeArgs,
+    estimateVideoBitrateKbps,
+    probeHasAudioStream,
+    probeVideoDurationSec,
+    runFfmpeg,
+} from "./ffmpeg";
 import type { ProcessedHeroVideoResult, ProcessedHeroVideoVariant } from "./types";
 
 export type ValidateVideoInputResult =
@@ -149,6 +155,59 @@ async function transcodeMp4(args: {
     await runFfmpeg(ffmpegArgs);
 }
 
+async function transcodeMp4ToFit(args: {
+    inputPath: string;
+    outputPath: string;
+    label: string;
+    maxWidth: number;
+    crf: number;
+    maxDurationSec: number;
+    durationSec: number;
+    includeAudio: boolean;
+    maxBytes: number;
+}): Promise<Buffer> {
+    const widthSteps = [
+        args.maxWidth,
+        Math.min(args.maxWidth, 960),
+        Math.min(args.maxWidth, 720),
+    ].filter((value, index, list) => list.indexOf(value) === index);
+
+    const crfSteps = [0, 2, 4, 6, 8].map((step) =>
+        Math.min(args.crf + step, 32),
+    );
+
+    for (const maxWidth of widthSteps) {
+        for (const crf of crfSteps) {
+            const maxRateKbps = estimateVideoBitrateKbps({
+                targetBytes: args.maxBytes,
+                durationSec: args.durationSec,
+                includeAudio: args.includeAudio,
+            });
+
+            await transcodeMp4({
+                inputPath: args.inputPath,
+                outputPath: args.outputPath,
+                maxWidth,
+                crf,
+                maxRateKbps,
+                maxDurationSec: args.maxDurationSec,
+                includeAudio: args.includeAudio,
+            });
+
+            const buffer = await readFile(args.outputPath);
+            if (buffer.length <= args.maxBytes) {
+                return buffer;
+            }
+        }
+    }
+
+    throw new Error(
+        `${args.label} is still too large after compression (${Math.round(
+            (await readFile(args.outputPath)).length / 1024,
+        )}KB). Try a shorter clip.`,
+    );
+}
+
 async function extractPosterWebp(
     inputPath: string,
     outputPath: string,
@@ -217,23 +276,34 @@ export async function processVideo(
             );
         }
 
-        await transcodeMp4({
+        const includeAudio = options.includeAudio ?? false;
+        const hasAudio = includeAudio && (await probeHasAudioStream(inputPath));
+        const effectiveDuration = Math.max(
+            1,
+            Math.min(duration, options.maxDurationSec),
+        );
+
+        const mobileBuffer = await transcodeMp4ToFit({
             inputPath,
             outputPath: mobilePath,
+            label: "Mobile video",
             maxWidth: options.variants.mobile.maxWidth,
             crf: options.variants.mobile.crf,
-            maxRateKbps: options.variants.mobile.maxRateKbps,
             maxDurationSec: options.maxDurationSec,
-            includeAudio: options.includeAudio,
+            durationSec: effectiveDuration,
+            includeAudio: hasAudio,
+            maxBytes: options.variants.mobile.maxBytes,
         });
-        await transcodeMp4({
+        const desktopBuffer = await transcodeMp4ToFit({
             inputPath,
             outputPath: desktopPath,
+            label: "Desktop video",
             maxWidth: options.variants.desktop.maxWidth,
             crf: options.variants.desktop.crf,
-            maxRateKbps: options.variants.desktop.maxRateKbps,
             maxDurationSec: options.maxDurationSec,
-            includeAudio: options.includeAudio,
+            durationSec: effectiveDuration,
+            includeAudio: hasAudio,
+            maxBytes: options.variants.desktop.maxBytes,
         });
         const posterBuffer = await extractPosterWebp(
             inputPath,
@@ -241,19 +311,6 @@ export async function processVideo(
             options.variants.poster,
         );
 
-        const mobileBuffer = await readFile(mobilePath);
-        const desktopBuffer = await readFile(desktopPath);
-
-        assertMaxBytes(
-            mobileBuffer,
-            options.variants.mobile.maxBytes,
-            "Mobile video",
-        );
-        assertMaxBytes(
-            desktopBuffer,
-            options.variants.desktop.maxBytes,
-            "Desktop video",
-        );
         assertMaxBytes(
             posterBuffer,
             options.variants.poster.maxBytes,

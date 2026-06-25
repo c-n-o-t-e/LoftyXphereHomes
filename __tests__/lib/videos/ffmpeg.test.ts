@@ -24,4 +24,15 @@ describe('estimateVideoBitrateKbps', () => {
     it('uses the configured audio bitrate constant', () => {
         expect(VIDEO_AUDIO_BITRATE_KBPS).toBe(128);
     });
+
+    it('allows low bitrates for long clips with audio', () => {
+        const kbps = estimateVideoBitrateKbps({
+            targetBytes: mb(6),
+            durationSec: 100,
+            includeAudio: true,
+        });
+
+        expect(kbps).toBeLessThan(600);
+        expect(kbps).toBeGreaterThanOrEqual(250);
+    });
 });

@@ -50,6 +50,7 @@ export default function AdminPropertyAmenityImagesPage() {
 
     useEffect(() => {
         if (!user || !me?.ok || me.role !== "admin") return;
+        // eslint-disable-next-line react-hooks/set-state-in-effect -- data fetch when admin session is verified
         void loadAmenity();
     }, [user, me, loadAmenity]);
 

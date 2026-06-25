@@ -1,5 +1,4 @@
 import { NextRequest, NextResponse, after } from "next/server";
-import { parseJsonBody } from "@/lib/validation/http";
 import { contactMessageBodySchema } from "@/lib/validation/schemas";
 import { prisma } from "@/lib/db";
 
@@ -42,8 +41,8 @@ export async function POST(request: NextRequest) {
         rawBody &&
         typeof rawBody === "object" &&
         "website" in rawBody &&
-        typeof (rawBody as any).website === "string" &&
-        (rawBody as any).website.trim()
+        typeof (rawBody as { website?: unknown }).website === "string" &&
+        (rawBody as { website: string }).website.trim()
     ) {
         // Honeypot: bots often fill hidden fields. Humans should leave empty.
         return NextResponse.json({ ok: true }, { status: 200 });

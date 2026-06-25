@@ -12,9 +12,10 @@ import {
   Tv,
   Shield,
   Sparkles,
+  type LucideIcon,
 } from "lucide-react";
 
-const amenityIcons: Record<string, any> = {
+const amenityIcons: Record<string, LucideIcon> = {
   "24/7 Power": Zap,
   "High-speed Wi-Fi": Wifi,
   "Air Conditioning": Wind,

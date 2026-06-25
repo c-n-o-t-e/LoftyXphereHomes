@@ -4,10 +4,9 @@ import ApartmentsLoading from "@/app/apartments/loading";
 import MyBookingsLoading from "@/app/my-bookings/loading";
 
 describe("App router loading UIs", () => {
-  it("renders app-level loading skeleton", () => {
+  it("renders no app-level skeleton (intentionally null)", () => {
     const { container } = render(<AppLoading />);
-    // contains skeleton blocks
-    expect(container.querySelectorAll(".animate-pulse").length).toBeGreaterThan(0);
+    expect(container.firstChild).toBeNull();
   });
 
   it("renders apartments loading skeleton", () => {

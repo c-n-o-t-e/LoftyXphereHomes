@@ -57,7 +57,7 @@ export const WHATSAPP_DEFAULT_MESSAGE =
  * converts to international (234 + national number) so wa.me works reliably.
  */
 export function normalizeWhatsAppPhoneDigits(phone: string): string | null {
-  let digits = phone.replace(/\D/g, "");
+  const digits = phone.replace(/\D/g, "");
   if (!digits) return null;
   if (digits.startsWith("234")) {
     return digits;

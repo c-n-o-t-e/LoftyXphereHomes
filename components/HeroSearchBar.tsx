@@ -114,6 +114,7 @@ export default function HeroSearchBar({ variant = "hero" }: { variant?: HeroSear
     },
   });
 
+  // eslint-disable-next-line react-hooks/incompatible-library -- react-hook-form watch is required for date/guest UI
   const checkIn = watch("checkIn");
   const checkOut = watch("checkOut");
 

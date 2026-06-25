@@ -1,4 +1,5 @@
 import fs from "fs";
+import path from "path";
 import {
     Document,
     Image,
@@ -44,18 +45,14 @@ function resolveInvoiceLogoPath(): string | null {
         process.env.BUSINESS_LOGO_PATH?.trim() ||
         "";
     if (env) {
-        // Allow both absolute paths and workspace-relative paths.
-        const path = require("path") as typeof import("path");
         return path.isAbsolute(env) ? env : path.join(process.cwd(), env);
     }
-    const path = require("path") as typeof import("path");
     const fallback = path.join(process.cwd(), "public", "lofty-logo-black.png");
     return fs.existsSync(fallback) ? fallback : null;
 }
 
 function logoPathToDataUri(filePath: string): string | null {
     try {
-        const path = require("path") as typeof import("path");
         const ext = path.extname(filePath).toLowerCase();
         const mime =
             ext === ".svg"
@@ -312,6 +309,7 @@ function InvoiceDocument(props: {
                 <View style={styles.headerRow}>
                     <View>
                         {props.logoSrc ? (
+                            // eslint-disable-next-line jsx-a11y/alt-text -- @react-pdf/renderer Image has no alt prop
                             <Image style={styles.logo} src={props.logoSrc} />
                         ) : (
                             <Text style={styles.title}>{props.businessName}</Text>

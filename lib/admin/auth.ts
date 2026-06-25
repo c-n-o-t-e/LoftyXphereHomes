@@ -11,6 +11,21 @@ export type AdminAuthResult = {
     role: AdminRole;
 };
 
+class AdminAuthError extends Error {
+    httpResponse?: Response;
+    statusCode?: number;
+
+    constructor(
+        message: string,
+        init?: { httpResponse?: Response; statusCode?: number },
+    ) {
+        super(message);
+        this.name = "AdminAuthError";
+        this.httpResponse = init?.httpResponse;
+        this.statusCode = init?.statusCode;
+    }
+}
+
 function requireSupabaseEnv() {
     const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL;
     const supabaseAnonKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY;
@@ -26,10 +41,9 @@ export async function requireAdmin(
 ): Promise<AdminAuthResult> {
     const parsedHeaders = parseHeaders(request, bearerAuthHeaderSchema);
     if (!parsedHeaders.success) {
-        // Reuse standardized response semantics by throwing; caller should catch and return 401/400.
-        const err = new Error("Unauthorized");
-        (err as any).httpResponse = parsedHeaders.response;
-        throw err;
+        throw new AdminAuthError("Unauthorized", {
+            httpResponse: parsedHeaders.response,
+        });
     }
 
     const token = parsedHeaders.data.authorization.replace(/^Bearer\s+/i, "");
@@ -41,9 +55,7 @@ export async function requireAdmin(
     } = await supabase.auth.getUser(token);
 
     if (authError || !user?.id || !user.email) {
-        const err = new Error("Unauthorized");
-        (err as any).statusCode = 401;
-        throw err;
+        throw new AdminAuthError("Unauthorized", { statusCode: 401 });
     }
 
     const { prisma } = await import("@/lib/db");
@@ -55,16 +67,12 @@ export async function requireAdmin(
     });
 
     if (!adminUser) {
-        const err = new Error("Forbidden");
-        (err as any).statusCode = 403;
-        throw err;
+        throw new AdminAuthError("Forbidden", { statusCode: 403 });
     }
 
     const role = adminUser.role as AdminRole;
     if (!allowedRoles.includes(role)) {
-        const err = new Error("Forbidden");
-        (err as any).statusCode = 403;
-        throw err;
+        throw new AdminAuthError("Forbidden", { statusCode: 403 });
     }
 
     return {
@@ -73,4 +81,3 @@ export async function requireAdmin(
         role,
     };
 }
-

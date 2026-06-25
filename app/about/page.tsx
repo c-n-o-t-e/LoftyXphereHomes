@@ -1,6 +1,7 @@
 "use client";
 
 import Image from "next/image";
+import Link from "next/link";
 import { Shield, Sparkles, Heart, Award, Check, Users, MapPin, Clock, Star } from "lucide-react";
 import { motion } from "framer-motion";
 
@@ -317,12 +318,12 @@ export default function AboutPage() {
               Discover our premium apartments and book your perfect stay today.
             </p>
             <div className="flex flex-col sm:flex-row gap-4 justify-center">
-              <a
+              <Link
                 href="/apartments"
                 className="inline-flex items-center justify-center px-8 py-4 bg-[#FA5C5C] text-white rounded-full font-semibold hover:bg-[#E84A4A] transition-colors shadow-lg hover:shadow-xl"
               >
                 View Apartments
-              </a>
+              </Link>
             </div>
           </motion.div>
         </div>

@@ -1,11 +1,9 @@
 import { NextRequest, NextResponse } from "next/server";
 import { requireAdmin } from "@/lib/admin/auth";
 import {
-    deletePropertyAmenityImage,
     reorderPropertyAmenityImages,
     serializePropertyAmenityImage,
 } from "@/lib/admin/propertyAmenityImages";
-import { prisma } from "@/lib/db";
 import { parseJsonBody } from "@/lib/validation/http";
 import { z } from "zod";
 

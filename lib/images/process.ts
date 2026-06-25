@@ -43,7 +43,7 @@ async function encodeWebpVariant(
     input: Buffer,
     variant: ImageVariantName,
 ): Promise<ProcessedImageVariant> {
-    const { width, minBytes, maxBytes } = IMAGE_VARIANTS[variant];
+    const { width, maxBytes } = IMAGE_VARIANTS[variant];
     let quality = 82;
 
     for (let attempt = 0; attempt < 8; attempt += 1) {

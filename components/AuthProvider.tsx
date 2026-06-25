@@ -274,7 +274,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
           | { ok: true; role: "admin" | "receptionist"; email: string }
           | { ok: false; error: string };
         if (cancelled) return;
-        if (json && (json as any).ok === true) {
+        if (json.ok === true) {
           setPolicyId("staff");
           try {
             localStorage.setItem(SESSION_STORAGE_KEYS.policyId, "staff");
@@ -296,23 +296,14 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   // Link bookings to userId after login (best-effort).
   useEffect(() => {
     if (!session?.access_token || !user?.email || !user?.id) return;
-    let cancelled = false;
-    const run = async () => {
-      try {
-        await fetch("/api/link-bookings", {
-          method: "POST",
-          headers: {
-            Authorization: `Bearer ${session.access_token}`,
-          },
-        });
-      } catch {
-        // ignore
-      }
-    };
-    void run();
-    return () => {
-      cancelled = true;
-    };
+    void fetch("/api/link-bookings", {
+      method: "POST",
+      headers: {
+        Authorization: `Bearer ${session.access_token}`,
+      },
+    }).catch(() => {
+      // ignore
+    });
   }, [session?.access_token, user?.email, user?.id]);
 
   const signOut = async () => {

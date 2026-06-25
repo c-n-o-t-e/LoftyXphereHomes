@@ -4,7 +4,6 @@ import Link from "next/link";
 import { notFound } from "next/navigation";
 import { getBlogPostById } from "@/lib/data/blog";
 import { ArrowLeft, Calendar, Clock, User } from "lucide-react";
-import { SITE_NAME } from "@/lib/constants";
 
 interface PageProps {
   params: Promise<{ id: string }>;

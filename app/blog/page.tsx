@@ -1,7 +1,6 @@
 import { Metadata } from "next";
 import { blogPosts } from "@/lib/data/blog";
 import BlogCard from "@/components/BlogCard";
-import { SITE_NAME } from "@/lib/constants";
 
 export const metadata: Metadata = {
   title: "Blog",

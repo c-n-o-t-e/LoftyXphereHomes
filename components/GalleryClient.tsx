@@ -45,9 +45,10 @@ export function GalleryClient({ suiteItems, propertyItems }: GalleryClientProps)
 
     const items = toDisplayItems(activeTab, suiteItems, propertyItems);
 
-    useEffect(() => {
+    const handleTabChange = (tab: GalleryTab) => {
         setSelectedIndex(null);
-    }, [activeTab]);
+        setActiveTab(tab);
+    };
 
     const handleClose = () => setSelectedIndex(null);
 
@@ -79,7 +80,7 @@ export function GalleryClient({ suiteItems, propertyItems }: GalleryClientProps)
             <div className="flex justify-center gap-2 mb-10">
                 <button
                     type="button"
-                    onClick={() => setActiveTab("suites")}
+                    onClick={() => handleTabChange("suites")}
                     className={`px-5 py-2.5 rounded-full text-sm font-medium transition-colors min-h-[44px] ${
                         activeTab === "suites"
                             ? "bg-[#FA5C5C] text-white"
@@ -90,7 +91,7 @@ export function GalleryClient({ suiteItems, propertyItems }: GalleryClientProps)
                 </button>
                 <button
                     type="button"
-                    onClick={() => setActiveTab("property")}
+                    onClick={() => handleTabChange("property")}
                     className={`px-5 py-2.5 rounded-full text-sm font-medium transition-colors min-h-[44px] ${
                         activeTab === "property"
                             ? "bg-[#FA5C5C] text-white"

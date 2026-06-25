@@ -73,14 +73,12 @@ function ApartmentsContent() {
   });
 
   const isLoadingAvailability = availabilityEnabled && isPending;
-  const availableForFilter =
-    !availabilityEnabled
-      ? null
-      : isLoadingAvailability
-        ? null
-        : isError || availabilityIds === null
-          ? []
-          : availabilityIds ?? [];
+  const availableForFilter = useMemo(() => {
+    if (!availabilityEnabled) return null;
+    if (isLoadingAvailability) return null;
+    if (isError || availabilityIds === null) return [];
+    return availabilityIds ?? [];
+  }, [availabilityEnabled, isLoadingAvailability, isError, availabilityIds]);
 
   const activeApartments = useMemo(() => getActiveApartments(), []);
 
@@ -188,12 +186,12 @@ function ApartmentsContent() {
               >
                 Contact us
               </Link>
-              <a
+              <Link
                 href="/apartments"
                 className="inline-flex items-center justify-center px-6 py-3 bg-white text-black rounded-full border border-black/15 hover:bg-black/5 transition-colors text-sm sm:text-base min-h-[44px]"
               >
                 Clear dates
-              </a>
+              </Link>
             </div>
           </div>
         ) : isLoadingAvailability ? (
@@ -227,12 +225,12 @@ function ApartmentsContent() {
                 : "Please check back later or contact us for assistance."}
             </p>
             {isSearchActive && (
-              <a
+              <Link
                 href="/apartments"
                 className="inline-block px-6 py-3 sm:px-8 sm:py-4 bg-[#FA5C5C] text-white rounded-full hover:bg-[#E84A4A] transition-colors text-sm sm:text-base min-h-[44px]"
               >
                 View All Suites
-              </a>
+              </Link>
             )}
           </div>
         )}

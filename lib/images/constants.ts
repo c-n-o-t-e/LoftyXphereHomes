@@ -6,6 +6,26 @@ export const APARTMENT_IMAGE_MAX_BYTES =
     1024 *
     1024;
 
+/** Supabase plan cap per object (Free tier: 50 MB). Bucket limit cannot exceed this. */
+export const SUPABASE_STORAGE_MAX_FILE_BYTES =
+    (Number.parseInt(process.env.SUPABASE_STORAGE_MAX_FILE_MB ?? "50", 10) || 50) *
+    1024 *
+    1024;
+
+export function resolveBucketFileSizeLimitBytes(args: {
+    apartmentImageMaxBytes: number;
+    heroVideoMaxBytes: number;
+    apartmentVideoMaxBytes: number;
+    supabasePlanMaxBytes: number;
+}) {
+    const desired = Math.max(
+        args.apartmentImageMaxBytes,
+        args.heroVideoMaxBytes,
+        args.apartmentVideoMaxBytes,
+    );
+    return Math.min(desired, args.supabasePlanMaxBytes);
+}
+
 export const ALLOWED_IMAGE_MIME_TYPES = new Set([
     "image/jpeg",
     "image/png",

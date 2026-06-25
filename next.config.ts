@@ -4,7 +4,7 @@ import { buildSecurityHeaders } from "./lib/security/headers";
 const nextConfig: NextConfig = {
     serverExternalPackages: ["sharp", "@supabase/supabase-js", "ffmpeg-static"],
     experimental: {
-        proxyClientMaxBodySize: "12mb",
+        proxyClientMaxBodySize: "300mb",
         serverActions: {
             bodySizeLimit: "12mb",
         },

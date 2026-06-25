@@ -1,9 +1,22 @@
 import { createServerSupabaseClient } from "@/lib/supabase/server";
 import {
+    APARTMENT_VIDEO_MAX_BYTES,
+    HERO_VIDEO_MAX_BYTES,
+} from "@/lib/videos/constants";
+import {
     APARTMENT_IMAGES_BUCKET,
     APARTMENT_IMAGE_MAX_BYTES,
     APARTMENT_STORAGE_MIME_TYPES,
+    SUPABASE_STORAGE_MAX_FILE_BYTES,
+    resolveBucketFileSizeLimitBytes,
 } from "./constants";
+
+const BUCKET_FILE_SIZE_LIMIT_BYTES = resolveBucketFileSizeLimitBytes({
+    apartmentImageMaxBytes: APARTMENT_IMAGE_MAX_BYTES,
+    heroVideoMaxBytes: HERO_VIDEO_MAX_BYTES,
+    apartmentVideoMaxBytes: APARTMENT_VIDEO_MAX_BYTES,
+    supabasePlanMaxBytes: SUPABASE_STORAGE_MAX_FILE_BYTES,
+});
 
 export async function ensureApartmentImagesBucket() {
     const supabase = createServerSupabaseClient();
@@ -19,7 +32,7 @@ export async function ensureApartmentImagesBucket() {
 
     const bucketConfig = {
         public: true,
-        fileSizeLimit: APARTMENT_IMAGE_MAX_BYTES,
+        fileSizeLimit: BUCKET_FILE_SIZE_LIMIT_BYTES,
         allowedMimeTypes: [...APARTMENT_STORAGE_MIME_TYPES],
     };
 
@@ -43,8 +56,10 @@ export async function ensureApartmentImagesBucket() {
     );
 
     if (updateError) {
-        throw new Error(
-            `Failed to update storage bucket "${APARTMENT_IMAGES_BUCKET}": ${updateError.message}`,
+        // Bucket already exists — don't block uploads/listing if metadata sync fails.
+        console.warn(
+            `Could not sync storage bucket "${APARTMENT_IMAGES_BUCKET}" settings:`,
+            updateError.message,
         );
     }
 }

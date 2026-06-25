@@ -104,7 +104,7 @@ export function ApartmentVideoManager({
                 <div>
                     <h2 className="font-semibold text-gray-900">Apartment tour video</h2>
                     <p className="text-sm text-gray-600 mt-1">
-                        Upload a short walkthrough for {apartmentName} (max 45 seconds).
+                        Upload a short walkthrough for {apartmentName} (max 100 seconds).
                         We compress to mobile + desktop MP4 and a poster — the original
                         is not stored.
                     </p>

@@ -111,6 +111,9 @@ export default function AdminHomePage() {
                                     <Link href="/admin/hero-video">Manage hero video</Link>
                                 </Button>
                                 <Button variant="outline" asChild>
+                                    <Link href="/admin/compress-video">Compress large videos</Link>
+                                </Button>
+                                <Button variant="outline" asChild>
                                     <Link href="/admin/property-amenities">Manage property amenities</Link>
                                 </Button>
                             </div>

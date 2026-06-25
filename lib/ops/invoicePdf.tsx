@@ -601,20 +601,20 @@ function InvoiceDocument(props: {
                         <PanelHeading title="Support" />
                         <Text style={styles.lead}>{props.businessName}</Text>
                         <Text style={styles.kv}>
-                            <Text style={styles.strong}>Website</Text>{" "}
-                            {props.websiteUrl}
+                            <Text style={styles.strong}>IG:</Text>{" "}
+                            {props.businessInstagram}
                         </Text>
                         <Text style={styles.kv}>
                             <Text style={styles.strong}>Phone</Text>{" "}
                             {props.businessPhone}
                         </Text>
                         <Text style={styles.kv}>
-                            <Text style={styles.strong}>Email</Text>{" "}
-                            {props.businessEmail}
+                            <Text style={styles.strong}>Website</Text>{" "}
+                            {props.websiteUrl}
                         </Text>
                         <Text style={styles.kv}>
-                            <Text style={styles.strong}>IG:</Text>{" "}
-                            {props.businessInstagram}
+                            <Text style={styles.strong}>Email</Text>{" "}
+                            {props.businessEmail}
                         </Text>
                         <Text style={styles.hint}>
                             Please include your <Text style={styles.strong}>invoice #</Text>{" "}

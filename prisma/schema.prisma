@@ -197,6 +197,19 @@ model PropertyAmenityImage {
   @@index([amenityId, displayOrder])
 }
 
+// --- Marketing page image slots (map amenity gallery photos to fixed page sections) ---
+
+model SiteImageSlot {
+  key          String   @id
+  label        String
+  pagePath     String
+  sectionLabel String
+  amenitySlug  String
+  imageIndex   Int
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
+}
+
 // --- Homepage hero video (optimized variants in Supabase Storage) ---
 
 model HeroVideo {

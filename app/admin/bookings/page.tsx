@@ -6,7 +6,9 @@ import { useRouter, useSearchParams } from "next/navigation";
 import { useInfiniteQuery } from "@tanstack/react-query";
 import { Loader2, Search, X } from "lucide-react";
 import { useAuth } from "@/components/AuthProvider";
-import { useAdminMe } from "@/hooks/useAdminMe";
+import { useAdminContext } from "@/components/admin/AdminContext";
+import { AdminPageContainer } from "@/components/admin/AdminPageContainer";
+import { AdminPageHeader } from "@/components/admin/AdminPageHeader";
 import { getSupabaseClient } from "@/lib/supabase/client";
 import { apartments } from "@/lib/data/apartments";
 import { Button } from "@/components/ui/button";
@@ -90,13 +92,9 @@ const VIEW_LABELS: Record<AdminBookingsView, string> = {
 
 export default function AdminBookingsPage() {
     const { user, isLoading } = useAuth();
+    const { role } = useAdminContext();
     const router = useRouter();
     const params = useSearchParams();
-    const {
-        data: me,
-        isLoading: isMeLoading,
-    } = useAdminMe(Boolean(user) && !isLoading, user?.id);
-
     const initialView = (params.get("view") as AdminBookingsView | null) ?? "current";
     const [view, setView] = useState<AdminBookingsView>(initialView);
     const [q, setQ] = useState(params.get("q") ?? "");
@@ -110,10 +108,10 @@ export default function AdminBookingsPage() {
         }
     }, [isLoading, user, router]);
 
-    const canSeeBookings = me?.ok === true;
-    const canCancelBookings = me?.ok === true && me.role === "admin";
-    const canSeeFinancials = me?.ok === true && me.role === "admin";
-    const canSeeContact = me?.ok === true && me.role === "admin";
+    const canSeeBookings = true;
+    const canCancelBookings = role === "admin";
+    const canSeeFinancials = role === "admin";
+    const canSeeContact = role === "admin";
 
     const query = useInfiniteQuery({
         queryKey: ["admin", "bookings", { view, q: debouncedQ }],
@@ -171,64 +169,31 @@ export default function AdminBookingsPage() {
 
     if (isLoading) return null;
     if (!user) return null;
-    if (isMeLoading || me === undefined) return null;
-
-    if (!me.ok) {
-        return (
-            <div className="min-h-screen bg-gray-50 pt-20">
-                <div className="max-w-4xl mx-auto px-4 py-10">
-                    <Card className="p-6">
-                        <h1 className="text-xl font-bold text-gray-900">
-                            Admin access required
-                        </h1>
-                        <p className="mt-2 text-sm text-gray-600">
-                            Your account doesn’t have access to staff bookings.
-                        </p>
-                        <div className="mt-4">
-                            <Button variant="outline" asChild>
-                                <Link href="/">Back to website</Link>
-                            </Button>
-                        </div>
-                    </Card>
-                </div>
-            </div>
-        );
-    }
 
     return (
-        <div className="min-h-screen bg-gray-50 pt-20">
-            <div className="max-w-6xl mx-auto px-4 py-10">
-                <div className="flex items-start justify-between gap-4 flex-wrap">
-                    <div>
-                        <h1 className="text-2xl font-bold text-gray-900">Bookings</h1>
-                        <p className="text-sm text-gray-600 mt-1">
-                            Search by guest name, invoice ID, email, phone, reference, or
-                            apartment id.
-                            {resolvedInvoiceId ? (
-                                <>
-                                    {" "}
-                                    Interpreted invoice ID:{" "}
-                                    <span className="font-medium">{resolvedInvoiceId}</span>.
-                                </>
-                            ) : null}
-                        </p>
-                    </div>
-                    <div className="flex gap-2 flex-wrap">
-                        <Button asChild>
+        <AdminPageContainer maxWidth="6xl">
+            <AdminPageHeader
+                title="Bookings"
+                description={`Search by guest name, invoice ID, email, phone, reference, or apartment id.${
+                    resolvedInvoiceId
+                        ? ` Interpreted invoice ID: ${resolvedInvoiceId}.`
+                        : ""
+                }`}
+                actions={
+                    <>
+                        <Button asChild className="bg-[#FA5C5C] hover:bg-[#E84A4A]">
                             <Link href="/admin/bookings/new">New manual booking</Link>
                         </Button>
-                        {canCancelBookings && (
+                        {canCancelBookings ? (
                             <Button variant="outline" asChild>
                                 <Link href="/admin/bookings/cancel">Cancel by invoice</Link>
                             </Button>
-                        )}
-                        <Button variant="outline" asChild>
-                            <Link href="/admin">Back</Link>
-                        </Button>
-                    </div>
-                </div>
+                        ) : null}
+                    </>
+                }
+            />
 
-                <Card className="p-6 mt-6">
+            <Card className="border-slate-200/80 p-6 shadow-sm">
                     <div className="grid gap-4">
                         <div>
                             <Label htmlFor="booking-search">Search</Label>
@@ -415,8 +380,7 @@ export default function AdminBookingsPage() {
                         </p>
                     ) : null}
                 </div>
-            </div>
-        </div>
+        </AdminPageContainer>
     );
 }
 

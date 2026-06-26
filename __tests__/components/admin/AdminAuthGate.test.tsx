@@ -4,8 +4,16 @@ import { AdminAuthGate } from "@/components/admin/AdminAuthGate";
 const mockReplace = jest.fn();
 
 jest.mock("next/navigation", () => ({
-    useRouter: () => ({ replace: mockReplace }),
+    useRouter: () => ({ replace: mockReplace, push: jest.fn() }),
     usePathname: () => "/admin/bookings",
+}));
+
+jest.mock("next/image", () => ({
+    __esModule: true,
+    default: (props: { alt?: string }) => {
+        // eslint-disable-next-line @next/next/no-img-element, jsx-a11y/alt-text
+        return <img alt={props.alt ?? ""} />;
+    },
 }));
 
 jest.mock("@/components/AuthProvider", () => ({
@@ -73,6 +81,7 @@ describe("AdminAuthGate", () => {
         (useAuth as jest.Mock).mockReturnValue({
             user: { id: "u1", email: "admin@example.com" },
             isLoading: false,
+            signOut: jest.fn(),
         });
         (useAdminMe as jest.Mock).mockReturnValue({
             data: { ok: true, role: "admin", email: "admin@example.com" },

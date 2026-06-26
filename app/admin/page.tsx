@@ -1,134 +1,108 @@
 "use client";
 
 import Link from "next/link";
-import { useEffect } from "react";
-import { useRouter } from "next/navigation";
-import { useAuth } from "@/components/AuthProvider";
-import { useAdminMe } from "@/hooks/useAdminMe";
+import {
+    ADMIN_NAV_GROUPS,
+    ADMIN_NAV_ITEMS,
+    type AdminNavGroup,
+} from "@/lib/admin/navigation";
+import { useAdminContext } from "@/components/admin/AdminContext";
+import { AdminModuleCard } from "@/components/admin/AdminModuleCard";
+import { AdminPageContainer } from "@/components/admin/AdminPageContainer";
+import { AdminPageHeader } from "@/components/admin/AdminPageHeader";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 
+const GROUP_ORDER: AdminNavGroup[] = [
+    "operations",
+    "website",
+    "tools",
+    "team",
+];
+
 export default function AdminHomePage() {
-    const { user, isLoading } = useAuth();
-    const router = useRouter();
-    const {
-        data: me,
-        isLoading: isMeLoading,
-    } = useAdminMe(Boolean(user) && !isLoading, user?.id);
+    const { email, role } = useAdminContext();
+    const isAdmin = role === "admin";
 
-    useEffect(() => {
-        if (isLoading) return;
-        if (!user) {
-            router.push("/login?redirect=/admin");
-            return;
-        }
-    }, [isLoading, user, router]);
+    const visibleItems = ADMIN_NAV_ITEMS.filter(
+        (item) => item.href !== "/admin" && item.roles.includes(role),
+    );
 
-    if (isLoading) return null;
-    if (!user) return null;
-    if (isMeLoading || me === undefined) return null;
-
-    if (!me.ok) {
-        return (
-            <div className="min-h-screen bg-gray-50 pt-20">
-                <div className="max-w-3xl mx-auto px-4 py-10">
-                    <Card className="p-6">
-                        <h1 className="text-xl font-bold text-gray-900">
-                            Admin access required
-                        </h1>
-                        <p className="mt-2 text-sm text-gray-600">
-                            Your account doesn’t have access to the admin dashboard.
-                        </p>
-                    </Card>
-                </div>
-            </div>
-        );
-    }
-
-    const canCancelBookings = me.role === "admin";
-    const canManageStaff = me.role === "admin";
+    const groupedSections = GROUP_ORDER.map((group) => ({
+        group,
+        items: visibleItems.filter((item) => item.group === group),
+    })).filter((section) => section.items.length > 0);
 
     return (
-        <div className="min-h-screen bg-gray-50 pt-20">
-            <div className="max-w-5xl mx-auto px-4 py-10">
-                <div className="flex items-start justify-between gap-4 flex-wrap">
-                    <div>
-                        <h1 className="text-2xl font-bold text-gray-900">
-                            Admin Dashboard
-                        </h1>
-                        <p className="text-sm text-gray-600 mt-1">
-                            Create manual bookings, generate invoices, and sync to Google
-                            Sheets.
-                        </p>
-                    </div>
-                    <div className="flex gap-2 flex-wrap">
+        <AdminPageContainer>
+            <AdminPageHeader
+                title="Dashboard"
+                description="Run daily operations, manage website content, and keep guest-facing assets up to date."
+                actions={
+                    <>
                         <Button variant="outline" asChild>
                             <Link href="/admin/bookings">View bookings</Link>
                         </Button>
-                        <Button asChild>
+                        <Button asChild className="bg-[#FA5C5C] hover:bg-[#E84A4A]">
                             <Link href="/admin/bookings/new">New manual booking</Link>
                         </Button>
-                        {canCancelBookings && (
-                            <Button variant="outline" asChild>
-                                <Link href="/admin/bookings/cancel">Cancel booking</Link>
-                            </Button>
-                        )}
-                    </div>
-                </div>
+                    </>
+                }
+            />
 
-                <div className="mt-8 grid gap-4 sm:grid-cols-2">
-                    <Card className="p-6">
-                        <h2 className="font-semibold text-gray-900">Manual bookings</h2>
-                        <p className="text-sm text-gray-600 mt-1">
-                            Create a paid booking for walk-ins / WhatsApp / Instagram.
-                        </p>
-                        <div className="mt-4 flex flex-wrap gap-2">
-                            <Button variant="outline" asChild>
-                                <Link href="/admin/bookings/new">Create booking</Link>
-                            </Button>
-                            {canCancelBookings && (
-                                <Button variant="outline" asChild>
-                                    <Link href="/admin/bookings/cancel">Cancel by invoice</Link>
-                                </Button>
-                            )}
-                        </div>
-                    </Card>
-                    <Card className="p-6">
-                        <h2 className="font-semibold text-gray-900">Access</h2>
-                        <p className="text-sm text-gray-600 mt-1">
-                            Signed in as <span className="font-medium">{user?.email}</span>
-                            {` (${me.role})`}.
-                        </p>
-                        {canManageStaff && (
-                            <div className="mt-4 flex flex-wrap gap-2">
-                                <Button variant="outline" asChild>
-                                    <Link href="/admin/users">Manage staff</Link>
-                                </Button>
-                                <Button variant="outline" asChild>
-                                    <Link href="/admin/apartments">Manage apartment images</Link>
-                                </Button>
-                                <Button variant="outline" asChild>
-                                    <Link href="/admin/hero-video">Manage hero video</Link>
-                                </Button>
-                                <Button variant="outline" asChild>
-                                    <Link href="/admin/compress-video">Compress large videos</Link>
-                                </Button>
-                                <Button variant="outline" asChild>
-                                    <Link href="/admin/property-amenities">Manage property amenities</Link>
-                                </Button>
-                            </div>
-                        )}
-                        <Button
-                            className="mt-4"
-                            variant="outline"
-                            onClick={() => router.push("/")}
-                        >
-                            Back to website
-                        </Button>
-                    </Card>
-                </div>
+            <div className="grid gap-4 md:grid-cols-3">
+                <Card className="border-slate-200/80 bg-white p-5 shadow-sm">
+                    <p className="text-xs font-semibold uppercase tracking-[0.12em] text-slate-500">
+                        Signed in
+                    </p>
+                    <p className="mt-2 truncate text-base font-semibold text-slate-900">
+                        {email}
+                    </p>
+                    <p className="mt-1 text-sm capitalize text-slate-600">{role}</p>
+                </Card>
+                <Card className="border-slate-200/80 bg-white p-5 shadow-sm md:col-span-2">
+                    <p className="text-xs font-semibold uppercase tracking-[0.12em] text-slate-500">
+                        Today&apos;s focus
+                    </p>
+                    <p className="mt-2 text-sm leading-relaxed text-slate-600">
+                        {isAdmin
+                            ? "Use Operations for bookings and invoices. Website content covers apartment photos, amenities, hero video, and fixed page images."
+                            : "Use Bookings to search reservations and create manual bookings for walk-ins, WhatsApp, or Instagram enquiries."}
+                    </p>
+                </Card>
             </div>
-        </div>
+
+            <div className="mt-10 space-y-10">
+                {groupedSections.map(({ group, items }) => (
+                    <section key={group}>
+                        <div className="mb-4">
+                            <h2 className="text-lg font-semibold text-slate-900">
+                                {ADMIN_NAV_GROUPS[group].label}
+                            </h2>
+                            <p className="mt-1 text-sm text-slate-600">
+                                {ADMIN_NAV_GROUPS[group].description}
+                            </p>
+                        </div>
+                        <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-3">
+                            {items.map((item) => (
+                                <AdminModuleCard
+                                    key={item.href}
+                                    href={item.href}
+                                    title={item.label}
+                                    description={item.description}
+                                    icon={item.icon}
+                                    badge={
+                                        item.roles.length === 1 &&
+                                        item.roles[0] === "admin"
+                                            ? "Admin"
+                                            : undefined
+                                    }
+                                />
+                            ))}
+                        </div>
+                    </section>
+                ))}
+            </div>
+        </AdminPageContainer>
     );
 }
-

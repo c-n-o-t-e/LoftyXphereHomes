@@ -6,6 +6,9 @@ import Link from "next/link";
 import { Calendar } from "lucide-react";
 import { useQueryClient } from "@tanstack/react-query";
 import { useAuth } from "@/components/AuthProvider";
+import { useAdminContext } from "@/components/admin/AdminContext";
+import { AdminPageContainer } from "@/components/admin/AdminPageContainer";
+import { AdminPageHeader } from "@/components/admin/AdminPageHeader";
 import { getSupabaseClient } from "@/lib/supabase/client";
 import { apartments } from "@/lib/data/apartments";
 import { Button } from "@/components/ui/button";
@@ -15,7 +18,6 @@ import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { DatePickerCalendar } from "@/components/DatePickerCalendar";
 import { useApartmentAvailability } from "@/hooks/useApartmentAvailability";
-import { useAdminMe } from "@/hooks/useAdminMe";
 import { buildCheckoutDisabledDates } from "@/lib/booking/checkoutDisabledDates";
 import {
     formatDateForInput,
@@ -42,12 +44,9 @@ function formatPrice(price: number) {
 
 export default function NewManualBookingPage() {
     const { user, isLoading } = useAuth();
+    const { role } = useAdminContext();
     const router = useRouter();
     const queryClient = useQueryClient();
-    const {
-        data: me,
-        isLoading: isMeLoading,
-    } = useAdminMe(Boolean(user) && !isLoading, user?.id);
 
     const [formResetKey, setFormResetKey] = useState(0);
 
@@ -201,64 +200,29 @@ export default function NewManualBookingPage() {
 
     if (isLoading) return null;
     if (!user) return null;
-    if (isMeLoading || me === undefined) return null;
 
-    if (!me.ok) {
-        return (
-            <div className="min-h-screen bg-gray-50 pt-20">
-                <div className="max-w-3xl mx-auto px-4 py-10">
-                    <Card className="p-6">
-                        <h1 className="text-xl font-bold text-gray-900">
-                            Admin access required
-                        </h1>
-                        <p className="mt-2 text-sm text-gray-600">
-                            Your account doesn’t have access to create manual bookings.
-                        </p>
-                        <div className="mt-4 flex flex-wrap gap-2">
-                            <Button variant="outline" asChild>
-                                <Link href="/">Back to website</Link>
-                            </Button>
-                            <Button
-                                variant="outline"
-                                onClick={() => router.push("/login?redirect=/admin/bookings/new")}
-                            >
-                                Sign in with a staff account
-                            </Button>
-                        </div>
-                    </Card>
-                </div>
-            </div>
-        );
-    }
-
-    const canCancelBookings = me.role === "admin";
+    const canCancelBookings = role === "admin";
 
     return (
-        <div className="min-h-screen bg-gray-50 pt-20">
-            <div className="max-w-3xl mx-auto px-4 py-10">
-                <div className="flex items-center justify-between gap-4 flex-wrap">
-                    <div>
-                        <h1 className="text-2xl font-bold text-gray-900">
-                            New manual booking
-                        </h1>
-                        <p className="text-sm text-gray-600 mt-1">
-                            Creates a PAID booking immediately. Invoice PDF and Google Sheets
-                            sync run in the background and may take a moment.
-                        </p>
-                    </div>
-                    <div className="flex gap-2 flex-wrap">
-                        {canCancelBookings && (
+        <AdminPageContainer maxWidth="3xl">
+            <AdminPageHeader
+                title="New manual booking"
+                description="Creates a PAID booking immediately. Invoice PDF and Google Sheets sync run in the background and may take a moment."
+                actions={
+                    <>
+                        <Button variant="outline" asChild>
+                            <Link href="/admin/bookings">View bookings</Link>
+                        </Button>
+                        {canCancelBookings ? (
                             <Button variant="outline" asChild>
                                 <Link href="/admin/bookings/cancel">Cancel booking</Link>
                             </Button>
-                        )}
-                        <Button variant="outline" asChild>
-                            <Link href="/admin">Back</Link>
-                        </Button>
-                    </div>
-                </div>
+                        ) : null}
+                    </>
+                }
+            />
 
-                <Card key={formResetKey} className="p-6 mt-6">
+            <Card key={formResetKey} className="border-slate-200/80 p-6 shadow-sm">
                     <div className="grid gap-4 sm:grid-cols-2">
                         <div className="sm:col-span-2">
                             <Label htmlFor="name">Full name</Label>
@@ -495,8 +459,7 @@ export default function NewManualBookingPage() {
                         </Button>
                     </div>
                 </Card>
-            </div>
-        </div>
+        </AdminPageContainer>
     );
 }
 

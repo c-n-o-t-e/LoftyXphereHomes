@@ -1,9 +1,7 @@
 import Link from "next/link";
 import { ArrowRight, Dumbbell, GlassWater, TreePalm, Waves } from "lucide-react";
-import {
-    resolveExperiencePageHeroImage,
-    type PropertyAmenityPublic,
-} from "@/lib/data/propertyAmenities";
+import type { ApartmentImageSet } from "@/lib/images/types";
+import type { PropertyAmenityPublic } from "@/lib/data/propertyAmenities";
 import { PropertyAmenityGallery } from "@/components/PropertyAmenityGallery";
 import { ResponsiveApartmentImage } from "@/components/ResponsiveApartmentImage";
 import { Button } from "@/components/ui/button";
@@ -17,11 +15,13 @@ const AMENITY_ICONS: Record<string, typeof Waves> = {
 
 type ExperiencePageContentProps = {
     amenities: PropertyAmenityPublic[];
+    heroImage: ApartmentImageSet | null;
 };
 
-export function ExperiencePageContent({ amenities }: ExperiencePageContentProps) {
-    const heroImage = resolveExperiencePageHeroImage(amenities);
-
+export function ExperiencePageContent({
+    amenities,
+    heroImage,
+}: ExperiencePageContentProps) {
     return (
         <div className="pt-20 pb-12 sm:pb-16 md:pb-24 bg-white min-h-screen">
             <div className="container mx-auto px-4 sm:px-6 lg:px-8">

@@ -2,10 +2,12 @@
 
 import Link from "next/link";
 import { useCallback, useEffect, useState } from "react";
-import { useParams, useRouter } from "next/navigation";
+import { useParams } from "next/navigation";
 import { Loader2 } from "lucide-react";
-import { useAuth } from "@/components/AuthProvider";
-import { useAdminMe } from "@/hooks/useAdminMe";
+import { useAdminContext } from "@/components/admin/AdminContext";
+import { AdminOnlyGate } from "@/components/admin/AdminOnlyGate";
+import { AdminPageContainer } from "@/components/admin/AdminPageContainer";
+import { AdminPageHeader } from "@/components/admin/AdminPageHeader";
 import { getSupabaseClient } from "@/lib/supabase/client";
 import { PropertyAmenityImageManager } from "@/components/admin/PropertyAmenityImageManager";
 import { Button } from "@/components/ui/button";
@@ -14,12 +16,7 @@ import { Card } from "@/components/ui/card";
 export default function AdminPropertyAmenityImagesPage() {
     const params = useParams<{ id: string }>();
     const amenityId = params.id;
-    const { user, isLoading } = useAuth();
-    const router = useRouter();
-    const { data: me, isLoading: isMeLoading } = useAdminMe(
-        Boolean(user) && !isLoading,
-        user?.id,
-    );
+    const { role } = useAdminContext();
     const [amenityName, setAmenityName] = useState<string | null>(null);
     const [isAmenityLoading, setIsAmenityLoading] = useState(true);
     const [amenityNotFound, setAmenityNotFound] = useState(false);
@@ -59,86 +56,47 @@ export default function AdminPropertyAmenityImagesPage() {
     }, [amenityId]);
 
     useEffect(() => {
-        if (isLoading) return;
-        if (!user) {
-            router.push(`/login?redirect=/admin/property-amenities/${amenityId}/images`);
-        }
-    }, [isLoading, user, router, amenityId]);
-
-    useEffect(() => {
-        if (!user || !me?.ok || me.role !== "admin") return;
+        if (role !== "admin") return;
         void loadAmenity();
-    }, [user, me, loadAmenity]);
+    }, [role, loadAmenity]);
 
-    if (isLoading || isMeLoading || me === undefined) return null;
-    if (!user) return null;
-
-    if (!me.ok || me.role !== "admin") {
-        return (
-            <div className="min-h-screen bg-gray-50 pt-20">
-                <div className="max-w-3xl mx-auto px-4 py-10">
-                    <Card className="p-6">
-                        <h1 className="text-xl font-bold text-gray-900">
-                            Admin access required
-                        </h1>
-                    </Card>
-                </div>
-            </div>
-        );
-    }
-
-    if (isAmenityLoading) {
-        return (
-            <div className="min-h-screen bg-gray-50 pt-20">
-                <div className="max-w-6xl mx-auto px-4 py-10">
-                    <div className="flex items-center gap-2 text-gray-600 mb-8">
+    return (
+        <AdminOnlyGate>
+            <AdminPageContainer maxWidth="6xl">
+                {isAmenityLoading ? (
+                    <div className="flex items-center gap-2 text-slate-600">
                         <Loader2 className="h-5 w-5 animate-spin" />
                         Loading amenity...
                     </div>
-                    <PropertyAmenityImageManager
-                        amenityId={amenityId}
-                        amenityName="Property amenity"
-                    />
-                </div>
-            </div>
-        );
-    }
-
-    if (amenityNotFound || !amenityName) {
-        return (
-            <div className="min-h-screen bg-gray-50 pt-20">
-                <div className="max-w-3xl mx-auto px-4 py-10">
-                    <Card className="p-6">
-                        <h1 className="text-xl font-bold text-gray-900">
+                ) : amenityNotFound || !amenityName ? (
+                    <Card className="border-slate-200/80 p-6 shadow-sm">
+                        <h1 className="text-xl font-semibold text-slate-900">
                             Property amenity not found
                         </h1>
                         <Button className="mt-4" variant="outline" asChild>
                             <Link href="/admin/property-amenities">Back to amenities</Link>
                         </Button>
                     </Card>
-                </div>
-            </div>
-        );
-    }
-
-    return (
-        <div className="min-h-screen bg-gray-50 pt-20">
-            <div className="max-w-6xl mx-auto px-4 py-10">
-                <div className="flex items-start justify-between gap-4 flex-wrap mb-8">
-                    <div>
-                        <p className="text-sm text-gray-500">Property amenity photos</p>
-                        <h1 className="text-2xl font-bold text-gray-900">{amenityName}</h1>
-                    </div>
-                    <Button variant="outline" asChild>
-                        <Link href="/admin/property-amenities">All amenities</Link>
-                    </Button>
-                </div>
-
-                <PropertyAmenityImageManager
-                    amenityId={amenityId}
-                    amenityName={amenityName}
-                />
-            </div>
-        </div>
+                ) : (
+                    <>
+                        <AdminPageHeader
+                            title={amenityName}
+                            description="Upload, reorder, and manage photos for this shared facility."
+                            actions={
+                                <Button variant="outline" asChild>
+                                    <Link href="/admin/property-amenities">
+                                        All amenities
+                                    </Link>
+                                </Button>
+                            }
+                        />
+                        <PropertyAmenityImageManager
+                            amenityId={amenityId}
+                            amenityName={amenityName}
+                        />
+                    </>
+                )}
+            </AdminPageContainer>
+        </AdminOnlyGate>
     );
 }

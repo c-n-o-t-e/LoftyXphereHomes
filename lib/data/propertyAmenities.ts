@@ -1,16 +1,18 @@
 import { unstable_noStore as noStore } from "next/cache";
 import { ensureDefaultPropertyAmenities } from "@/lib/admin/propertyAmenities";
+import type { SiteImageSlotAssignment } from "@/lib/admin/siteImageSlots";
+import { getSiteImageSlotAssignments } from "@/lib/admin/siteImageSlots";
 import { prisma } from "@/lib/db";
 import type { ApartmentImageSet } from "@/lib/images/types";
 
-/** Edit slug + imageIndex to change the wide banner on /experience. */
+/** Fallback when DB slots are unavailable. Prefer admin → Site images. */
 export const EXPERIENCE_PAGE_HERO = {
     slug: "outdoor-lounge",
     /** Admin gallery label "#9" (0-based index). */
     imageIndex: 8,
 } as const;
 
-/** Edit slug + imageIndex to change photos on /about (Outdoor & common areas). */
+/** Fallback when DB slots are unavailable. Prefer admin → Site images. */
 export const ABOUT_PAGE_IMAGES = {
     slug: "outdoor-lounge",
     /** Admin gallery label "#8" — Our Story section (0-based index 7). */
@@ -103,11 +105,15 @@ function resolveAmenityImageByIndex(
 
 export function resolveExperiencePageHeroImage(
     amenities: PropertyAmenityPublic[],
+    assignment: SiteImageSlotAssignment = {
+        amenitySlug: EXPERIENCE_PAGE_HERO.slug,
+        imageIndex: EXPERIENCE_PAGE_HERO.imageIndex,
+    },
 ): ApartmentImageSet | null {
     const chosen = resolveAmenityImageByIndex(
         amenities,
-        EXPERIENCE_PAGE_HERO.slug,
-        EXPERIENCE_PAGE_HERO.imageIndex,
+        assignment.amenitySlug,
+        assignment.imageIndex,
     );
     if (chosen) return chosen;
 
@@ -122,19 +128,55 @@ export function resolveExperiencePageHeroImage(
 
 export function resolveAboutPageImages(
     amenities: PropertyAmenityPublic[],
+    assignments: {
+        aboutStory: SiteImageSlotAssignment;
+        aboutWhyChooseUs: SiteImageSlotAssignment;
+    } = {
+        aboutStory: {
+            amenitySlug: ABOUT_PAGE_IMAGES.slug,
+            imageIndex: ABOUT_PAGE_IMAGES.storyImageIndex,
+        },
+        aboutWhyChooseUs: {
+            amenitySlug: ABOUT_PAGE_IMAGES.slug,
+            imageIndex: ABOUT_PAGE_IMAGES.whyChooseUsImageIndex,
+        },
+    },
 ): AboutPageImages {
     return {
         story: resolveAmenityImageByIndex(
             amenities,
-            ABOUT_PAGE_IMAGES.slug,
-            ABOUT_PAGE_IMAGES.storyImageIndex,
+            assignments.aboutStory.amenitySlug,
+            assignments.aboutStory.imageIndex,
         ),
         whyChooseUs: resolveAmenityImageByIndex(
             amenities,
-            ABOUT_PAGE_IMAGES.slug,
-            ABOUT_PAGE_IMAGES.whyChooseUsImageIndex,
+            assignments.aboutWhyChooseUs.amenitySlug,
+            assignments.aboutWhyChooseUs.imageIndex,
         ),
     };
+}
+
+export async function loadSiteImageSlotAssignments() {
+    noStore();
+    try {
+        return await getSiteImageSlotAssignments();
+    } catch (err) {
+        console.error("Failed to load site image slots:", err);
+        return {
+            experienceHero: {
+                amenitySlug: EXPERIENCE_PAGE_HERO.slug,
+                imageIndex: EXPERIENCE_PAGE_HERO.imageIndex,
+            },
+            aboutStory: {
+                amenitySlug: ABOUT_PAGE_IMAGES.slug,
+                imageIndex: ABOUT_PAGE_IMAGES.storyImageIndex,
+            },
+            aboutWhyChooseUs: {
+                amenitySlug: ABOUT_PAGE_IMAGES.slug,
+                imageIndex: ABOUT_PAGE_IMAGES.whyChooseUsImageIndex,
+            },
+        };
+    }
 }
 
 /** Amenities with at least one image — for homepage teaser cards. */

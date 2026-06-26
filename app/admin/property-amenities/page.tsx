@@ -2,10 +2,11 @@
 
 import Link from "next/link";
 import { useCallback, useEffect, useState } from "react";
-import { useRouter } from "next/navigation";
 import { ImageIcon, Loader2 } from "lucide-react";
-import { useAuth } from "@/components/AuthProvider";
-import { useAdminMe } from "@/hooks/useAdminMe";
+import { useAdminContext } from "@/components/admin/AdminContext";
+import { AdminOnlyGate } from "@/components/admin/AdminOnlyGate";
+import { AdminPageContainer } from "@/components/admin/AdminPageContainer";
+import { AdminPageHeader } from "@/components/admin/AdminPageHeader";
 import { getSupabaseClient } from "@/lib/supabase/client";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
@@ -24,22 +25,10 @@ type AdminPropertyAmenityRow = {
 };
 
 export default function AdminPropertyAmenitiesPage() {
-    const { user, isLoading } = useAuth();
-    const router = useRouter();
-    const { data: me, isLoading: isMeLoading } = useAdminMe(
-        Boolean(user) && !isLoading,
-        user?.id,
-    );
+    const { role } = useAdminContext();
     const [amenities, setAmenities] = useState<AdminPropertyAmenityRow[]>([]);
     const [isFetching, setIsFetching] = useState(true);
     const [savingId, setSavingId] = useState<string | null>(null);
-
-    useEffect(() => {
-        if (isLoading) return;
-        if (!user) {
-            router.push("/login?redirect=/admin/property-amenities");
-        }
-    }, [isLoading, user, router]);
 
     const authHeaders = useCallback(async () => {
         const supabase = getSupabaseClient();
@@ -70,9 +59,9 @@ export default function AdminPropertyAmenitiesPage() {
     }, [authHeaders]);
 
     useEffect(() => {
-        if (!user || !me?.ok || me.role !== "admin") return;
+        if (role !== "admin") return;
         void loadAmenities();
-    }, [user, me, loadAmenities]);
+    }, [role, loadAmenities]);
 
     const saveAmenity = async (
         amenity: AdminPropertyAmenityRow,
@@ -108,49 +97,26 @@ export default function AdminPropertyAmenitiesPage() {
         }
     };
 
-    if (isLoading || isMeLoading || me === undefined) return null;
-    if (!user) return null;
-
-    if (!me.ok || me.role !== "admin") {
-        return (
-            <div className="min-h-screen bg-gray-50 pt-20">
-                <div className="max-w-3xl mx-auto px-4 py-10">
-                    <Card className="p-6">
-                        <h1 className="text-xl font-bold text-gray-900">
-                            Admin access required
-                        </h1>
-                    </Card>
-                </div>
-            </div>
-        );
-    }
-
     return (
-        <div className="min-h-screen bg-gray-50 pt-20">
-            <div className="max-w-5xl mx-auto px-4 py-10">
-                <div className="flex items-start justify-between gap-4 flex-wrap">
-                    <div>
-                        <h1 className="text-2xl font-bold text-gray-900">
-                            Property Amenities
-                        </h1>
-                        <p className="text-sm text-gray-600 mt-1">
-                            Manage shared facilities — pool, gym, bar, and outdoor spaces.
-                        </p>
-                    </div>
-                    <Button variant="outline" asChild>
-                        <Link href="/admin">Back to admin</Link>
-                    </Button>
-                </div>
+        <AdminOnlyGate>
+            <AdminPageContainer maxWidth="5xl">
+                <AdminPageHeader
+                    title="Property amenities"
+                    description="Manage shared facilities — pool, gym, bar, and outdoor spaces."
+                />
 
                 {isFetching ? (
-                    <div className="mt-8 flex items-center gap-2 text-gray-600">
+                    <div className="flex items-center gap-2 text-slate-600">
                         <Loader2 className="h-4 w-4 animate-spin" />
                         Loading amenities...
                     </div>
                 ) : (
-                    <div className="mt-8 grid gap-6">
+                    <div className="grid gap-6">
                         {amenities.map((amenity) => (
-                            <Card key={amenity.id} className="p-5 space-y-4">
+                            <Card
+                                key={amenity.id}
+                                className="space-y-4 border-slate-200/80 p-5 shadow-sm"
+                            >
                                 <div className="flex flex-col sm:flex-row sm:items-start justify-between gap-4">
                                     <div className="space-y-3 flex-1">
                                         <div className="space-y-1">
@@ -236,7 +202,7 @@ export default function AdminPropertyAmenitiesPage() {
                         ))}
                     </div>
                 )}
-            </div>
-        </div>
+            </AdminPageContainer>
+        </AdminOnlyGate>
     );
 }

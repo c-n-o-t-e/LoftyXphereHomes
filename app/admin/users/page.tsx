@@ -1,11 +1,12 @@
 "use client";
 
 import Link from "next/link";
-import { useEffect, useMemo, useState } from "react";
-import { useRouter } from "next/navigation";
+import { useEffect, useState } from "react";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { useAuth } from "@/components/AuthProvider";
-import { useAdminMe } from "@/hooks/useAdminMe";
+import { AdminOnlyGate } from "@/components/admin/AdminOnlyGate";
+import { AdminPageContainer } from "@/components/admin/AdminPageContainer";
+import { AdminPageHeader } from "@/components/admin/AdminPageHeader";
 import { getSupabaseClient } from "@/lib/supabase/client";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
@@ -62,12 +63,7 @@ async function getTokenOrThrow(): Promise<string> {
 
 export default function AdminUsersPage() {
     const { user, isLoading } = useAuth();
-    const router = useRouter();
     const queryClient = useQueryClient();
-    const { data: me, isLoading: roleLoading } = useAdminMe(
-        Boolean(user) && !isLoading,
-        user?.id,
-    );
 
     const [email, setEmail] = useState("");
     const [role, setRole] = useState<StaffRole>("receptionist");
@@ -75,17 +71,7 @@ export default function AdminUsersPage() {
     const [error, setError] = useState<string | null>(null);
     const [success, setSuccess] = useState<string | null>(null);
 
-    useEffect(() => {
-        if (isLoading) return;
-        if (!user) {
-            router.push("/login?redirect=/admin/users");
-        }
-    }, [isLoading, user, router]);
-
-    const canManageStaff = useMemo(
-        () => me?.ok === true && me.role === "admin",
-        [me],
-    );
+    const canManageStaff = Boolean(user) && !isLoading;
 
     const staffQuery = useQuery({
         queryKey: ["admin", "users"],
@@ -210,42 +196,13 @@ export default function AdminUsersPage() {
     if (isLoading) return null;
     if (!user) return null;
 
-    if (roleLoading || !me) return null;
-
-    if (!me.ok || me.role !== "admin") {
-        return (
-            <div className="min-h-screen bg-gray-50 pt-20">
-                <div className="max-w-3xl mx-auto px-4 py-10">
-                    <Card className="p-6">
-                        <h1 className="text-xl font-bold text-gray-900">
-                            Admin access required
-                        </h1>
-                        <p className="mt-2 text-sm text-gray-600">
-                            Only admins can manage staff access.
-                        </p>
-                        <Button className="mt-4" variant="outline" asChild>
-                            <Link href="/admin">Back to dashboard</Link>
-                        </Button>
-                    </Card>
-                </div>
-            </div>
-        );
-    }
-
     return (
-        <div className="min-h-screen bg-gray-50 pt-20">
-            <div className="max-w-5xl mx-auto px-4 py-10">
-                <div className="flex items-center justify-between gap-4 flex-wrap">
-                    <div>
-                        <h1 className="text-2xl font-bold text-gray-900">Manage staff</h1>
-                        <p className="text-sm text-gray-600 mt-1">
-                            Invite new admins/receptionists, change roles, or remove access.
-                        </p>
-                    </div>
-                    <Button variant="outline" asChild>
-                        <Link href="/admin">Back</Link>
-                    </Button>
-                </div>
+        <AdminOnlyGate>
+            <AdminPageContainer maxWidth="5xl">
+                <AdminPageHeader
+                    title="Staff access"
+                    description="Invite new admins and receptionists, change roles, or remove access."
+                />
 
                 <Card className="p-6 mt-6">
                     <div className="grid gap-4 sm:grid-cols-3">
@@ -375,8 +332,8 @@ export default function AdminUsersPage() {
                         )}
                     </div>
                 </Card>
-            </div>
-        </div>
+            </AdminPageContainer>
+        </AdminOnlyGate>
     );
 }
 

@@ -1,4 +1,8 @@
-import { getPublishedPropertyAmenities } from "@/lib/data/propertyAmenities";
+import {
+    getPublishedPropertyAmenities,
+    loadSiteImageSlotAssignments,
+    resolveExperiencePageHeroImage,
+} from "@/lib/data/propertyAmenities";
 import { ExperiencePageContent } from "@/components/ExperiencePageContent";
 
 export const metadata = {
@@ -8,7 +12,16 @@ export const metadata = {
 };
 
 export default async function ExperiencePage() {
-    const amenities = await getPublishedPropertyAmenities();
+    const [amenities, assignments] = await Promise.all([
+        getPublishedPropertyAmenities(),
+        loadSiteImageSlotAssignments(),
+    ]);
+    const heroImage = resolveExperiencePageHeroImage(
+        amenities,
+        assignments.experienceHero,
+    );
 
-    return <ExperiencePageContent amenities={amenities} />;
+    return (
+        <ExperiencePageContent amenities={amenities} heroImage={heroImage} />
+    );
 }

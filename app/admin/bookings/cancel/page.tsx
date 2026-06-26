@@ -1,11 +1,11 @@
 "use client";
 
-import { useEffect, useState } from "react";
-import { useRouter } from "next/navigation";
+import { useState } from "react";
 import Link from "next/link";
-import { useAuth } from "@/components/AuthProvider";
+import { AdminOnlyGate } from "@/components/admin/AdminOnlyGate";
+import { AdminPageContainer } from "@/components/admin/AdminPageContainer";
+import { AdminPageHeader } from "@/components/admin/AdminPageHeader";
 import { getSupabaseClient } from "@/lib/supabase/client";
-import { useAdminMe } from "@/hooks/useAdminMe";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
@@ -24,44 +24,11 @@ type CancelResponse =
       }
     | { error: string; code?: string };
 
-async function readCancelResponse(res: Response): Promise<CancelResponse> {
-    const contentType = res.headers.get("content-type") || "";
-    if (contentType.includes("application/json")) {
-        return (await res.json()) as CancelResponse;
-    }
-
-    const text = await res.text();
-    if (res.ok) {
-        return { error: "Unexpected server response." };
-    }
-
-    return {
-        error:
-            text && !text.trimStart().startsWith("<")
-                ? text
-                : "Server returned an HTML error page instead of JSON. Check the server logs for the cancellation failure.",
-    };
-}
-
 export default function AdminCancelBookingPage() {
-    const { user, isLoading } = useAuth();
-    const router = useRouter();
-    const { data: me, isLoading: isRoleLoading } = useAdminMe(
-        Boolean(user) && !isLoading,
-        user?.id,
-    );
-
     const [invoiceInput, setInvoiceInput] = useState("");
     const [submitting, setSubmitting] = useState(false);
     const [error, setError] = useState<string | null>(null);
     const [success, setSuccess] = useState<CancelResponse | null>(null);
-
-    useEffect(() => {
-        if (isLoading) return;
-        if (!user) {
-            router.push("/login?redirect=/admin/bookings/cancel");
-        }
-    }, [isLoading, user, router]);
 
     async function submit() {
         setError(null);
@@ -72,8 +39,9 @@ export default function AdminCancelBookingPage() {
             const {
                 data: { session },
             } = await supabase.auth.getSession();
-            if (!session?.access_token) {
-                router.push("/login?redirect=/admin/bookings/cancel");
+            const token = session?.access_token;
+            if (!token) {
+                setError("Not signed in.");
                 return;
             }
 
@@ -81,22 +49,14 @@ export default function AdminCancelBookingPage() {
                 method: "POST",
                 headers: {
                     "Content-Type": "application/json",
-                    Authorization: `Bearer ${session.access_token}`,
+                    Authorization: `Bearer ${token}`,
                 },
                 body: JSON.stringify({ invoiceId: invoiceInput.trim() }),
             });
 
-            const payload = await readCancelResponse(res);
+            const payload = (await res.json()) as CancelResponse;
             if (!res.ok) {
-                if ("error" in payload && typeof payload.error === "string") {
-                    setError(payload.error);
-                } else {
-                    setError("Request failed.");
-                }
-                return;
-            }
-            if (!("ok" in payload) || payload.ok !== true) {
-                setError("Unexpected server response.");
+                setError("error" in payload ? payload.error : "Request failed.");
                 return;
             }
             setSuccess(payload);
@@ -107,108 +67,62 @@ export default function AdminCancelBookingPage() {
         }
     }
 
-    if (isLoading) return null;
-    if (!user) return null;
-
-    if (isRoleLoading || !me) return null;
-
-    if (!me.ok || me.role !== "admin") {
-        return (
-            <div className="min-h-screen bg-gray-50 pt-20">
-                <div className="max-w-3xl mx-auto px-4 py-10">
-                    <Card className="p-6">
-                        <h1 className="text-xl font-bold text-gray-900">
-                            Admin access required
-                        </h1>
-                        <p className="mt-2 text-sm text-gray-600">
-                            Only admins can cancel bookings. Receptionist accounts can create
-                            manual bookings, but cannot cancel existing ones.
-                        </p>
-                        <Button className="mt-4" variant="outline" asChild>
-                            <Link href="/admin">Back to dashboard</Link>
-                        </Button>
-                    </Card>
-                </div>
-            </div>
-        );
-    }
-
     return (
-        <div className="min-h-screen bg-gray-50 pt-20">
-            <div className="max-w-3xl mx-auto px-4 py-10">
-                <div className="flex items-center justify-between gap-4 flex-wrap">
-                    <div>
-                        <h1 className="text-2xl font-bold text-gray-900">
-                            Cancel booking
-                        </h1>
-                        <p className="text-sm text-gray-600 mt-1">
-                            Marks the booking cancelled and sets{" "}
-                            <span className="font-medium">Stayed</span> to false in Google
-                            Sheets (strike-through styling applies on branded tabs).
-                        </p>
-                    </div>
-                    <Button variant="outline" asChild>
-                        <Link href="/admin">Back</Link>
-                    </Button>
-                </div>
+        <AdminOnlyGate>
+            <AdminPageContainer maxWidth="3xl">
+                <AdminPageHeader
+                    title="Cancel booking"
+                    description='Marks the booking cancelled and sets Stayed to false in Google Sheets (strike-through styling applies on branded tabs).'
+                    actions={
+                        <Button variant="outline" asChild>
+                            <Link href="/admin/bookings">View bookings</Link>
+                        </Button>
+                    }
+                />
 
-                <Card className="p-6 mt-6">
-                    <div>
-                        <Label htmlFor="invoiceId">Invoice ID</Label>
-                        <Input
-                            id="invoiceId"
-                            name="invoiceId"
-                            className="mt-2 font-mono text-sm"
-                            value={invoiceInput}
-                            onChange={(e) => setInvoiceInput(e.target.value)}
-                            placeholder="LXH-260414-7K3P9D or paste text that contains the id"
-                            autoComplete="off"
-                            disabled={submitting}
-                            aria-describedby="invoice-hint"
-                        />
-                        <p
-                            id="invoice-hint"
-                            className="text-xs text-gray-500 mt-2"
-                        >
-                            You can paste the full id from the sheet or invoice PDF, or a
-                            sentence that includes it.
-                        </p>
-                    </div>
-
-                    {error && (
-                        <div
-                            className="mt-4 bg-red-50 border border-red-200 rounded-lg p-3"
-                            role="alert"
-                        >
-                            <p className="text-sm text-red-700">{error}</p>
+                <Card className="border-slate-200/80 p-6 shadow-sm">
+                    <div className="space-y-4">
+                        <div className="space-y-1">
+                            <Label htmlFor="invoice-id">Invoice ID</Label>
+                            <Input
+                                id="invoice-id"
+                                value={invoiceInput}
+                                onChange={(e) => setInvoiceInput(e.target.value)}
+                                placeholder="e.g. LXH-2026-00042"
+                            />
                         </div>
-                    )}
 
-                    {success && "ok" in success && success.ok && (
-                        <div className="mt-4 bg-green-50 border border-green-200 rounded-lg p-3 space-y-1">
-                            <p className="text-sm text-green-800 font-medium">
-                                {success.alreadyCancelled
-                                    ? "This booking was already cancelled."
-                                    : "Booking cancelled."}
+                        {error ? (
+                            <p className="text-sm text-red-700" role="alert">
+                                {error}
                             </p>
-                            <p className="text-xs text-green-900/80">
-                                Booking ID: {success.bookingId} • Invoice:{" "}
-                                {success.invoiceId}
-                            </p>
-                            {success.sheetTitle != null && success.rowNumber != null && (
-                                <p className="text-xs text-green-900/80">
-                                    Sheet: {success.sheetTitle}, row {success.rowNumber}
-                                </p>
-                            )}
-                            {success.warning && (
-                                <p className="text-sm text-amber-800 mt-2">
-                                    {success.warning}
-                                </p>
-                            )}
-                        </div>
-                    )}
+                        ) : null}
 
-                    <div className="mt-6 flex gap-3 justify-end flex-wrap">
+                        {success && "ok" in success && success.ok ? (
+                            <div className="rounded-lg border border-green-200 bg-green-50 p-4 text-sm text-green-900">
+                                <p className="font-medium">
+                                    {success.alreadyCancelled
+                                        ? "Booking was already cancelled."
+                                        : "Booking cancelled."}
+                                </p>
+                                <p className="mt-1">
+                                    Invoice:{" "}
+                                    <span className="font-medium">{success.invoiceId}</span>
+                                </p>
+                                {success.sheetTitle && success.rowNumber ? (
+                                    <p className="mt-1 text-green-800">
+                                        Google Sheet: {success.sheetTitle}, row{" "}
+                                        {success.rowNumber}
+                                    </p>
+                                ) : null}
+                                {success.warning ? (
+                                    <p className="mt-2 text-amber-800">{success.warning}</p>
+                                ) : null}
+                            </div>
+                        ) : null}
+                    </div>
+
+                    <div className="mt-6 flex flex-wrap justify-end gap-3">
                         <Button variant="outline" asChild>
                             <Link href="/admin/bookings/new">New manual booking</Link>
                         </Button>
@@ -221,7 +135,7 @@ export default function AdminCancelBookingPage() {
                         </Button>
                     </div>
                 </Card>
-            </div>
-        </div>
+            </AdminPageContainer>
+        </AdminOnlyGate>
     );
 }

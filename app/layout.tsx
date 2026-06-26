@@ -3,11 +3,9 @@ import { Inter, Playfair_Display } from "next/font/google";
 import Link from "next/link";
 import { cookies } from "next/headers";
 import "./globals.css";
-import Navbar from "@/components/Navbar";
-import Footer from "@/components/Footer";
-import WhatsAppFloatButton from "@/components/WhatsAppFloatButton";
 import { AuthProvider } from "@/components/AuthProvider";
 import { QueryProvider } from "@/components/providers/QueryProvider";
+import { PublicSiteChrome } from "@/components/PublicSiteChrome";
 import { Toaster } from "sonner";
 import { GoogleAnalytics } from "@/components/analytics/GoogleAnalytics";
 import {
@@ -105,12 +103,7 @@ export default async function RootLayout({
         >
           <QueryProvider>
             <AuthProvider>
-              <Navbar />
-              <main id="main-content" className="min-h-screen">
-                {children}
-              </main>
-              <Footer />
-              <WhatsAppFloatButton />
+              <PublicSiteChrome>{children}</PublicSiteChrome>
               <Toaster richColors position="top-center" />
             </AuthProvider>
           </QueryProvider>

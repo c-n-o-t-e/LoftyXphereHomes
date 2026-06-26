@@ -5,7 +5,9 @@ import { usePathname, useRouter } from "next/navigation";
 import { Loader2 } from "lucide-react";
 import { useAuth } from "@/components/AuthProvider";
 import { useAdminMe } from "@/hooks/useAdminMe";
-import { Card } from "@/components/ui/card";
+import { AdminContextProvider } from "@/components/admin/AdminContext";
+import { AdminNotice } from "@/components/admin/AdminNotice";
+import { AdminShell } from "@/components/admin/AdminShell";
 
 type AdminAuthGateProps = {
     children: React.ReactNode;
@@ -46,8 +48,11 @@ export function AdminAuthGate({
 
     if (isLoading || isMeLoading || (user && me === undefined)) {
         return (
-            <div className="min-h-screen bg-gray-50 flex items-center justify-center pt-20">
-                <Loader2 className="h-8 w-8 animate-spin text-amber-600" aria-hidden />
+            <div className="flex min-h-screen items-center justify-center bg-slate-50">
+                <Loader2
+                    className="h-8 w-8 animate-spin text-[#FA5C5C]"
+                    aria-hidden
+                />
                 <span className="sr-only">Loading admin dashboard</span>
             </div>
         );
@@ -59,37 +64,31 @@ export function AdminAuthGate({
 
     if (!me?.ok) {
         return (
-            <div className="min-h-screen bg-gray-50 pt-20">
-                <div className="max-w-3xl mx-auto px-4 py-10">
-                    <Card className="p-6">
-                        <h1 className="text-xl font-bold text-gray-900">
-                            Admin access required
-                        </h1>
-                        <p className="mt-2 text-sm text-gray-600">
-                            Your account doesn’t have access to the admin dashboard.
-                        </p>
-                    </Card>
-                </div>
-            </div>
+            <AdminNotice
+                title="Admin access required"
+                description="Your account doesn’t have access to the admin dashboard. Contact an administrator if you believe this is a mistake."
+            />
         );
     }
 
     if (!allowedRoles.includes(me.role)) {
         return (
-            <div className="min-h-screen bg-gray-50 pt-20">
-                <div className="max-w-3xl mx-auto px-4 py-10">
-                    <Card className="p-6">
-                        <h1 className="text-xl font-bold text-gray-900">
-                            Insufficient permissions
-                        </h1>
-                        <p className="mt-2 text-sm text-gray-600">
-                            This area requires {allowedRoles.join(" or ")} access.
-                        </p>
-                    </Card>
-                </div>
-            </div>
+            <AdminNotice
+                title="Insufficient permissions"
+                description={`This area requires ${allowedRoles.join(" or ")} access.`}
+            />
         );
     }
 
-    return <>{children}</>;
+    return (
+        <AdminContextProvider
+            value={{
+                user: { id: user.id, email: user.email },
+                email: me.email,
+                role: me.role,
+            }}
+        >
+            <AdminShell>{children}</AdminShell>
+        </AdminContextProvider>
+    );
 }

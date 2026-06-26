@@ -6,7 +6,7 @@ import type { ApartmentImageSet } from "@/lib/images/types";
 /** Edit slug + imageIndex to change the wide banner on /experience. */
 export const EXPERIENCE_PAGE_HERO = {
     slug: "outdoor-lounge",
-    imageIndex: 4,
+    imageIndex: 8,
 } as const;
 
 export type PropertyAmenityPublic = {

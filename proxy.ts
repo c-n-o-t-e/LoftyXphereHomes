@@ -19,7 +19,7 @@ function resolveConsentRequired(request: NextRequest): boolean {
   return isEeaOrUkCountry(country);
 }
 
-export function middleware(request: NextRequest) {
+export function proxy(request: NextRequest) {
   const response = NextResponse.next();
   const consentRequired = resolveConsentRequired(request);
 

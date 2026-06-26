@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
 import { Inter, Playfair_Display } from "next/font/google";
 import Link from "next/link";
+import { cookies } from "next/headers";
 import "./globals.css";
 import Navbar from "@/components/Navbar";
 import Footer from "@/components/Footer";
@@ -9,6 +10,15 @@ import { AuthProvider } from "@/components/AuthProvider";
 import { QueryProvider } from "@/components/providers/QueryProvider";
 import { Toaster } from "sonner";
 import { GoogleAnalytics } from "@/components/analytics/GoogleAnalytics";
+import {
+  CookieConsentProvider,
+} from "@/components/analytics/CookieConsentContext";
+import { CookieConsentBanner } from "@/components/analytics/CookieConsentBanner";
+import {
+  ANALYTICS_CONSENT_COOKIE,
+  CONSENT_REQUIRED_COOKIE,
+  parseAnalyticsConsent,
+} from "@/lib/analytics/consent";
 import { SITE_NAME, SITE_DESCRIPTION, SITE_URL } from "@/lib/constants";
 
 const inter = Inter({
@@ -66,11 +76,18 @@ export const metadata: Metadata = {
   },
 };
 
-export default function RootLayout({
+export default async function RootLayout({
   children,
 }: Readonly<{
   children: React.ReactNode;
 }>) {
+  const cookieStore = await cookies();
+  const consentRequired =
+    cookieStore.get(CONSENT_REQUIRED_COOKIE)?.value === "1";
+  const initialConsent = parseAnalyticsConsent(
+    cookieStore.get(ANALYTICS_CONSENT_COOKIE)?.value,
+  );
+
   return (
     <html lang="en" className="overflow-x-hidden">
       <body
@@ -82,18 +99,24 @@ export default function RootLayout({
         >
           Skip to main content
         </Link>
-        <QueryProvider>
-          <AuthProvider>
-            <Navbar />
-            <main id="main-content" className="min-h-screen">
-              {children}
-            </main>
-            <Footer />
-            <WhatsAppFloatButton />
-            <Toaster richColors position="top-center" />
-          </AuthProvider>
-        </QueryProvider>
-        <GoogleAnalytics />
+        <CookieConsentProvider
+          consentRequired={consentRequired}
+          initialConsent={initialConsent}
+        >
+          <QueryProvider>
+            <AuthProvider>
+              <Navbar />
+              <main id="main-content" className="min-h-screen">
+                {children}
+              </main>
+              <Footer />
+              <WhatsAppFloatButton />
+              <Toaster richColors position="top-center" />
+            </AuthProvider>
+          </QueryProvider>
+          <CookieConsentBanner />
+          <GoogleAnalytics />
+        </CookieConsentProvider>
       </body>
     </html>
   );

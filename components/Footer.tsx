@@ -3,6 +3,7 @@ import Image from "next/image";
 import { Mail, Phone, MapPin } from "lucide-react";
 import { SiFacebook, SiInstagram, SiX } from "react-icons/si";
 import { TrackedPhoneLink } from "@/components/analytics/TrackedPhoneLink";
+import { CookieSettingsLink } from "@/components/analytics/CookieSettingsLink";
 
 export default function Footer() {
   const currentYear = new Date().getFullYear();
@@ -100,6 +101,9 @@ export default function Footer() {
                 <Link href="/terms" className="hover:text-[#FA5C5C] transition-colors text-sm text-white/80">
                   Terms & Conditions
                 </Link>
+              </li>
+              <li>
+                <CookieSettingsLink />
               </li>
             </ul>
           </div>

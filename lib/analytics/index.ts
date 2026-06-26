@@ -9,6 +9,16 @@ export {
   isAnalyticsExcludedPath,
   isAnalyticsAllowedPath,
 } from "@/lib/analytics/paths";
+export {
+  CONSENT_REQUIRED_COOKIE,
+  ANALYTICS_CONSENT_COOKIE,
+  getCookieConsentMode,
+  isCookieConsentFeatureEnabled,
+  parseAnalyticsConsent,
+  consentRequiresBanner,
+  isAnalyticsAllowedByConsent,
+} from "@/lib/analytics/consent";
+export { isEeaOrUkCountry, EEA_UK_COUNTRY_CODES } from "@/lib/analytics/regions";
 export { pageview, sendGaEvent } from "@/lib/analytics/gtag";
 export {
   trackEvent,

@@ -89,11 +89,15 @@ export function VideoCompressTool() {
 
             if (!res.ok) {
                 let message = "Compression failed";
-                try {
-                    const data = (await res.json()) as { error?: string };
-                    message = data.error ?? message;
-                } catch {
-                    message = (await res.text()) || message;
+                const text = await res.text();
+                if (text) {
+                    try {
+                        const data = JSON.parse(text) as { error?: string };
+                        message = data.error ?? text;
+                    } catch {
+                        message =
+                            text.length > 180 ? `${text.slice(0, 180)}…` : text;
+                    }
                 }
                 throw new Error(message);
             }

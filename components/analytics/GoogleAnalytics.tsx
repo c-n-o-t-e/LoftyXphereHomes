@@ -5,18 +5,22 @@ import { usePathname } from "next/navigation";
 import { getGaMeasurementId, isGaConfigured } from "@/lib/analytics/config";
 import { isAnalyticsExcludedPath } from "@/lib/analytics/paths";
 import { GoogleAnalyticsRouteTracker } from "@/components/analytics/GoogleAnalyticsRouteTracker";
+import { useOptionalCookieConsent } from "@/components/analytics/CookieConsentContext";
 
 /**
- * Loads GA4 gtag.js on public routes only and tracks App Router navigations.
+ * Loads GA4 gtag.js on public routes when analytics consent allows it.
  * Admin routes (`/admin/*`) are excluded — no scripts, page views, or events.
  */
 export function GoogleAnalytics() {
   const pathname = usePathname();
   const measurementId = getGaMeasurementId();
+  const cookieConsent = useOptionalCookieConsent();
+  const analyticsEnabled = cookieConsent?.analyticsEnabled ?? true;
 
   if (
     !isGaConfigured() ||
     !measurementId ||
+    !analyticsEnabled ||
     isAnalyticsExcludedPath(pathname ?? "")
   ) {
     return null;
@@ -33,8 +37,15 @@ export function GoogleAnalytics() {
           window.dataLayer = window.dataLayer || [];
           function gtag(){dataLayer.push(arguments);}
           gtag('js', new Date());
+          gtag('consent', 'update', {
+            analytics_storage: 'granted',
+            ad_storage: 'denied',
+            ad_user_data: 'denied',
+            ad_personalization: 'denied',
+          });
           gtag('config', '${measurementId}', {
             page_path: window.location.pathname,
+            anonymize_ip: true,
           });
         `}
       </Script>

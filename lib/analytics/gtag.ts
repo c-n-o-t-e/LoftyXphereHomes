@@ -1,5 +1,10 @@
 import { getGaMeasurementId, isGaConfigured } from "@/lib/analytics/config";
 import { isAnalyticsExcludedPath } from "@/lib/analytics/paths";
+import {
+  readClientAnalyticsConsent,
+  readClientConsentRequired,
+  isAnalyticsAllowedByConsent,
+} from "@/lib/analytics/consent";
 
 declare global {
   interface Window {
@@ -21,9 +26,16 @@ function getGtag(): Gtag.Gtag | undefined {
   return window.gtag;
 }
 
+function hasAnalyticsConsent(): boolean {
+  const consentRequired = readClientConsentRequired();
+  const consent = readClientAnalyticsConsent();
+  return isAnalyticsAllowedByConsent(consentRequired, consent);
+}
+
 function isTrackingAllowed(pathname?: string): boolean {
   if (!isGaConfigured()) return false;
   if (typeof window === "undefined") return false;
+  if (!hasAnalyticsConsent()) return false;
 
   const path = pathname ?? window.location.pathname;
   return !isAnalyticsExcludedPath(path);

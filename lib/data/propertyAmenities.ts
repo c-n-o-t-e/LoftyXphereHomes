@@ -3,6 +3,12 @@ import { ensureDefaultPropertyAmenities } from "@/lib/admin/propertyAmenities";
 import { prisma } from "@/lib/db";
 import type { ApartmentImageSet } from "@/lib/images/types";
 
+/** Edit slug + imageIndex to change the wide banner on /experience. */
+export const EXPERIENCE_PAGE_HERO = {
+    slug: "outdoor-lounge",
+    imageIndex: 4,
+} as const;
+
 export type PropertyAmenityPublic = {
     id: string;
     slug: string;
@@ -37,7 +43,9 @@ function rowToImageSet(row: {
     };
 }
 
-export async function getPublishedPropertyAmenities(): Promise<PropertyAmenityPublic[]> {
+export async function getPublishedPropertyAmenities(): Promise<
+    PropertyAmenityPublic[]
+> {
     noStore();
     await ensureDefaultPropertyAmenities();
 
@@ -69,6 +77,24 @@ export async function getPublishedPropertyAmenities(): Promise<PropertyAmenityPu
     }
 }
 
+export function resolveExperiencePageHeroImage(
+    amenities: PropertyAmenityPublic[],
+): ApartmentImageSet | null {
+    const target = amenities.find(
+        (amenity) => amenity.slug === EXPERIENCE_PAGE_HERO.slug,
+    );
+    const chosen = target?.images[EXPERIENCE_PAGE_HERO.imageIndex];
+    if (chosen) return chosen;
+
+    for (const amenity of amenities) {
+        if (amenity.images.length > 0) {
+            return amenity.images[0] ?? null;
+        }
+    }
+
+    return null;
+}
+
 /** Amenities with at least one image — for homepage teaser cards. */
 export async function getPublishedPropertyAmenitiesWithImages(): Promise<
     PropertyAmenityPublic[]
@@ -77,7 +103,9 @@ export async function getPublishedPropertyAmenitiesWithImages(): Promise<
     return amenities.filter((amenity) => amenity.images.length > 0);
 }
 
-export async function getPropertyGalleryImages(): Promise<PropertyGalleryImageItem[]> {
+export async function getPropertyGalleryImages(): Promise<
+    PropertyGalleryImageItem[]
+> {
     const amenities = await getPublishedPropertyAmenities();
     return amenities.flatMap((amenity) =>
         amenity.images.map((image) => ({

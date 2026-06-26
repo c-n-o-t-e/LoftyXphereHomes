@@ -15,8 +15,6 @@ import {
     CarouselPrevious,
 } from "@/components/ui/carousel";
 
-const HOMEPAGE_AMENITY_LIMIT = 2;
-
 type PropertyExperienceSectionProps = {
     amenities: PropertyAmenityPublic[];
 };
@@ -39,7 +37,7 @@ function AmenityCard({
                             fill
                             variant="medium"
                             className="object-cover group-hover:scale-105 transition-transform duration-500"
-                            sizes="(max-width: 640px) 100vw, 50vw"
+                            sizes="(max-width: 1024px) 100vw, 33vw"
                             priority={priority}
                         />
                     ) : null}
@@ -61,11 +59,11 @@ function AmenityCard({
 export default function PropertyExperienceSection({
     amenities,
 }: PropertyExperienceSectionProps) {
-    const featured = amenities.slice(0, HOMEPAGE_AMENITY_LIMIT);
-
-    if (featured.length === 0) {
+    if (amenities.length === 0) {
         return null;
     }
+
+    const showControls = amenities.length > 1;
 
     return (
         <section className="py-12 sm:py-16 md:py-24 bg-black/[0.02]">
@@ -85,48 +83,40 @@ export default function PropertyExperienceSection({
                     </p>
                 </motion.div>
 
-                {/* Mobile: swipe one card at a time */}
-                <div className="sm:hidden mb-8">
+                <div className="relative max-w-6xl mx-auto mb-8 sm:mb-12 px-8 sm:px-10 lg:px-12">
                     <Carousel
-                        opts={{ align: "start", loop: featured.length > 1 }}
-                        className="w-full max-w-md mx-auto"
+                        opts={{ align: "start", loop: amenities.length > 3 }}
+                        className="w-full"
+                        aria-label="Property amenities"
                     >
-                        <CarouselContent className="-ml-3">
-                            {featured.map((amenity, index) => (
-                                <CarouselItem key={amenity.id} className="pl-3 basis-full">
+                        <CarouselContent className="-ml-3 sm:-ml-4">
+                            {amenities.map((amenity, index) => (
+                                <CarouselItem
+                                    key={amenity.id}
+                                    className="pl-3 sm:pl-4 basis-full lg:basis-1/3"
+                                >
                                     <motion.div
                                         initial={{ opacity: 0, y: 16 }}
                                         whileInView={{ opacity: 1, y: 0 }}
                                         viewport={{ once: true }}
                                         transition={{ duration: 0.4, delay: index * 0.05 }}
+                                        className="h-full"
                                     >
-                                        <AmenityCard amenity={amenity} priority={index === 0} />
+                                        <AmenityCard
+                                            amenity={amenity}
+                                            priority={index < 3}
+                                        />
                                     </motion.div>
                                 </CarouselItem>
                             ))}
                         </CarouselContent>
-                        {featured.length > 1 ? (
+                        {showControls ? (
                             <>
-                                <CarouselPrevious className="left-0 -translate-x-1/2 border-black/10 bg-white shadow-md" />
-                                <CarouselNext className="right-0 translate-x-1/2 border-black/10 bg-white shadow-md" />
+                                <CarouselPrevious className="left-0 border-black/10 bg-white shadow-md hover:bg-white disabled:opacity-40" />
+                                <CarouselNext className="right-0 border-black/10 bg-white shadow-md hover:bg-white disabled:opacity-40" />
                             </>
                         ) : null}
                     </Carousel>
-                </div>
-
-                {/* Tablet/desktop: two-up grid */}
-                <div className="hidden sm:grid sm:grid-cols-2 gap-6 sm:gap-8 max-w-5xl mx-auto mb-8 sm:mb-12">
-                    {featured.map((amenity, index) => (
-                        <motion.div
-                            key={amenity.id}
-                            initial={{ opacity: 0, y: 20 }}
-                            whileInView={{ opacity: 1, y: 0 }}
-                            viewport={{ once: true }}
-                            transition={{ duration: 0.5, delay: index * 0.08 }}
-                        >
-                            <AmenityCard amenity={amenity} priority={index === 0} />
-                        </motion.div>
-                    ))}
                 </div>
 
                 <div className="text-center">

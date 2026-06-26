@@ -1,7 +1,11 @@
 import Link from "next/link";
 import { ArrowRight, Dumbbell, GlassWater, TreePalm, Waves } from "lucide-react";
-import type { PropertyAmenityPublic } from "@/lib/data/propertyAmenities";
+import {
+    resolveExperiencePageHeroImage,
+    type PropertyAmenityPublic,
+} from "@/lib/data/propertyAmenities";
 import { PropertyAmenityGallery } from "@/components/PropertyAmenityGallery";
+import { ResponsiveApartmentImage } from "@/components/ResponsiveApartmentImage";
 import { Button } from "@/components/ui/button";
 
 const AMENITY_ICONS: Record<string, typeof Waves> = {
@@ -16,7 +20,7 @@ type ExperiencePageContentProps = {
 };
 
 export function ExperiencePageContent({ amenities }: ExperiencePageContentProps) {
-    const heroImage = amenities.find((a) => a.heroImage)?.heroImage;
+    const heroImage = resolveExperiencePageHeroImage(amenities);
 
     return (
         <div className="pt-20 pb-12 sm:pb-16 md:pb-24 bg-white min-h-screen">
@@ -33,11 +37,14 @@ export function ExperiencePageContent({ amenities }: ExperiencePageContentProps)
 
                 {heroImage ? (
                     <div className="relative aspect-[21/9] max-h-[420px] rounded-2xl overflow-hidden mb-16 sm:mb-20">
-                        {/* eslint-disable-next-line @next/next/no-img-element */}
-                        <img
-                            src={heroImage.large || heroImage.medium}
+                        <ResponsiveApartmentImage
+                            image={heroImage}
                             alt={heroImage.altText ?? "Lofty property amenities"}
-                            className="absolute inset-0 h-full w-full object-cover"
+                            fill
+                            variant="large"
+                            className="object-cover"
+                            sizes="100vw"
+                            priority
                         />
                         <div className="absolute inset-0 bg-gradient-to-t from-black/40 to-transparent" />
                     </div>

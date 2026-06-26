@@ -5,7 +5,7 @@ import { renderWithQueryClient } from "@/lib/testing/render-with-query-client";
 
 describe("YourReservationCard", () => {
     const defaultProps = {
-        apartmentId: "lofty-horizon-suite",
+        apartmentId: "horizon-suite",
         pricePerNight: 120_000,
         capacity: 2,
         beds: 1,

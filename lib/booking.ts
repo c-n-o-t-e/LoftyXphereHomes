@@ -1,6 +1,6 @@
 import type { PaystackVerifyData } from "./paystack";
 import { initiateRefund } from "./paystack";
-import { getApartmentById } from "./data/apartments";
+import { getApartmentById, normalizeApartmentId } from "./data/apartments";
 import { prisma } from "./db";
 import {
     computeBookingQuote,
@@ -35,7 +35,7 @@ function validatePaystackBookingInput(data: PaystackVerifyData) {
     }
 
     const meta = data.metadata ?? {};
-    const apartmentId = meta.apartment_id;
+    const apartmentId = normalizeApartmentId(String(meta.apartment_id));
     const checkInStr = meta.check_in;
     const checkOutStr = meta.check_out;
     const email = data.customer?.email?.trim();

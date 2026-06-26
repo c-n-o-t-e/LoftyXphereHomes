@@ -1,7 +1,7 @@
 import { unstable_noStore as noStore } from "next/cache";
 import { randomUUID } from "crypto";
 import { prisma } from "@/lib/db";
-import { getApartmentById } from "@/lib/data/apartments";
+import { getApartmentById, getApartmentIdLookupIds } from "@/lib/data/apartments";
 import { HERO_VIDEO_BUCKET } from "@/lib/videos/constants";
 import {
     processApartmentVideo,
@@ -49,8 +49,8 @@ export async function getApartmentVideoRow(
     apartmentId: string,
 ): Promise<ApartmentVideoRow | null> {
     try {
-        return await prisma.apartmentVideo.findUnique({
-            where: { apartmentId },
+        return await prisma.apartmentVideo.findFirst({
+            where: { apartmentId: { in: getApartmentIdLookupIds(apartmentId) } },
         });
     } catch (err) {
         console.error(`Failed to load apartment video for ${apartmentId}:`, err);

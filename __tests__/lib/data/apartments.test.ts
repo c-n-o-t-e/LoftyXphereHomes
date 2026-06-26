@@ -112,11 +112,9 @@ describe('getFeaturedApartments', () => {
     expect(featured.length).toBeLessThanOrEqual(3)
   })
 
-  it('returns apartments sorted by rating', () => {
-    const featured = getFeaturedApartments(10)
-    for (let i = 0; i < featured.length - 1; i++) {
-      expect(featured[i].rating).toBeGreaterThanOrEqual(featured[i + 1].rating)
-    }
+  it('returns Meridian and Lumen suites first by default', () => {
+    const featured = getFeaturedApartments(2)
+    expect(featured.map((apt) => apt.id)).toEqual(['meridian-suite', 'lumen-suite'])
   })
 
   it('returns only active apartments when limit is greater than active total', () => {

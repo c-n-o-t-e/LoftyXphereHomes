@@ -14,8 +14,8 @@ datasource db {
 
 model Booking {
   id           String   @id @default(cuid())
-  reference    String   @unique // Paystack transaction reference (e.g. lxh_lofty-wuye-01_1234567890)
-  apartmentId  String   // e.g. lofty-wuye-01
+  reference    String   @unique // Paystack transaction reference (e.g. lxh_meridian-suite_1234567890)
+  apartmentId  String   // e.g. meridian-suite
   checkIn      DateTime @db.Date
   checkOut     DateTime @db.Date
   nights       Int      // number of nights

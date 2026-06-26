@@ -5,8 +5,8 @@ import type { GalleryImageItem } from '@/lib/data/getApartmentImages'
 
 const mockItems: GalleryImageItem[] = [
   {
-    apartment: 'The Horizon Suite',
-    apartmentId: 'lofty-horizon-suite',
+    apartment: 'Horizon Suite',
+    apartmentId: 'horizon-suite',
     image: {
       thumbnail: 'https://example.com/thumb-1.jpg',
       medium: 'https://example.com/medium-1.jpg',
@@ -14,8 +14,8 @@ const mockItems: GalleryImageItem[] = [
     },
   },
   {
-    apartment: 'The Skyline Suite',
-    apartmentId: 'lofty-skyline-suite',
+    apartment: 'Skyline Suite',
+    apartmentId: 'skyline-suite',
     image: {
       thumbnail: 'https://example.com/thumb-2.jpg',
       medium: 'https://example.com/medium-2.jpg',

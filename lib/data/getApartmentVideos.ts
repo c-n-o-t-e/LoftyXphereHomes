@@ -1,4 +1,9 @@
-import { getActiveApartments } from "@/lib/data/apartments";
+import {
+    expandApartmentIdsForLookup,
+    getActiveApartments,
+    getApartmentIdLookupIds,
+    normalizeApartmentId,
+} from "@/lib/data/apartments";
 import { prisma } from "@/lib/db";
 import type { ApartmentVideoSummary } from "@/lib/videos/types";
 
@@ -15,7 +20,11 @@ export async function getApartmentVideoSummariesMap(): Promise<
     try {
         const rows = await prisma.apartmentVideo.findMany({
             where: {
-                apartmentId: { in: activeApartments.map((apartment) => apartment.id) },
+                apartmentId: {
+                    in: expandApartmentIdsForLookup(
+                        activeApartments.map((apartment) => apartment.id),
+                    ),
+                },
             },
             select: {
                 apartmentId: true,
@@ -24,8 +33,9 @@ export async function getApartmentVideoSummariesMap(): Promise<
         });
 
         for (const row of rows) {
-            map[row.apartmentId] = {
-                apartmentId: row.apartmentId,
+            const canonicalId = normalizeApartmentId(row.apartmentId);
+            map[canonicalId] = {
+                apartmentId: canonicalId,
                 posterUrl: row.posterUrl,
             };
         }
@@ -39,7 +49,7 @@ export async function getApartmentVideoSummariesMap(): Promise<
 export async function apartmentHasVideoTour(apartmentId: string): Promise<boolean> {
     try {
         const count = await prisma.apartmentVideo.count({
-            where: { apartmentId },
+            where: { apartmentId: { in: getApartmentIdLookupIds(apartmentId) } },
         });
         return count > 0;
     } catch (err) {

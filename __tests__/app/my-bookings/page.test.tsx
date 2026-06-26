@@ -97,7 +97,7 @@ describe("MyBookingsPage", () => {
                     ok: true,
                     json: async () => ({
                         images: {
-                            "lofty-horizon-suite": [
+                            "horizon-suite": [
                                 {
                                     thumbnail: "https://example.com/thumb.jpg",
                                     medium: "https://example.com/medium.jpg",
@@ -115,7 +115,7 @@ describe("MyBookingsPage", () => {
                         {
                             id: "bk_1",
                             reference: "ref_1",
-                            apartmentId: "lofty-horizon-suite",
+                            apartmentId: "horizon-suite",
                             checkIn: futureCheckIn.toISOString().slice(0, 10),
                             checkOut: futureCheckOut.toISOString().slice(0, 10),
                             nights: 3,

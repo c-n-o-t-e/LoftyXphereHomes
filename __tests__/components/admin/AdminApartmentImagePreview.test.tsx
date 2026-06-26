@@ -42,7 +42,7 @@ describe("AdminApartmentImagePreview", () => {
 
         render(
             <AdminApartmentImagePreview
-                apartmentId="lofty-horizon-suite"
+                apartmentId="horizon-suite"
                 imageId="img_1"
                 alt="Suite photo"
             />,
@@ -50,7 +50,7 @@ describe("AdminApartmentImagePreview", () => {
 
         await waitFor(() => {
             expect(globalThis.fetch).toHaveBeenCalledWith(
-                "/api/admin/apartments/lofty-horizon-suite/images/img_1/preview?variant=medium",
+                "/api/admin/apartments/horizon-suite/images/img_1/preview?variant=medium",
                 { headers: { Authorization: "Bearer token_admin" } },
             );
         });
@@ -69,7 +69,7 @@ describe("AdminApartmentImagePreview", () => {
 
         render(
             <AdminApartmentImagePreview
-                apartmentId="lofty-horizon-suite"
+                apartmentId="horizon-suite"
                 imageId="img_missing"
                 alt="Missing photo"
             />,

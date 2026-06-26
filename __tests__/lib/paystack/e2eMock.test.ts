@@ -7,7 +7,7 @@ import {
 
 describe("paystack e2e mock", () => {
     const payload = {
-        apartmentId: "lofty-horizon-suite",
+        apartmentId: "horizon-suite",
         checkIn: "2026-12-15",
         checkOut: "2026-12-18",
     };
@@ -15,7 +15,7 @@ describe("paystack e2e mock", () => {
     it("builds and parses e2e references", () => {
         const reference = buildE2ePaystackReference(payload);
         expect(reference).toBe(
-            "e2e:lofty-horizon-suite:2026-12-15:2026-12-18",
+            "e2e:horizon-suite:2026-12-15:2026-12-18",
         );
         expect(parseE2ePaystackReference(reference)).toEqual(payload);
     });

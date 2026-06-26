@@ -13,8 +13,8 @@ jest.mock('@/lib/data/getApartmentImages', () => ({
 
 describe('Apartment Detail Page - generateMetadata', () => {
   it('returns metadata when apartment exists', async () => {
-    const apartment = getApartmentById('lofty-skyline-suite')
-    const params = Promise.resolve({ id: 'lofty-skyline-suite' })
+    const apartment = getApartmentById('skyline-suite')
+    const params = Promise.resolve({ id: 'skyline-suite' })
     const metadata = await generateMetadata({ params })
     
     expect(metadata).toBeDefined()

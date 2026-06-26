@@ -28,14 +28,14 @@ describe("useApartmentAvailability", () => {
         } as Response);
 
         const { result } = renderHook(
-            () => useApartmentAvailability("lofty-horizon-suite"),
+            () => useApartmentAvailability("horizon-suite"),
             { wrapper },
         );
 
         await waitFor(() => expect(result.current.isSuccess).toBe(true));
 
         expect(globalThis.fetch).toHaveBeenCalledWith(
-            "/api/availability?apartmentId=lofty-horizon-suite",
+            "/api/availability?apartmentId=horizon-suite",
             { cache: "no-store" },
         );
         expect(result.current.data).toEqual({
@@ -59,7 +59,7 @@ describe("useApartmentAvailability", () => {
         } as Response);
 
         const { result } = renderHook(
-            () => useApartmentAvailability("lofty-horizon-suite"),
+            () => useApartmentAvailability("horizon-suite"),
             { wrapper },
         );
 

@@ -1,4 +1,10 @@
-import { getActiveApartments, apartments } from "@/lib/data/apartments";
+import {
+    expandApartmentIdsForLookup,
+    getActiveApartments,
+    getApartmentIdLookupIds,
+    normalizeApartmentId,
+    apartments,
+} from "@/lib/data/apartments";
 import { prisma } from "@/lib/db";
 import type { ApartmentImageSet } from "@/lib/images/types";
 import type { Apartment } from "@/lib/types";
@@ -31,8 +37,9 @@ export async function getApartmentImageSets(
     apartmentId: string,
 ): Promise<ApartmentImageSet[]> {
     try {
+        const lookupIds = getApartmentIdLookupIds(apartmentId);
         const rows = await prisma.apartmentImage.findMany({
-            where: { apartmentId },
+            where: { apartmentId: { in: lookupIds } },
             orderBy: { displayOrder: "asc" },
             select: {
                 thumbnailUrl: true,
@@ -79,7 +86,7 @@ export async function getApartmentImageCounts(): Promise<Record<string, number>>
 export async function getApartmentImageSetsMap(
     apartmentIds: string[],
 ): Promise<Record<string, ApartmentImageSet[]>> {
-    const uniqueIds = [...new Set(apartmentIds)];
+    const uniqueIds = [...new Set(apartmentIds.map(normalizeApartmentId))];
     const map: Record<string, ApartmentImageSet[]> = Object.fromEntries(
         uniqueIds.map((id) => [id, []]),
     );
@@ -90,7 +97,7 @@ export async function getApartmentImageSetsMap(
 
     try {
         const rows = await prisma.apartmentImage.findMany({
-            where: { apartmentId: { in: uniqueIds } },
+            where: { apartmentId: { in: expandApartmentIdsForLookup(uniqueIds) } },
             orderBy: [{ apartmentId: "asc" }, { displayOrder: "asc" }],
             select: {
                 apartmentId: true,
@@ -103,7 +110,8 @@ export async function getApartmentImageSetsMap(
         });
 
         for (const row of rows) {
-            map[row.apartmentId]?.push({
+            const canonicalId = normalizeApartmentId(row.apartmentId);
+            map[canonicalId]?.push({
                 thumbnail: row.thumbnailUrl,
                 medium: row.mediumUrl,
                 large: row.largeUrl,
@@ -157,7 +165,11 @@ export async function getAllApartmentImageSetsMap(): Promise<
 
     try {
         const rows = await prisma.apartmentImage.findMany({
-            where: { apartmentId: { in: activeApartments.map((a) => a.id) } },
+            where: {
+                apartmentId: {
+                    in: expandApartmentIdsForLookup(activeApartments.map((a) => a.id)),
+                },
+            },
             orderBy: [{ apartmentId: "asc" }, { displayOrder: "asc" }],
             select: {
                 apartmentId: true,
@@ -170,8 +182,9 @@ export async function getAllApartmentImageSetsMap(): Promise<
         });
 
         for (const row of rows) {
-            map[row.apartmentId] ??= [];
-            map[row.apartmentId].push({
+            const canonicalId = normalizeApartmentId(row.apartmentId);
+            map[canonicalId] ??= [];
+            map[canonicalId].push({
                 thumbnail: row.thumbnailUrl,
                 medium: row.mediumUrl,
                 large: row.largeUrl,

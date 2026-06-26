@@ -4,8 +4,8 @@ import type { GalleryImageItem } from '@/lib/data/getApartmentImages'
 
 const mockItems: GalleryImageItem[] = [
   {
-    apartment: 'The Horizon Suite',
-    apartmentId: 'lofty-horizon-suite',
+    apartment: 'Horizon Suite',
+    apartmentId: 'horizon-suite',
     image: {
       thumbnail: 'https://example.com/thumb-1.jpg',
       medium: 'https://example.com/medium-1.jpg',
@@ -13,8 +13,8 @@ const mockItems: GalleryImageItem[] = [
     },
   },
   {
-    apartment: 'The Skyline Suite',
-    apartmentId: 'lofty-skyline-suite',
+    apartment: 'Skyline Suite',
+    apartmentId: 'skyline-suite',
     image: {
       thumbnail: 'https://example.com/thumb-2.jpg',
       medium: 'https://example.com/medium-2.jpg',
@@ -22,8 +22,8 @@ const mockItems: GalleryImageItem[] = [
     },
   },
   {
-    apartment: 'The Meridian Suite',
-    apartmentId: 'lofty-meridian-suite',
+    apartment: 'Meridian Suite',
+    apartmentId: 'meridian-suite',
     image: {
       thumbnail: 'https://example.com/thumb-3.jpg',
       medium: 'https://example.com/medium-3.jpg',
@@ -31,8 +31,8 @@ const mockItems: GalleryImageItem[] = [
     },
   },
   {
-    apartment: 'The Lumen Suite',
-    apartmentId: 'lofty-lumen-suite',
+    apartment: 'Lumen Suite',
+    apartmentId: 'lumen-suite',
     image: {
       thumbnail: 'https://example.com/thumb-4.jpg',
       medium: 'https://example.com/medium-4.jpg',
@@ -40,8 +40,8 @@ const mockItems: GalleryImageItem[] = [
     },
   },
   {
-    apartment: 'The Horizon Suite',
-    apartmentId: 'lofty-horizon-suite',
+    apartment: 'Horizon Suite',
+    apartmentId: 'horizon-suite',
     image: {
       thumbnail: 'https://example.com/thumb-5.jpg',
       medium: 'https://example.com/medium-5.jpg',
@@ -49,8 +49,8 @@ const mockItems: GalleryImageItem[] = [
     },
   },
   {
-    apartment: 'The Skyline Suite',
-    apartmentId: 'lofty-skyline-suite',
+    apartment: 'Skyline Suite',
+    apartmentId: 'skyline-suite',
     image: {
       thumbnail: 'https://example.com/thumb-6.jpg',
       medium: 'https://example.com/medium-6.jpg',

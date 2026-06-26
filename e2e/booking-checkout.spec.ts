@@ -5,7 +5,7 @@ import {
     selectEnabledCalendarDay,
 } from "./helpers/calendar";
 
-const APARTMENT_ID = "lofty-horizon-suite";
+const APARTMENT_ID = "horizon-suite";
 const stay = buildFutureStayDates(60, 3);
 const E2E_REFERENCE = `e2e:${APARTMENT_ID}:${stay.checkIn}:${stay.checkOut}`;
 

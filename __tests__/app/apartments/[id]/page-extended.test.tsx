@@ -28,15 +28,15 @@ describe('Apartment Detail Page - Extended Coverage', () => {
     waitFor(() => expect(screen.getByText('Book Apartment')).toBeInTheDocument())
 
   it('renders all apartment details', async () => {
-    const params = Promise.resolve({ id: 'lofty-skyline-suite' })
+    const params = Promise.resolve({ id: 'skyline-suite' })
     renderWithQueryClient(await ApartmentDetailPage({ params }))
     await waitForReservationCard()
-    expect(screen.getByText(/The Skyline Suite/i)).toBeInTheDocument()
+    expect(screen.getByText(/Skyline Suite/i)).toBeInTheDocument()
     expect(screen.getByText(/Wuye, Abuja/i)).toBeInTheDocument()
   })
 
   it('renders apartment amenities', async () => {
-    const params = Promise.resolve({ id: 'lofty-skyline-suite' })
+    const params = Promise.resolve({ id: 'skyline-suite' })
     renderWithQueryClient(await ApartmentDetailPage({ params }))
     await waitForReservationCard()
     expect(screen.getByText('In your suite')).toBeInTheDocument()
@@ -44,7 +44,7 @@ describe('Apartment Detail Page - Extended Coverage', () => {
   })
 
   it('renders house rules', async () => {
-    const params = Promise.resolve({ id: 'lofty-skyline-suite' })
+    const params = Promise.resolve({ id: 'skyline-suite' })
     renderWithQueryClient(await ApartmentDetailPage({ params }))
     await waitForReservationCard()
     expect(screen.getByText('House Rules')).toBeInTheDocument()
@@ -52,7 +52,7 @@ describe('Apartment Detail Page - Extended Coverage', () => {
   })
 
   it('renders check-in and check-out times', async () => {
-    const params = Promise.resolve({ id: 'lofty-skyline-suite' })
+    const params = Promise.resolve({ id: 'skyline-suite' })
     renderWithQueryClient(await ApartmentDetailPage({ params }))
     await waitForReservationCard()
     expect(screen.getByText(/Check-in:/i)).toBeInTheDocument()
@@ -60,7 +60,7 @@ describe('Apartment Detail Page - Extended Coverage', () => {
   })
 
   it('renders booking card with price', async () => {
-    const params = Promise.resolve({ id: 'lofty-skyline-suite' })
+    const params = Promise.resolve({ id: 'skyline-suite' })
     renderWithQueryClient(await ApartmentDetailPage({ params }))
     await waitForReservationCard()
     expect(screen.getByText(/₦200,000/i)).toBeInTheDocument()
@@ -69,7 +69,7 @@ describe('Apartment Detail Page - Extended Coverage', () => {
   })
 
   it('renders apartment images', async () => {
-    const params = Promise.resolve({ id: 'lofty-skyline-suite' })
+    const params = Promise.resolve({ id: 'skyline-suite' })
     renderWithQueryClient(await ApartmentDetailPage({ params }))
     await waitForReservationCard()
     const images = screen.getAllByRole('img')
@@ -87,7 +87,7 @@ describe('Apartment Detail Page - Extended Coverage', () => {
   })
 
   it('renders Book Apartment button', async () => {
-    const params = Promise.resolve({ id: 'lofty-skyline-suite' })
+    const params = Promise.resolve({ id: 'skyline-suite' })
     renderWithQueryClient(await ApartmentDetailPage({ params }))
     await waitForReservationCard()
     expect(screen.getByText('Book Apartment')).toBeInTheDocument()
@@ -97,7 +97,7 @@ describe('Apartment Detail Page - Extended Coverage', () => {
     const { getApartmentImageSets } = jest.requireMock('@/lib/data/getApartmentImages')
     getApartmentImageSets.mockResolvedValueOnce([])
 
-    const params = Promise.resolve({ id: 'lofty-skyline-suite' })
+    const params = Promise.resolve({ id: 'skyline-suite' })
     renderWithQueryClient(await ApartmentDetailPage({ params }))
     await waitForReservationCard()
     expect(screen.getByLabelText('Photo coming soon')).toBeInTheDocument()

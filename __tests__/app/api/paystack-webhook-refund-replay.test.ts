@@ -97,7 +97,7 @@ const paystackPayload = {
     status: "success" as const,
     amount: totalNgnToKobo(quote.totalNgn),
     metadata: {
-        apartment_id: "lofty-horizon-suite",
+        apartment_id: "horizon-suite",
         check_in: checkIn,
         check_out: checkOut,
     },

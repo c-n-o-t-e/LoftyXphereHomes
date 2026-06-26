@@ -17,7 +17,7 @@ describe("resolveInvoiceFinancials", () => {
         const total = accommodation + PAYSTACK_FEE;
 
         const result = resolveInvoiceFinancials({
-            apartmentId: "lofty-skyline-suite",
+            apartmentId: "skyline-suite",
             checkIn,
             checkOut,
             amountPaidNgn: total,
@@ -42,7 +42,7 @@ describe("resolveInvoiceFinancials", () => {
         const total = accommodation + PAYSTACK_FEE;
 
         const result = resolveInvoiceFinancials({
-            apartmentId: "lofty-horizon-suite",
+            apartmentId: "horizon-suite",
             checkIn,
             checkOut,
             amountPaidNgn: total,
@@ -55,7 +55,7 @@ describe("resolveInvoiceFinancials", () => {
 
     it("falls back when paid amount does not match catalog quote (manual booking)", () => {
         const result = resolveInvoiceFinancials({
-            apartmentId: "lofty-skyline-suite",
+            apartmentId: "skyline-suite",
             checkIn: "2026-05-12",
             checkOut: "2026-05-14",
             amountPaidNgn: 91_250,

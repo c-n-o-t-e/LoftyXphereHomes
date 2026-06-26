@@ -1,6 +1,11 @@
 import { Metadata } from "next";
 import { notFound } from "next/navigation";
-import { getApartmentById, isApartmentBookable } from "@/lib/data/apartments";
+import { redirect } from "next/navigation";
+import {
+    getApartmentById,
+    isApartmentBookable,
+    normalizeApartmentId,
+} from "@/lib/data/apartments";
 import { getApartmentImageSets } from "@/lib/data/getApartmentImages";
 import { getPublicApartmentVideo } from "@/lib/admin/apartmentVideo";
 import { MapPin, Check } from "lucide-react";
@@ -16,7 +21,7 @@ interface PageProps {
 
 export async function generateMetadata({ params }: PageProps): Promise<Metadata> {
   const { id } = await params;
-  const apartment = getApartmentById(id);
+  const apartment = getApartmentById(normalizeApartmentId(id));
 
   if (!apartment || apartment.status !== "active") {
     return {
@@ -24,7 +29,8 @@ export async function generateMetadata({ params }: PageProps): Promise<Metadata>
     };
   }
 
-  const imageSets = await getApartmentImageSets(id);
+  const canonicalId = normalizeApartmentId(id);
+  const imageSets = await getApartmentImageSets(canonicalId);
   const ogImages = imageSets.map((set) => set.large || set.medium).filter(Boolean);
 
   return {
@@ -40,14 +46,20 @@ export async function generateMetadata({ params }: PageProps): Promise<Metadata>
 
 export default async function ApartmentDetailPage({ params }: PageProps) {
   const { id } = await params;
-  const apartment = getApartmentById(id);
+  const canonicalId = normalizeApartmentId(id);
+
+  if (id !== canonicalId) {
+    redirect(`/apartments/${canonicalId}`);
+  }
+
+  const apartment = getApartmentById(canonicalId);
 
   if (!apartment || !isApartmentBookable(apartment)) {
     notFound();
   }
 
-  const imageSets = await getApartmentImageSets(id);
-  const apartmentVideo = await getPublicApartmentVideo(id);
+  const imageSets = await getApartmentImageSets(canonicalId);
+  const apartmentVideo = await getPublicApartmentVideo(canonicalId);
 
   return (
     <div className="pt-20 pb-12 sm:pb-16 md:pb-24 bg-white min-h-screen">

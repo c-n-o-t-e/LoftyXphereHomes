@@ -60,7 +60,7 @@ describe("upsertBookingFromPaystack", () => {
             status: "failed",
             amount: 100_00,
             metadata: {
-                apartment_id: "lofty-horizon-suite",
+                apartment_id: "horizon-suite",
                 check_in: "2026-03-20",
                 check_out: "2026-03-24",
             },
@@ -85,7 +85,7 @@ describe("upsertBookingFromPaystack", () => {
             status: "success",
             amount: wrongKobo,
             metadata: {
-                apartment_id: "lofty-horizon-suite",
+                apartment_id: "horizon-suite",
                 check_in: checkIn,
                 check_out: checkOut,
             },
@@ -110,7 +110,7 @@ describe("upsertBookingFromPaystack", () => {
             status: "success",
             amount: kobo,
             metadata: {
-                apartment_id: "lofty-horizon-suite",
+                apartment_id: "horizon-suite",
                 check_in: checkIn,
                 check_out: checkOut,
             },
@@ -153,7 +153,7 @@ describe("upsertBookingFromPaystack", () => {
             status: "success",
             amount: kobo,
             metadata: {
-                apartment_id: "lofty-horizon-suite",
+                apartment_id: "horizon-suite",
                 check_in: checkIn,
                 check_out: checkOut,
             },
@@ -189,7 +189,7 @@ describe("upsertBookingFromPaystack", () => {
             status: "success",
             amount: kobo,
             metadata: {
-                apartment_id: "lofty-horizon-suite",
+                apartment_id: "horizon-suite",
                 check_in: checkIn,
                 check_out: checkOut,
             },
@@ -252,7 +252,7 @@ describe("upsertBookingFromPaystack", () => {
             status: "success",
             amount: kobo,
             metadata: {
-                apartment_id: "lofty-horizon-suite",
+                apartment_id: "horizon-suite",
                 check_in: checkIn,
                 check_out: checkOut,
             },

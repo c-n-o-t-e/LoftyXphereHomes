@@ -9,27 +9,27 @@ jest.mock('next/link', () => {
 })
 
 const initialImageSets = {
-  'lofty-horizon-suite': [
+  'horizon-suite': [
     {
       thumbnail: 'https://example.com/thumb.jpg',
       medium: 'https://example.com/medium.jpg',
       large: 'https://example.com/large.jpg',
     },
   ],
-  'lofty-skyline-suite': [
+  'skyline-suite': [
     {
       thumbnail: 'https://example.com/thumb-2.jpg',
       medium: 'https://example.com/medium-2.jpg',
       large: 'https://example.com/large-2.jpg',
     },
   ],
-  'lofty-meridian-suite': [],
-  'lofty-lumen-suite': [],
+  'meridian-suite': [],
+  'lumen-suite': [],
 }
 
 const initialVideoSummaries = {
-  'lofty-horizon-suite': {
-    apartmentId: 'lofty-horizon-suite',
+  'horizon-suite': {
+    apartmentId: 'horizon-suite',
     posterUrl: 'https://example.com/poster.jpg',
   },
 }

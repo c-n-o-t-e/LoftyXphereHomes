@@ -29,10 +29,9 @@ export function ApartmentImageGallery({ images, name, apartmentId, video = null 
     const allImages = images;
     const hasVideo = Boolean(video?.posterUrl);
     const heroImage = allImages[0];
-    const gridImages = hasVideo ? allImages.slice(0, 5) : allImages.slice(1, 5);
-    const extraCount = hasVideo
-        ? Math.max(0, allImages.length - 5)
-        : Math.max(0, allImages.length - 5);
+    const visiblePhotoCount = hasVideo ? 4 : 5;
+    const gridImages = hasVideo ? allImages.slice(0, 4) : allImages.slice(1, 5);
+    const extraCount = Math.max(0, allImages.length - visiblePhotoCount);
 
     const openVideoTour = useCallback(
         (source: "hero_tile" | "lightbox") => {

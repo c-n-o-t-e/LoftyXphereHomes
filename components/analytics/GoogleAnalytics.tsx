@@ -6,21 +6,29 @@ import { getGaMeasurementId, isGaConfigured } from "@/lib/analytics/config";
 import { isAnalyticsExcludedPath } from "@/lib/analytics/paths";
 import { GoogleAnalyticsRouteTracker } from "@/components/analytics/GoogleAnalyticsRouteTracker";
 import { useOptionalCookieConsent } from "@/components/analytics/CookieConsentContext";
+import { readClientInternalTrafficOptedOut } from "@/lib/analytics/internal";
 
 /**
  * Loads GA4 gtag.js on public routes when analytics consent allows it.
- * Admin routes (`/admin/*`) are excluded — no scripts, page views, or events.
+ * Admin routes (`/admin/*`) and staff opt-out browsers are excluded.
  */
-export function GoogleAnalytics() {
+export function GoogleAnalytics({
+  internalTrafficOptedOut = false,
+}: {
+  internalTrafficOptedOut?: boolean;
+}) {
   const pathname = usePathname();
   const measurementId = getGaMeasurementId();
   const cookieConsent = useOptionalCookieConsent();
   const analyticsEnabled = cookieConsent?.analyticsEnabled ?? true;
+  const isInternal =
+    internalTrafficOptedOut || readClientInternalTrafficOptedOut();
 
   if (
     !isGaConfigured() ||
     !measurementId ||
     !analyticsEnabled ||
+    isInternal ||
     isAnalyticsExcludedPath(pathname ?? "")
   ) {
     return null;

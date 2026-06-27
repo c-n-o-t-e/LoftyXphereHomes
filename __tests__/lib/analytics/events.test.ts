@@ -8,6 +8,7 @@ beforeEach(() => {
   process.env.NEXT_PUBLIC_GA_MEASUREMENT_ID = "G-TEST123";
   window.history.pushState({}, "", "/");
   document.cookie = "lxh-consent-required=0; path=/";
+  document.cookie = "lxh-analytics-internal=; path=/; max-age=0";
 });
 
 afterEach(() => {
@@ -53,6 +54,17 @@ describe("trackEvent", () => {
 
   it("does nothing when consent is required but not granted", () => {
     document.cookie = "lxh-consent-required=1; path=/";
+
+    trackEvent({
+      action: "whatsapp_click",
+      category: "engagement",
+    });
+
+    expect(mockGtag).not.toHaveBeenCalled();
+  });
+
+  it("does nothing when staff internal opt-out cookie is set", () => {
+    document.cookie = "lxh-analytics-internal=1; path=/";
 
     trackEvent({
       action: "whatsapp_click",

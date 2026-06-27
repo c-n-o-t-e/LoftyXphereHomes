@@ -5,6 +5,7 @@ import {
   readClientConsentRequired,
   isAnalyticsAllowedByConsent,
 } from "@/lib/analytics/consent";
+import { readClientInternalTrafficOptedOut } from "@/lib/analytics/internal";
 
 declare global {
   interface Window {
@@ -35,6 +36,7 @@ function hasAnalyticsConsent(): boolean {
 function isTrackingAllowed(pathname?: string): boolean {
   if (!isGaConfigured()) return false;
   if (typeof window === "undefined") return false;
+  if (readClientInternalTrafficOptedOut()) return false;
   if (!hasAnalyticsConsent()) return false;
 
   const path = pathname ?? window.location.pathname;

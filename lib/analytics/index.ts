@@ -19,6 +19,12 @@ export {
   isAnalyticsAllowedByConsent,
 } from "@/lib/analytics/consent";
 export { isEeaOrUkCountry, EEA_UK_COUNTRY_CODES } from "@/lib/analytics/regions";
+export {
+  INTERNAL_TRAFFIC_COOKIE,
+  INTERNAL_OPTOUT_QUERY_PARAM,
+  isInternalTrafficOptedOut,
+  readClientInternalTrafficOptedOut,
+} from "@/lib/analytics/internal";
 export { pageview, sendGaEvent } from "@/lib/analytics/gtag";
 export {
   trackEvent,

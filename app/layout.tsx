@@ -17,6 +17,10 @@ import {
   CONSENT_REQUIRED_COOKIE,
   parseAnalyticsConsent,
 } from "@/lib/analytics/consent";
+import {
+  INTERNAL_TRAFFIC_COOKIE,
+  isInternalTrafficOptedOut,
+} from "@/lib/analytics/internal";
 import { SITE_NAME, SITE_DESCRIPTION, SITE_URL } from "@/lib/constants";
 
 const inter = Inter({
@@ -85,6 +89,9 @@ export default async function RootLayout({
   const initialConsent = parseAnalyticsConsent(
     cookieStore.get(ANALYTICS_CONSENT_COOKIE)?.value,
   );
+  const internalTrafficOptedOut = isInternalTrafficOptedOut(
+    cookieStore.get(INTERNAL_TRAFFIC_COOKIE)?.value,
+  );
 
   return (
     <html lang="en" className="overflow-x-hidden">
@@ -108,7 +115,7 @@ export default async function RootLayout({
             </AuthProvider>
           </QueryProvider>
           <CookieConsentBanner />
-          <GoogleAnalytics />
+          <GoogleAnalytics internalTrafficOptedOut={internalTrafficOptedOut} />
         </CookieConsentProvider>
       </body>
     </html>

@@ -23,9 +23,9 @@ export function LandingHeader() {
       <div className="container mx-auto px-4 sm:px-6 lg:px-8">
         <div className="flex items-center justify-between h-20 overflow-visible">
           <Link
-            href="/book"
+            href="/"
             className="flex items-center shrink-0 group -my-2 sm:-my-3 md:-my-4 lg:-my-5"
-            aria-label="LoftyXphereHomes booking"
+            aria-label="LoftyXphereHomes — visit main site"
           >
             <Image
               src="/lofty-logo-black.png"

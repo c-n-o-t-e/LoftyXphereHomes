@@ -198,9 +198,11 @@ export default function HeroSearchBar({
 
   const handleCheckInSelect = (date: string) => {
     setValue("checkIn", date);
-    setOpenCalendar(null);
-    setValue("checkOut", "");
-    setOpenCalendar("checkOut");
+    if (checkOut && date >= checkOut) {
+      setValue("checkOut", "");
+    }
+    // DatePickerCalendar calls onClose after onSelect — delay opening checkout.
+    setTimeout(() => setOpenCalendar("checkOut"), 150);
   };
 
   const handleCheckOutSelect = (date: string) => {
@@ -264,18 +266,21 @@ export default function HeroSearchBar({
                 {checkIn ? formatDisplayDate(checkIn) : "Select"}
               </span>
             </button>
-            {openCalendar === "checkIn" && (
+            {openCalendar === "checkIn" ? (
               <DatePickerCalendar
                 open
                 onClose={() => setOpenCalendar(null)}
                 value={checkIn ?? ""}
                 minDate={today}
                 onSelect={handleCheckInSelect}
-                onClear={() => setValue("checkIn", "")}
+                onClear={() => {
+                  setValue("checkIn", "");
+                  setValue("checkOut", "");
+                }}
                 placement={variant === "nav" || variant === "landing" ? "bottom" : "top"}
                 dropDownOnMobile={variant === "nav" || variant === "landing"}
               />
-            )}
+            ) : null}
             {errors.checkIn && (
               <p className="text-[10px] sm:text-xs text-[#FA5C5C] mt-0.5">{errors.checkIn.message}</p>
             )}
@@ -286,7 +291,13 @@ export default function HeroSearchBar({
             <Label className="text-[10px] sm:text-xs font-semibold text-black/70 block uppercase tracking-wide">Check-out</Label>
             <button
               type="button"
-              onClick={() => setOpenCalendar("checkOut")}
+              onClick={() => {
+                if (!checkIn) {
+                  setOpenCalendar("checkIn");
+                  return;
+                }
+                setOpenCalendar(openCalendar === "checkOut" ? null : "checkOut");
+              }}
               className="w-full flex items-center justify-start gap-1.5 sm:gap-2 h-8 sm:h-10 md:h-10 rounded-md text-left text-black text-xs sm:text-sm bg-transparent hover:bg-black/5 focus:outline-none"
             >
               <Calendar className="h-3.5 w-3.5 sm:h-4 sm:w-4 text-black/40 shrink-0" />

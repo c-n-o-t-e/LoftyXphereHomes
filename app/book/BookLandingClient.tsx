@@ -21,12 +21,15 @@ import {
   parseLandingDatesFromParams,
 } from "@/lib/utils/landingDates";
 import { areDatesValid, calculateNights, filterApartments } from "@/lib/utils/search";
+import { LandingPropertyHighlights } from "@/components/landing/LandingPropertyHighlights";
+import type { PropertyAmenityPublic } from "@/lib/data/propertyAmenities";
 import type { ApartmentImageSet } from "@/lib/images/types";
 import type { ApartmentVideoSummary } from "@/lib/videos/types";
 
 type BookLandingClientProps = {
   initialImageSets: Record<string, ApartmentImageSet[]>;
   initialVideoSummaries: Record<string, ApartmentVideoSummary>;
+  propertyAmenities: PropertyAmenityPublic[];
 };
 
 function formatDisplayDate(iso: string): string {
@@ -47,6 +50,7 @@ const compactTrustItems = [
 function BookLandingContent({
   initialImageSets,
   initialVideoSummaries,
+  propertyAmenities,
 }: BookLandingClientProps) {
   const router = useRouter();
   const searchParams = useSearchParams();
@@ -291,6 +295,8 @@ function BookLandingContent({
               </div>
             )}
           </section>
+
+          <LandingPropertyHighlights amenities={propertyAmenities} />
 
           {/* Compact trust strip */}
           <section

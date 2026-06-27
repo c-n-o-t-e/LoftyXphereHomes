@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
 import { getAllApartmentImageSetsMap } from "@/lib/data/getApartmentImages";
 import { getApartmentVideoSummariesMap } from "@/lib/data/getApartmentVideos";
+import { getPublishedPropertyAmenitiesWithImages } from "@/lib/data/propertyAmenities";
 import { BookLandingClient } from "./BookLandingClient";
 
 export const metadata: Metadata = {
@@ -14,15 +15,18 @@ export const metadata: Metadata = {
 };
 
 export default async function BookLandingPage() {
-  const [initialImageSets, initialVideoSummaries] = await Promise.all([
-    getAllApartmentImageSetsMap(),
-    getApartmentVideoSummariesMap(),
-  ]);
+  const [initialImageSets, initialVideoSummaries, propertyAmenities] =
+    await Promise.all([
+      getAllApartmentImageSetsMap(),
+      getApartmentVideoSummariesMap(),
+      getPublishedPropertyAmenitiesWithImages(),
+    ]);
 
   return (
     <BookLandingClient
       initialImageSets={initialImageSets}
       initialVideoSummaries={initialVideoSummaries}
+      propertyAmenities={propertyAmenities}
     />
   );
 }

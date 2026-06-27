@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useMemo } from "react";
+import { useState, useMemo, useEffect } from "react";
 import Link from "next/link";
 import { useQueryClient } from "@tanstack/react-query";
 import { Calendar, Users, Bed, Bath, Loader2, Info } from "lucide-react";
@@ -18,6 +18,7 @@ import {
 } from "@/lib/booking/datePickerDisplay";
 import { buildCheckoutDisabledDates } from "@/lib/booking/checkoutDisabledDates";
 import { useApartmentAvailability } from "@/hooks/useApartmentAvailability";
+import { areDatesValid } from "@/lib/utils/search";
 
 function formatPrice(price: number) {
   return new Intl.NumberFormat("en-NG", {
@@ -41,7 +42,7 @@ function messageFromApiError(data: {
   return data.error ?? "Unable to start payment. Please try again.";
 }
 
-interface YourReservationCardProps {
+export interface YourReservationCardProps {
   apartmentId: string;
   pricePerNight: number;
   capacity: number;
@@ -50,6 +51,8 @@ interface YourReservationCardProps {
   bookingUrl?: string | null;
   bookable?: boolean;
   apartmentName?: string;
+  initialCheckIn?: string;
+  initialCheckOut?: string;
 }
 
 export function YourReservationCard({
@@ -61,6 +64,8 @@ export function YourReservationCard({
   bookingUrl,
   bookable = true,
   apartmentName,
+  initialCheckIn,
+  initialCheckOut,
 }: YourReservationCardProps) {
   const queryClient = useQueryClient();
   const today = useMemo(() => {
@@ -78,6 +83,17 @@ export function YourReservationCard({
 
   // Calendar popup state
   const [openCalendar, setOpenCalendar] = useState<"checkIn" | "checkOut" | null>(null);
+
+  useEffect(() => {
+    if (
+      initialCheckIn &&
+      initialCheckOut &&
+      areDatesValid(initialCheckIn, initialCheckOut)
+    ) {
+      setCheckIn(initialCheckIn);
+      setCheckOut(initialCheckOut);
+    }
+  }, [initialCheckIn, initialCheckOut]);
 
   const { data: availabilityData } = useApartmentAvailability(apartmentId);
 

@@ -10,6 +10,7 @@ import { Button } from "@/components/ui/button";
 import { Label } from "@/components/ui/label";
 import type { Resolver } from "react-hook-form";
 import { areDatesValid } from "@/lib/utils/search";
+import { appendUtmParams } from "@/lib/utils/landingDates";
 import { DatePickerCalendar } from "./DatePickerCalendar";
 
 const searchSchema = z
@@ -90,13 +91,33 @@ function GuestCounter({
   );
 }
 
-type HeroSearchBarVariant = "hero" | "nav";
+type HeroSearchBarVariant = "hero" | "nav" | "landing";
 
-export default function HeroSearchBar({ variant = "hero" }: { variant?: HeroSearchBarVariant }) {
+type HeroSearchBarProps = {
+  variant?: HeroSearchBarVariant;
+  /** Destination path when the form is submitted (default `/apartments`). */
+  basePath?: string;
+  navigationMode?: "push" | "replace";
+  initialCheckIn?: string;
+  initialCheckOut?: string;
+  initialGuests?: number;
+  /** Keep UTM params from the current URL on submit. */
+  preserveUtm?: boolean;
+};
+
+export default function HeroSearchBar({
+  variant = "hero",
+  basePath = "/apartments",
+  navigationMode = "push",
+  initialCheckIn,
+  initialCheckOut,
+  initialGuests,
+  preserveUtm = false,
+}: HeroSearchBarProps) {
   const router = useRouter();
   const [openCalendar, setOpenCalendar] = useState<"checkIn" | "checkOut" | null>(null);
   const [openGuestPicker, setOpenGuestPicker] = useState(false);
-  const [adults, setAdults] = useState(1);
+  const [adults, setAdults] = useState(initialGuests ?? 1);
   const [children, setChildren] = useState(0);
   const guestPickerRef = useRef<HTMLDivElement>(null);
 
@@ -108,11 +129,20 @@ export default function HeroSearchBar({ variant = "hero" }: { variant?: HeroSear
   } = useForm<SearchFormData>({
     resolver: zodResolver(searchSchema) as Resolver<SearchFormData>,
     defaultValues: {
-      checkIn: "",
-      checkOut: "",
-      guests: 1,
+      checkIn: initialCheckIn ?? "",
+      checkOut: initialCheckOut ?? "",
+      guests: initialGuests ?? 1,
     },
   });
+
+  useEffect(() => {
+    if (initialCheckIn) setValue("checkIn", initialCheckIn);
+    if (initialCheckOut) setValue("checkOut", initialCheckOut);
+    if (initialGuests) {
+      setValue("guests", initialGuests);
+      setAdults(initialGuests);
+    }
+  }, [initialCheckIn, initialCheckOut, initialGuests, setValue]);
 
   // eslint-disable-next-line react-hooks/incompatible-library -- react-hook-form watch is required for date/guest UI
   const checkIn = watch("checkIn");
@@ -141,7 +171,16 @@ export default function HeroSearchBar({ variant = "hero" }: { variant?: HeroSear
     if (data.checkIn) params.set("checkIn", data.checkIn);
     if (data.checkOut) params.set("checkOut", data.checkOut);
     if (data.guests) params.set("guests", data.guests.toString());
-    router.push(`/apartments?${params.toString()}`);
+    if (preserveUtm && typeof window !== "undefined") {
+      appendUtmParams(params, new URLSearchParams(window.location.search));
+    }
+    const query = params.toString();
+    const href = query ? `${basePath}?${query}` : basePath;
+    if (navigationMode === "replace") {
+      router.replace(href);
+    } else {
+      router.push(href);
+    }
   };
 
   const today = new Date().toISOString().split("T")[0];
@@ -170,7 +209,7 @@ export default function HeroSearchBar({ variant = "hero" }: { variant?: HeroSear
   };
 
   return (
-    <div className={`w-full max-w-6xl mx-auto ${variant === "nav" ? "mt-0" : ""}`}>
+    <div className={`w-full max-w-6xl mx-auto ${variant === "nav" || variant === "landing" ? "mt-0" : ""}`}>
       {variant === "hero" && (
         <div className="mb-6 sm:mb-8 text-center space-y-2 sm:space-y-3">
           <p className="text-xs sm:text-sm md:text-base text-white/80 font-light tracking-wide">
@@ -204,7 +243,11 @@ export default function HeroSearchBar({ variant = "hero" }: { variant?: HeroSear
 
       <form
         onSubmit={handleSubmit(onSubmit)}
-        className="bg-white/95 backdrop-blur-md rounded-2xl md:rounded-full shadow-2xl shadow-black/20 p-4 sm:p-5 md:py-2 md:px-3 flex flex-col md:flex-row gap-0 md:gap-0 items-stretch md:items-center md:w-fit mx-4 md:mx-auto border border-white/20"
+        className={
+          variant === "landing"
+            ? "bg-white rounded-2xl shadow-lg border border-black/10 p-4 sm:p-5 flex flex-col md:flex-row gap-0 items-stretch md:items-center md:w-fit mx-auto"
+            : "bg-white/95 backdrop-blur-md rounded-2xl md:rounded-full shadow-2xl shadow-black/20 p-4 sm:p-5 md:py-2 md:px-3 flex flex-col md:flex-row gap-0 md:gap-0 items-stretch md:items-center md:w-fit mx-4 md:mx-auto border border-white/20"
+        }
       >
         {/* Mobile: Grid layout for dates, Desktop: inline */}
         <div className="grid grid-cols-2 md:flex md:flex-row gap-0 w-full md:w-auto">
@@ -229,8 +272,8 @@ export default function HeroSearchBar({ variant = "hero" }: { variant?: HeroSear
                 minDate={today}
                 onSelect={handleCheckInSelect}
                 onClear={() => setValue("checkIn", "")}
-                placement={variant === "nav" ? "bottom" : "top"}
-                dropDownOnMobile={variant === "nav"}
+                placement={variant === "nav" || variant === "landing" ? "bottom" : "top"}
+                dropDownOnMobile={variant === "nav" || variant === "landing"}
               />
             )}
             {errors.checkIn && (
@@ -259,8 +302,8 @@ export default function HeroSearchBar({ variant = "hero" }: { variant?: HeroSear
                 minDate={minCheckOut}
                 onSelect={handleCheckOutSelect}
                 onClear={() => setValue("checkOut", "")}
-                placement={variant === "nav" ? "bottom" : "top"}
-                dropDownOnMobile={variant === "nav"}
+                placement={variant === "nav" || variant === "landing" ? "bottom" : "top"}
+                dropDownOnMobile={variant === "nav" || variant === "landing"}
               />
             )}
             {errors.checkOut && (
@@ -297,7 +340,7 @@ export default function HeroSearchBar({ variant = "hero" }: { variant?: HeroSear
             {openGuestPicker && (
               <div
                 className={
-                  variant === "nav"
+                  variant === "nav" || variant === "landing"
                     ? "absolute top-full left-0 mt-1 w-80 max-w-[calc(100vw-2rem)] p-4 bg-white rounded-2xl shadow-xl border border-black/10 z-50"
                     : "absolute bottom-full left-0 mb-1 w-80 max-w-[calc(100vw-2rem)] p-4 bg-white rounded-2xl shadow-xl border border-black/10 z-50"
                 }

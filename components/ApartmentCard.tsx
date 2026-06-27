@@ -18,6 +18,8 @@ interface ApartmentCardProps {
   imageSets?: ApartmentImageSet[];
   imagesLoading?: boolean;
   hasVideoTour?: boolean;
+  /** Query string (without leading ?) appended to detail links, e.g. checkIn & checkOut. */
+  detailSearchParams?: string;
 }
 
 export default function ApartmentCard({
@@ -26,8 +28,12 @@ export default function ApartmentCard({
   imageSets,
   imagesLoading = false,
   hasVideoTour = false,
+  detailSearchParams,
 }: ApartmentCardProps) {
   const comingSoon = apartment.status === "coming_soon";
+  const detailHref = detailSearchParams
+    ? `/apartments/${apartment.id}?${detailSearchParams}`
+    : `/apartments/${apartment.id}`;
   const [imageIndex, setImageIndex] = useState(0);
   const sets = imageSets ?? [];
   const hasImages = sets.length > 0;
@@ -61,7 +67,7 @@ export default function ApartmentCard({
       transition={{ duration: 0.5, delay: index * 0.1 }}
     >
       <Card className={`overflow-hidden rounded-2xl border-0 shadow-lg hover:shadow-xl transition-shadow duration-300 group ${comingSoon ? "opacity-90" : ""}`}>
-        <Link href={`/apartments/${apartment.id}`} className="block">
+        <Link href={detailHref} className="block">
           <div className={`relative h-64 overflow-hidden bg-black/5 ${comingSoon ? "grayscale-[35%]" : ""}`}>
             {imagesLoading ? (
               <ApartmentImagePlaceholder loading className="absolute inset-0" />
@@ -147,7 +153,7 @@ export default function ApartmentCard({
           </div>
         </Link>
         <CardContent className="p-6">
-          <Link href={`/apartments/${apartment.id}`}>
+          <Link href={detailHref}>
             <h3 className="text-xl font-bold text-black mb-2 group-hover:text-[#FA5C5C] transition-colors">
               {apartment.name}
             </h3>
@@ -199,7 +205,7 @@ export default function ApartmentCard({
                     : "bg-[#FA5C5C] hover:bg-[#E84A4A] text-white"
                 }`}
               >
-                <Link href={`/apartments/${apartment.id}`} className="w-full sm:w-auto text-center">
+                <Link href={detailHref} className="w-full sm:w-auto text-center">
                   {comingSoon ? "View details" : "View Details"}
                 </Link>
               </Button>

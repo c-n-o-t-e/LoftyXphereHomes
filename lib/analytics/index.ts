@@ -33,6 +33,7 @@ export {
   trackApartmentImageInteraction,
   trackInquirySubmit,
   trackBookingComplete,
+  trackLandingPageView,
 } from "@/lib/analytics/events";
 export type { AnalyticsEventParams, AnalyticsEventCategory } from "@/lib/analytics/events";
 export {

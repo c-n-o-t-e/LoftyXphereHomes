@@ -1,4 +1,4 @@
-import { trackEvent, trackApartmentView } from "@/lib/analytics/events";
+import { trackEvent, trackApartmentView, trackLandingPageView } from "@/lib/analytics/events";
 
 const mockGtag = jest.fn();
 
@@ -87,6 +87,34 @@ describe("trackApartmentView", () => {
       event_label: "Apartment Detail Page",
       apartment_id: "apt-1",
       apartment_name: "Skyline Suite",
+    });
+  });
+});
+
+describe("trackLandingPageView", () => {
+  it("sends landing_page_view with dates and UTM metadata", () => {
+    trackLandingPageView({
+      checkIn: "2026-07-04",
+      checkOut: "2026-07-06",
+      availableCount: 2,
+      usedDefaultDates: false,
+      utmSource: "google",
+      utmCampaign: "brand",
+    });
+
+    expect(mockGtag).toHaveBeenCalledWith("event", "landing_page_view", {
+      event_category: "engagement",
+      event_label: "Ads Landing Page",
+      page_location: "/book",
+      check_in: "2026-07-04",
+      check_out: "2026-07-06",
+      available_count: 2,
+      used_default_dates: false,
+      utm_source: "google",
+      utm_medium: undefined,
+      utm_campaign: "brand",
+      utm_term: undefined,
+      utm_content: undefined,
     });
   });
 });

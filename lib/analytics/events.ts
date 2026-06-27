@@ -135,3 +135,31 @@ export function trackBookingComplete(params: {
     transaction_id: params.reference,
   });
 }
+
+export function trackLandingPageView(params: {
+  checkIn: string;
+  checkOut: string;
+  availableCount: number;
+  usedDefaultDates?: boolean;
+  utmSource?: string;
+  utmMedium?: string;
+  utmCampaign?: string;
+  utmTerm?: string;
+  utmContent?: string;
+}): void {
+  trackEvent({
+    action: "landing_page_view",
+    category: "engagement",
+    label: "Ads Landing Page",
+    page_location: "/book",
+    check_in: params.checkIn,
+    check_out: params.checkOut,
+    available_count: params.availableCount,
+    used_default_dates: params.usedDefaultDates,
+    utm_source: params.utmSource,
+    utm_medium: params.utmMedium,
+    utm_campaign: params.utmCampaign,
+    utm_term: params.utmTerm,
+    utm_content: params.utmContent,
+  });
+}

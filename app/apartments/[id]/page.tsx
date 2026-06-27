@@ -9,7 +9,7 @@ import {
 import { getApartmentImageSets } from "@/lib/data/getApartmentImages";
 import { getPublicApartmentVideo } from "@/lib/admin/apartmentVideo";
 import { MapPin, Check } from "lucide-react";
-import { YourReservationCard } from "@/components/YourReservationCard";
+import { YourReservationCardFromUrl } from "@/components/YourReservationCardFromUrl";
 import { ApartmentImageGallery } from "@/components/ApartmentImageGallery";
 import { ApartmentPageTracker } from "@/components/analytics/ApartmentPageTracker";
 import { IncludedWithStayStrip } from "@/components/IncludedWithStayStrip";
@@ -134,7 +134,7 @@ export default async function ApartmentDetailPage({ params }: PageProps) {
 
           {/* Your Reservation Card */}
           <div className="lg:col-span-1">
-            <YourReservationCard
+            <YourReservationCardFromUrl
               apartmentId={apartment.id}
               pricePerNight={apartment.pricePerNight}
               capacity={apartment.capacity}

@@ -6,6 +6,7 @@ import Link from "next/link";
 import { useQuery } from "@tanstack/react-query";
 import { getActiveApartments } from "@/lib/data/apartments";
 import ApartmentCard from "@/components/ApartmentCard";
+import { useAvailableApartments } from "@/hooks/useAvailableApartments";
 import { filterApartments, SearchFilters, calculateNights } from "@/lib/utils/search";
 import type { ApartmentImageSet } from "@/lib/images/types";
 import type { ApartmentVideoSummary } from "@/lib/videos/types";
@@ -60,45 +61,17 @@ function ApartmentsContent({
   });
 
   const {
-    data: availabilityIds,
-    isPending,
+    availableIds: availableForFilter,
+    isLoading: isLoadingAvailability,
     isError,
     error: availabilityError,
     refetch,
-  } = useQuery({
-    queryKey: [
-      "apartments-available",
-      filters.checkIn,
-      filters.checkOut,
-      guestsCount,
-    ],
-    queryFn: async (): Promise<string[] | null> => {
-      const params = new URLSearchParams();
-      params.set("checkIn", filters.checkIn!);
-      params.set("checkOut", filters.checkOut!);
-      params.set("guests", guestsCount.toString());
-      const res = await fetch(`/api/apartments/available?${params.toString()}`);
-      const data = await res.json().catch(() => ({}));
-      if (!res.ok) {
-        const message =
-          typeof data?.error === "string"
-            ? data.error
-            : "Availability is temporarily unavailable.";
-        throw new Error(message);
-      }
-      return data.availableApartmentIds ?? [];
-    },
+  } = useAvailableApartments({
+    checkIn: filters.checkIn,
+    checkOut: filters.checkOut,
+    guests: guestsCount,
     enabled: availabilityEnabled,
-    staleTime: 60_000,
   });
-
-  const isLoadingAvailability = availabilityEnabled && isPending;
-  const availableForFilter = useMemo(() => {
-    if (!availabilityEnabled) return null;
-    if (isLoadingAvailability) return null;
-    if (isError || availabilityIds === null) return [];
-    return availabilityIds ?? [];
-  }, [availabilityEnabled, isLoadingAvailability, isError, availabilityIds]);
 
   const activeApartments = useMemo(() => getActiveApartments(), []);
 

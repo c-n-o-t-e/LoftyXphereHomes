@@ -6,7 +6,6 @@ import { ArrowRight } from "lucide-react";
 import { ResponsiveApartmentImage } from "@/components/ResponsiveApartmentImage";
 import type { PropertyAmenityPublic } from "@/lib/data/propertyAmenities";
 import { Button } from "@/components/ui/button";
-import { Card } from "@/components/ui/card";
 import {
     Carousel,
     CarouselContent,
@@ -28,8 +27,8 @@ function AmenityCard({
 }) {
     return (
         <Link href={`/experience#${amenity.slug}`} className="block group h-full">
-            <Card className="overflow-hidden border-0 shadow-lg hover:shadow-xl transition-shadow duration-300 h-full">
-                <div className="relative aspect-[4/3] bg-black/5 overflow-hidden">
+            <div className="overflow-hidden rounded-2xl shadow-lg hover:shadow-xl transition-shadow duration-300 h-full">
+                <div className="relative h-64 overflow-hidden bg-black/5">
                     {amenity.heroImage ? (
                         <ResponsiveApartmentImage
                             image={amenity.heroImage}
@@ -37,7 +36,7 @@ function AmenityCard({
                             fill
                             variant="medium"
                             className="object-cover group-hover:scale-105 transition-transform duration-500"
-                            sizes="(max-width: 1024px) 100vw, 33vw"
+                            sizes="(max-width: 768px) 100vw, (max-width: 1200px) 50vw, 50vw"
                             priority={priority}
                         />
                     ) : null}
@@ -51,7 +50,7 @@ function AmenityCard({
                         </p>
                     </div>
                 </div>
-            </Card>
+            </div>
         </Link>
     );
 }
@@ -83,17 +82,17 @@ export default function PropertyExperienceSection({
                     </p>
                 </motion.div>
 
-                <div className="relative max-w-6xl mx-auto mb-8 sm:mb-12 px-8 sm:px-10 lg:px-12">
+                <div className="relative max-w-5xl mx-auto mb-8 sm:mb-12">
                     <Carousel
-                        opts={{ align: "start", loop: amenities.length > 3 }}
+                        opts={{ align: "start", loop: amenities.length > 2 }}
                         className="w-full"
                         aria-label="Property amenities"
                     >
-                        <CarouselContent className="-ml-3 sm:-ml-4">
+                        <CarouselContent className="-ml-4 sm:-ml-6">
                             {amenities.map((amenity, index) => (
                                 <CarouselItem
                                     key={amenity.id}
-                                    className="pl-3 sm:pl-4 basis-full lg:basis-1/3"
+                                    className="pl-4 sm:pl-6 basis-full sm:basis-1/2"
                                 >
                                     <motion.div
                                         initial={{ opacity: 0, y: 16 }}
@@ -112,8 +111,8 @@ export default function PropertyExperienceSection({
                         </CarouselContent>
                         {showControls ? (
                             <>
-                                <CarouselPrevious className="left-0 border-black/10 bg-white shadow-md hover:bg-white disabled:opacity-40" />
-                                <CarouselNext className="right-0 border-black/10 bg-white shadow-md hover:bg-white disabled:opacity-40" />
+                                <CarouselPrevious className="left-2 sm:-left-4 border-0 bg-white/95 shadow-lg hover:bg-white disabled:opacity-40" />
+                                <CarouselNext className="right-2 sm:-right-4 border-0 bg-white/95 shadow-lg hover:bg-white disabled:opacity-40" />
                             </>
                         ) : null}
                     </Carousel>

@@ -81,3 +81,47 @@ export function clampNow(nowMs: number): number {
   return Number.isFinite(nowMs) ? nowMs : Date.now();
 }
 
+export function readSessionTimestamps(): SessionTimestamps {
+  try {
+    return {
+      sessionStartMs: safeParseMs(
+        localStorage.getItem(SESSION_STORAGE_KEYS.sessionStartMs),
+      ),
+      lastActivityMs: safeParseMs(
+        localStorage.getItem(SESSION_STORAGE_KEYS.lastActivityMs),
+      ),
+    };
+  } catch {
+    return { sessionStartMs: null, lastActivityMs: null };
+  }
+}
+
+export function writeSessionTimestamps(
+  userId: string,
+  nextPolicyId: SessionPolicyId,
+  nowMs = Date.now(),
+): void {
+  localStorage.setItem(SESSION_STORAGE_KEYS.userId, userId);
+  localStorage.setItem(SESSION_STORAGE_KEYS.sessionStartMs, String(nowMs));
+  localStorage.setItem(SESSION_STORAGE_KEYS.lastActivityMs, String(nowMs));
+  localStorage.setItem(SESSION_STORAGE_KEYS.policyId, nextPolicyId);
+}
+
+/** Routes where session expiry should sign the user out and show a message. */
+export function isProtectedAuthRoute(pathname: string | null | undefined): boolean {
+  if (!pathname) return false;
+  return (
+    pathname.startsWith("/my-bookings") || pathname.startsWith("/admin")
+  );
+}
+
+export function isMissingAuthSessionError(error: unknown): boolean {
+  if (!error || typeof error !== "object") return false;
+  const name = "name" in error ? String(error.name) : "";
+  const message = "message" in error ? String(error.message) : "";
+  return (
+    name === "AuthSessionMissingError" ||
+    message.includes("Auth session missing")
+  );
+}
+

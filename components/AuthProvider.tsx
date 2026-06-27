@@ -6,6 +6,7 @@ import {
   useContext,
   useEffect,
   useMemo,
+  useRef,
   useState,
 } from "react";
 import { usePathname, useRouter } from "next/navigation";
@@ -14,9 +15,13 @@ import { getSupabaseClient } from "@/lib/supabase/client";
 import {
   clampNow,
   computeSessionExpiry,
+  isMissingAuthSessionError,
+  isProtectedAuthRoute,
+  readSessionTimestamps,
   safeParseMs,
   SESSION_POLICIES,
   SESSION_STORAGE_KEYS,
+  writeSessionTimestamps,
   type SessionPolicyId,
 } from "@/lib/auth/sessionPolicy";
 
@@ -51,6 +56,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   const [policyId, setPolicyId] = useState<SessionPolicyId>("customer");
   const router = useRouter();
   const pathname = usePathname();
+  const isSigningOutRef = useRef(false);
 
   const clearAuthError = useCallback(() => {
     setAuthError(null);
@@ -70,47 +76,51 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   }, []);
 
   const ensureSessionTimeoutStorageInitialized = useCallback(
-    (nextUserId: string) => {
+    (nextUserId: string, opts?: { forceReset?: boolean }) => {
       const nowMs = Date.now();
       try {
         const storedUserId = localStorage.getItem(SESSION_STORAGE_KEYS.userId);
-        if (storedUserId !== nextUserId) {
-          localStorage.setItem(SESSION_STORAGE_KEYS.userId, nextUserId);
+
+        if (opts?.forceReset || storedUserId !== nextUserId) {
+          writeSessionTimestamps(nextUserId, policyId, nowMs);
+          return;
+        }
+
+        const timestamps = readSessionTimestamps();
+        const expiry = computeSessionExpiry({ nowMs, policy, timestamps });
+
+        // Supabase still trusts this session — refresh stale client-side timers
+        // instead of treating a return visit as an immediate timeout.
+        if (expiry.expired) {
+          writeSessionTimestamps(nextUserId, policyId, nowMs);
+          return;
+        }
+
+        if (!timestamps.sessionStartMs) {
           localStorage.setItem(
             SESSION_STORAGE_KEYS.sessionStartMs,
             String(nowMs),
           );
+        }
+        if (!timestamps.lastActivityMs) {
           localStorage.setItem(
             SESSION_STORAGE_KEYS.lastActivityMs,
             String(nowMs),
           );
-          localStorage.setItem(SESSION_STORAGE_KEYS.policyId, policyId);
-          return;
-        }
-
-        const startMs = safeParseMs(
-          localStorage.getItem(SESSION_STORAGE_KEYS.sessionStartMs),
-        );
-        const lastMs = safeParseMs(
-          localStorage.getItem(SESSION_STORAGE_KEYS.lastActivityMs),
-        );
-
-        if (!startMs) {
-          localStorage.setItem(SESSION_STORAGE_KEYS.sessionStartMs, String(nowMs));
-        }
-        if (!lastMs) {
-          localStorage.setItem(SESSION_STORAGE_KEYS.lastActivityMs, String(nowMs));
         }
       } catch {
         // ignore
       }
     },
-    [policyId],
+    [policy, policyId],
   );
 
   const bumpLastActivity = useCallback(() => {
     try {
-      localStorage.setItem(SESSION_STORAGE_KEYS.lastActivityMs, String(Date.now()));
+      localStorage.setItem(
+        SESSION_STORAGE_KEYS.lastActivityMs,
+        String(Date.now()),
+      );
     } catch {
       // ignore
     }
@@ -118,6 +128,9 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 
   const signOutInternal = useCallback(
     async (opts?: { reason?: "expired"; redirectTo?: string }) => {
+      if (isSigningOutRef.current) return;
+      isSigningOutRef.current = true;
+
       const supabase = getSupabaseClient();
       try {
         await supabase.auth.signOut();
@@ -127,6 +140,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         setUser(null);
         setSession(null);
         clearSessionTimeoutStorage();
+        isSigningOutRef.current = false;
       }
 
       if (opts?.reason === "expired") {
@@ -140,6 +154,28 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     [clearSessionTimeoutStorage, router],
   );
 
+  const enforceSessionExpiry = useCallback(() => {
+    if (!user?.id || !session?.access_token) return false;
+
+    const nowMs = clampNow(Date.now());
+    const expiry = computeSessionExpiry({
+      nowMs,
+      policy,
+      timestamps: readSessionTimestamps(),
+    });
+
+    if (!expiry.expired) return false;
+
+    const protectedRoute = isProtectedAuthRoute(pathname);
+    void signOutInternal({
+      reason: protectedRoute ? "expired" : undefined,
+      redirectTo: protectedRoute
+        ? `/login?redirect=${encodeURIComponent(pathname || "/")}`
+        : undefined,
+    });
+    return true;
+  }, [pathname, policy, session?.access_token, signOutInternal, user?.id]);
+
   useEffect(() => {
     const supabase = getSupabaseClient();
     let cancelled = false;
@@ -151,7 +187,16 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
           error,
         } = await supabase.auth.getUser();
         if (cancelled) return;
-        if (error) throw error;
+
+        if (error) {
+          if (isMissingAuthSessionError(error)) {
+            setSession(null);
+            setUser(null);
+            return;
+          }
+          throw error;
+        }
+
         const initialSession = initialUser
           ? (await supabase.auth.getSession()).data.session
           : null;
@@ -176,7 +221,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 
     const {
       data: { subscription },
-    } = supabase.auth.onAuthStateChange((_event, nextSession) => {
+    } = supabase.auth.onAuthStateChange((event, nextSession) => {
       if (cancelled) return;
       setSession(nextSession);
       setUser(nextSession?.user ?? null);
@@ -185,7 +230,9 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       if (!nextSession?.user?.id) {
         clearSessionTimeoutStorage();
       } else {
-        ensureSessionTimeoutStorageInitialized(nextSession.user.id);
+        ensureSessionTimeoutStorageInitialized(nextSession.user.id, {
+          forceReset: event === "SIGNED_IN",
+        });
       }
     });
 
@@ -194,6 +241,13 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       subscription.unsubscribe();
     };
   }, [clearSessionTimeoutStorage, ensureSessionTimeoutStorageInitialized]);
+
+  // Customer policy on public routes; staff policy only applies under /admin.
+  useEffect(() => {
+    if (!pathname?.startsWith("/admin")) {
+      setPolicyId("customer");
+    }
+  }, [pathname]);
 
   // Track user activity for idle timeout. (Only when logged in.)
   useEffect(() => {
@@ -225,42 +279,16 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   useEffect(() => {
     if (!user?.id || !session?.access_token) return;
 
-    let cancelled = false;
+    enforceSessionExpiry();
+
     const interval = window.setInterval(() => {
-      if (cancelled) return;
-      const nowMs = clampNow(Date.now());
-
-      let sessionStartMs: number | null = null;
-      let lastActivityMs: number | null = null;
-      try {
-        sessionStartMs = safeParseMs(
-          localStorage.getItem(SESSION_STORAGE_KEYS.sessionStartMs),
-        );
-        lastActivityMs = safeParseMs(
-          localStorage.getItem(SESSION_STORAGE_KEYS.lastActivityMs),
-        );
-      } catch {
-        // ignore
-      }
-
-      const expiry = computeSessionExpiry({
-        nowMs,
-        policy,
-        timestamps: { sessionStartMs, lastActivityMs },
-      });
-      if (expiry.expired) {
-        const redirect = `/login?redirect=${encodeURIComponent(
-          pathname || "/",
-        )}`;
-        void signOutInternal({ reason: "expired", redirectTo: redirect });
-      }
-    }, 15_000);
+      enforceSessionExpiry();
+    }, 60_000);
 
     return () => {
-      cancelled = true;
       window.clearInterval(interval);
     };
-  }, [pathname, policy, session?.access_token, signOutInternal, user?.id]);
+  }, [enforceSessionExpiry, session?.access_token, user?.id]);
 
   // If the user is accessing /admin and is confirmed staff, enforce staff-level timeouts.
   useEffect(() => {
@@ -280,7 +308,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         if (json.ok === true) {
           setPolicyId("staff");
           try {
-            localStorage.setItem(SESSION_STORAGE_KEYS.policyId, "staff");
+            writeSessionTimestamps(user.id, "staff");
           } catch {
             // ignore
           }

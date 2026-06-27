@@ -1,10 +1,17 @@
 import {
   SESSION_POLICIES,
   computeSessionExpiry,
+  isMissingAuthSessionError,
+  isProtectedAuthRoute,
   safeParseMs,
+  writeSessionTimestamps,
 } from "@/lib/auth/sessionPolicy";
 
 describe("sessionPolicy", () => {
+  beforeEach(() => {
+    localStorage.clear();
+  });
+
   describe("safeParseMs", () => {
     it("returns null for empty and non-numeric values", () => {
       expect(safeParseMs(null)).toBeNull();
@@ -76,6 +83,41 @@ describe("sessionPolicy", () => {
         timestamps: { sessionStartMs: start, lastActivityMs: last },
       });
       expect(res).toEqual({ expired: false });
+    });
+  });
+
+  describe("isProtectedAuthRoute", () => {
+    it("treats my-bookings and admin as protected", () => {
+      expect(isProtectedAuthRoute("/my-bookings")).toBe(true);
+      expect(isProtectedAuthRoute("/admin/bookings")).toBe(true);
+    });
+
+    it("treats public marketing pages as unprotected", () => {
+      expect(isProtectedAuthRoute("/")).toBe(false);
+      expect(isProtectedAuthRoute("/apartments")).toBe(false);
+      expect(isProtectedAuthRoute("/login")).toBe(false);
+    });
+  });
+
+  describe("isMissingAuthSessionError", () => {
+    it("detects Supabase missing-session errors", () => {
+      expect(
+        isMissingAuthSessionError({ name: "AuthSessionMissingError" }),
+      ).toBe(true);
+      expect(
+        isMissingAuthSessionError(new Error("Auth session missing!")),
+      ).toBe(true);
+      expect(isMissingAuthSessionError(new Error("network down"))).toBe(false);
+    });
+  });
+
+  describe("writeSessionTimestamps", () => {
+    it("writes all session tracking keys", () => {
+      writeSessionTimestamps("user-1", "customer", 5_000);
+      expect(localStorage.getItem("lxh:auth:user_id")).toBe("user-1");
+      expect(localStorage.getItem("lxh:auth:session_start_ms")).toBe("5000");
+      expect(localStorage.getItem("lxh:auth:last_activity_ms")).toBe("5000");
+      expect(localStorage.getItem("lxh:auth:policy_id")).toBe("customer");
     });
   });
 });

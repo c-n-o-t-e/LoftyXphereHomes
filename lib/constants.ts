@@ -9,12 +9,15 @@ export const TWO_BED_RACK_RATE_NGN = 200_000;
  * Length-of-stay savings off the rack nightly rate (same absolute amounts for all units).
  * Effective nightly rate = rack rate − discount per night for the whole stay tier.
  *
- * 1 night: full rack | 2 nights: −₦10k/night | 3–6: −₦20k | 7–21: −₦30k | 28+: −₦40k
+ * 1 night: full rack | 2 nights: −₦5k/night | 3–6: −₦10k | 7–21: −₦15k | 28+: −₦20k
+ *
+ * Examples at rack ₦200k: ₦200k → ₦195k → ₦190k → ₦185k → ₦180k
+ * Examples at rack ₦100k: ₦100k → ₦95k → ₦90k → ₦85k → ₦80k
  */
-export const DISCOUNT_PER_NIGHT_2_NIGHTS = 10_000;
-export const DISCOUNT_PER_NIGHT_3_6 = 20_000;
-export const DISCOUNT_PER_NIGHT_1_WEEK_TO_3_WEEKS = 30_000;
-export const DISCOUNT_PER_NIGHT_1_MONTH_PLUS = 40_000;
+export const DISCOUNT_PER_NIGHT_2_NIGHTS = 5_000;
+export const DISCOUNT_PER_NIGHT_3_6 = 10_000;
+export const DISCOUNT_PER_NIGHT_1_WEEK_TO_3_WEEKS = 15_000;
+export const DISCOUNT_PER_NIGHT_1_MONTH_PLUS = 20_000;
 
 /** Per-night discount (NGN) for a stay of `nights` length. */
 export function getStayDiscountPerNight(nights: number): number {

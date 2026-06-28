@@ -104,11 +104,11 @@ describe('constants', () => {
 
   describe('getEffectiveNightlyRate', () => {
     it('returns tiered 2-bedroom rates', () => {
-      expect(getEffectiveNightlyRate(250_000, 1)).toBe(250_000)
-      expect(getEffectiveNightlyRate(250_000, 2)).toBe(240_000)
-      expect(getEffectiveNightlyRate(250_000, 4)).toBe(230_000)
-      expect(getEffectiveNightlyRate(250_000, 7)).toBe(220_000)
-      expect(getEffectiveNightlyRate(250_000, 28)).toBe(210_000)
+      expect(getEffectiveNightlyRate(200_000, 1)).toBe(200_000)
+      expect(getEffectiveNightlyRate(200_000, 2)).toBe(190_000)
+      expect(getEffectiveNightlyRate(200_000, 4)).toBe(180_000)
+      expect(getEffectiveNightlyRate(200_000, 7)).toBe(170_000)
+      expect(getEffectiveNightlyRate(200_000, 28)).toBe(160_000)
     })
   })
 

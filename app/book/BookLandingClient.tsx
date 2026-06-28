@@ -26,10 +26,18 @@ import type { PropertyAmenityPublic } from "@/lib/data/propertyAmenities";
 import type { ApartmentImageSet } from "@/lib/images/types";
 import type { ApartmentVideoSummary } from "@/lib/videos/types";
 
+type BookLandingInitialAvailability = {
+  checkIn: string;
+  checkOut: string;
+  guests: number;
+  availableIds: string[] | null;
+};
+
 type BookLandingClientProps = {
   initialImageSets: Record<string, ApartmentImageSet[]>;
   initialVideoSummaries: Record<string, ApartmentVideoSummary>;
   propertyAmenities: PropertyAmenityPublic[];
+  initialAvailability: BookLandingInitialAvailability;
 };
 
 function formatDisplayDate(iso: string): string {
@@ -51,6 +59,7 @@ function BookLandingContent({
   initialImageSets,
   initialVideoSummaries,
   propertyAmenities,
+  initialAvailability,
 }: BookLandingClientProps) {
   const router = useRouter();
   const searchParams = useSearchParams();
@@ -93,6 +102,14 @@ function BookLandingContent({
   const activeCheckIn = datesReady ? urlCheckIn! : checkIn;
   const activeCheckOut = datesReady ? urlCheckOut! : checkOut;
 
+  const prefetchedAvailability =
+    initialAvailability.availableIds !== null &&
+    initialAvailability.checkIn === activeCheckIn &&
+    initialAvailability.checkOut === activeCheckOut &&
+    initialAvailability.guests === guests
+      ? initialAvailability.availableIds
+      : undefined;
+
   const { data: imageSetsByApartment } = useQuery({
     queryKey: ["apartment-images"],
     queryFn: async (): Promise<Record<string, ApartmentImageSet[]>> => {
@@ -127,7 +144,7 @@ function BookLandingContent({
     checkIn: activeCheckIn,
     checkOut: activeCheckOut,
     guests,
-    enabled: datesReady,
+    initialAvailableIds: prefetchedAvailability,
   });
 
   const activeApartments = useMemo(() => getActiveApartments(), []);
@@ -160,7 +177,7 @@ function BookLandingContent({
       )
     : null;
 
-  const trackingReady = datesReady && !isLoadingAvailability && availableIds !== null;
+  const trackingReady = !isLoadingAvailability && availableIds !== null;
 
   return (
     <>
@@ -187,7 +204,9 @@ function BookLandingContent({
             <p className="text-base sm:text-lg text-black/70 max-w-2xl mx-auto mb-2 px-4">
               Instant online booking · Secure Paystack payment · Pool, gym & breakfast included
             </p>
-            {datesReady && !isLoadingAvailability ? (
+            {isLoadingAvailability ? (
+              <p className="text-sm text-black/60 px-4">Checking availability…</p>
+            ) : (
               <p className="text-sm text-black/60 px-4">
                 Showing suites free for{" "}
                 <span className="font-medium text-black">
@@ -195,8 +214,6 @@ function BookLandingContent({
                 </span>
                 {nights > 0 ? ` (${nights} ${nights === 1 ? "night" : "nights"})` : null}
               </p>
-            ) : (
-              <p className="text-sm text-black/60 px-4">Checking availability…</p>
             )}
           </section>
 
@@ -235,7 +252,7 @@ function BookLandingContent({
                   Retry
                 </Button>
               </div>
-            ) : isLoadingAvailability || !datesReady ? (
+            ) : isLoadingAvailability ? (
               <div className="text-center py-12 sm:py-16 bg-white rounded-xl shadow-sm border border-black/10 px-4">
                 <Loader2 className="h-10 w-10 sm:h-12 sm:w-12 text-[#FA5C5C] mx-auto mb-4 animate-spin" />
                 <h2 className="text-xl sm:text-2xl font-bold text-black mb-2">

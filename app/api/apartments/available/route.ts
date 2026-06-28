@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
+import { getAvailableApartmentIds } from "@/lib/availability/availableApartments";
 import { getActiveApartments } from "@/lib/data/apartments";
-import { getOverlappingBookings } from "@/lib/cache/availability-data";
 import { parseSearchParams } from "@/lib/validation/http";
 import { availableApartmentsQuerySchema } from "@/lib/validation/schemas";
 
@@ -27,33 +27,7 @@ export async function GET(request: NextRequest) {
   const { checkIn, checkOut, guests } = parsedQuery.data;
 
   try {
-    const requestedCheckIn = new Date(checkIn);
-    const requestedCheckOut = new Date(checkOut);
-
-    // Find all bookings that overlap with the requested date range.
-    const overlappingBookings = await getOverlappingBookings(
-      requestedCheckIn.toISOString(),
-      requestedCheckOut.toISOString()
-    );
-
-    // Get set of apartment IDs that are booked (unavailable)
-    const bookedApartmentIds = new Set(
-      overlappingBookings.map((b) => b.apartmentId)
-    );
-
-    // Filter to get available apartments
-    let availableApartments = getActiveApartments().filter(
-      (apt) => !bookedApartmentIds.has(apt.id)
-    );
-
-    // Filter by guest capacity if specified
-    if (guests && guests > 0) {
-      availableApartments = availableApartments.filter(
-        (apt) => apt.capacity >= guests
-      );
-    }
-
-    const availableIds = availableApartments.map((apt) => apt.id);
+    const availableIds = await getAvailableApartmentIds(checkIn, checkOut, guests);
 
     return NextResponse.json(
       {
@@ -62,7 +36,7 @@ export async function GET(request: NextRequest) {
         checkOut,
         guests,
         totalAvailable: availableIds.length,
-        totalBooked: bookedApartmentIds.size,
+        totalBooked: getActiveApartments().length - availableIds.length,
       },
       {
         headers: {

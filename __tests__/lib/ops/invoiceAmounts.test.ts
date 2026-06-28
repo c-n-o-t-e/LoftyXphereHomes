@@ -11,7 +11,7 @@ describe("resolveInvoiceFinancials", () => {
     it("uses rack subtotal, discount, and accommodation excluding Paystack fee", () => {
         const checkIn = "2026-05-12";
         const checkOut = "2026-05-16"; // 4 nights → ₦20k off/night on 2-bed rack
-        const subtotal = 250_000 * 4;
+        const subtotal = 200_000 * 4;
         const discount = 20_000 * 4;
         const accommodation = subtotal - discount;
         const total = accommodation + PAYSTACK_FEE;
@@ -29,14 +29,14 @@ describe("resolveInvoiceFinancials", () => {
         expect(result.amountPaidNgn).toBe(total);
         expect(result.processingFeeNgn).toBe(PAYSTACK_FEE);
         expect(result.lineItemNgn).toBe(subtotal);
-        expect(result.rackRateNgn).toBe(250_000);
+        expect(result.rackRateNgn).toBe(200_000);
         expect(result.nights).toBe(4);
     });
 
     it("includes stay discount for 7-night one-bedroom booking", () => {
         const checkIn = "2026-06-01";
         const checkOut = "2026-06-08";
-        const subtotal = 120_000 * 7;
+        const subtotal = 100_000 * 7;
         const discount = 30_000 * 7;
         const accommodation = subtotal - discount;
         const total = accommodation + PAYSTACK_FEE;

@@ -8,6 +8,8 @@ type UseAvailableApartmentsOptions = {
   checkOut?: string;
   guests?: number;
   enabled?: boolean;
+  /** Server-prefetched IDs when query params match the current search. */
+  initialAvailableIds?: string[];
 };
 
 export function useAvailableApartments({
@@ -15,6 +17,7 @@ export function useAvailableApartments({
   checkOut,
   guests = 1,
   enabled = true,
+  initialAvailableIds,
 }: UseAvailableApartmentsOptions) {
   const availabilityEnabled = enabled && !!(checkIn && checkOut);
 
@@ -43,6 +46,7 @@ export function useAvailableApartments({
       return data.availableApartmentIds ?? [];
     },
     enabled: availabilityEnabled,
+    initialData: initialAvailableIds,
     staleTime: 60_000,
   });
 

@@ -2,8 +2,8 @@ export const CHECK_IN_TIME = "2:00 PM";
 export const CHECK_OUT_TIME = "11:00 AM";
 
 /** Rack rates (full single-night price before length-of-stay reductions). */
-export const ONE_BED_RACK_RATE_NGN = 120_000;
-export const TWO_BED_RACK_RATE_NGN = 250_000;
+export const ONE_BED_RACK_RATE_NGN = 100_000;
+export const TWO_BED_RACK_RATE_NGN = 200_000;
 
 /**
  * Length-of-stay savings off the rack nightly rate (same absolute amounts for all units).

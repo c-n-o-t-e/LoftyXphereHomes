@@ -51,6 +51,15 @@ describe('apartments data', () => {
       })
   })
 
+  it('one-bedroom and two-bedroom suites have distinct in-suite amenity lists', () => {
+    const oneBed = getApartmentById('horizon-suite')
+    const twoBed = getApartmentById('meridian-suite')
+    expect(oneBed?.amenities).toContain('Cozy bedroom')
+    expect(oneBed?.amenities).toContain('2 air conditioners on solar & inverter')
+    expect(twoBed?.amenities).toContain('Cozy bedrooms')
+    expect(twoBed?.amenities).toContain('4 air conditioners on solar & inverter')
+  })
+
   it('apartment location has city and area', () => {
     apartments.forEach((apartment) => {
       expect(apartment.location).toHaveProperty('city')

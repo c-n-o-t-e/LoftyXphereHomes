@@ -2,22 +2,48 @@ import { Apartment } from "../types";
 
 const LOCATION = { city: "Abuja", area: "Wuye" } as const;
 
-const SHARED_AMENITIES = [
-    "24/7 Power",
-    "High-speed Wi-Fi",
-    "Air Conditioning",
+/** In-suite amenities for 1-bedroom units (apartment detail “In your suite” section). */
+const ONE_BED_AMENITIES = [
+    "PS5 gaming console",
+    "Starlink Wi-Fi",
+    "Shared lounge",
+    "On-site restaurant",
+    "Keyless entry with passcode door & entry camera",
+    "Daily cleaning",
+    "Cozy bedroom",
+    "Swimming pool",
+    "Private balcony",
+    "Washing machine",
+    "En-suite bathroom",
     "Fully equipped kitchen",
-    "Secure parking",
-    "Workspace desk",
-    "Netflix/YouTube enabled TV",
-    "Security personnel",
-    "Fresh towels & toiletries",
+    "Smart TV (Netflix & DStv)",
+    "Stylishly furnished living room",
+    "2 air conditioners on solar & inverter",
+    "Excellent customer service & support",
+    "Serene, secure neighborhood",
+    "24/7 electricity (solar, inverter & generator)",
 ] as const;
 
+/** In-suite amenities for 2-bedroom units (apartment detail “In your suite” section). */
 const TWO_BED_AMENITIES = [
-    ...SHARED_AMENITIES,
-    "Balcony with city view",
+    "PS5 gaming console",
+    "Starlink Wi-Fi",
+    "Shared lounge",
+    "On-site restaurant",
+    "Keyless entry with passcode door & entry camera",
+    "Daily cleaning",
+    "Cozy bedrooms",
+    "Swimming pool",
+    "Private balconies",
     "Washing machine",
+    "En-suite bathrooms",
+    "Fully equipped kitchen",
+    "Smart TV (Netflix & DStv)",
+    "Stylishly furnished living room",
+    "4 air conditioners on solar & inverter",
+    "Excellent customer service & support",
+    "Serene, secure neighborhood",
+    "24/7 electricity (solar, inverter & generator)",
 ] as const;
 
 const SHARED_HOUSE_RULES = [
@@ -91,7 +117,7 @@ export const apartments: Apartment[] = [
         location: LOCATION,
         pricePerNight: ONE_BED_PRICE,
         images: [],
-        amenities: [...SHARED_AMENITIES],
+        amenities: [...ONE_BED_AMENITIES],
         houseRules: [...SHARED_HOUSE_RULES],
         capacity: 2,
         beds: 1,
@@ -161,7 +187,7 @@ export const apartments: Apartment[] = [
         location: LOCATION,
         pricePerNight: ONE_BED_PRICE,
         images: [],
-        amenities: [...SHARED_AMENITIES],
+        amenities: [...ONE_BED_AMENITIES],
         houseRules: [...SHARED_HOUSE_RULES],
         capacity: 2,
         beds: 1,

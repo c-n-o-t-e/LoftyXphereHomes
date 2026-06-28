@@ -40,7 +40,7 @@ describe('Apartment Detail Page - Extended Coverage', () => {
     renderWithQueryClient(await ApartmentDetailPage({ params }))
     await waitForReservationCard()
     expect(screen.getByText('In your suite')).toBeInTheDocument()
-    expect(screen.getByText(/24\/7 Power/i)).toBeInTheDocument()
+    expect(screen.getByText(/Starlink Wi-Fi/i)).toBeInTheDocument()
   })
 
   it('renders house rules', async () => {

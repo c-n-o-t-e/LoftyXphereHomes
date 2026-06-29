@@ -53,8 +53,8 @@ const SHARED_HOUSE_RULES = [
     "Respect neighbors (noise control after 10PM)",
 ] as const;
 
-const ONE_BED_PRICE = 100_000;
-const TWO_BED_PRICE = 200_000;
+const ONE_BED_PRICE = 120_000;
+const TWO_BED_PRICE = 250_000;
 
 /** Canonical IDs shown first on the site and in featured sections. */
 export const FEATURED_APARTMENT_IDS = ["meridian-suite", "lumen-suite"] as const;

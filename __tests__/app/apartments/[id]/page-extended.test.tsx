@@ -63,7 +63,7 @@ describe('Apartment Detail Page - Extended Coverage', () => {
     const params = Promise.resolve({ id: 'skyline-suite' })
     renderWithQueryClient(await ApartmentDetailPage({ params }))
     await waitForReservationCard()
-    expect(screen.getByText(/₦200,000/i)).toBeInTheDocument()
+    expect(screen.getByText(/₦250,000/i)).toBeInTheDocument()
     // Price format may vary, just check that price is displayed
     expect(screen.getByText(/₦/i)).toBeInTheDocument()
   })

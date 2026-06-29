@@ -2,6 +2,7 @@ import {
   consentRequiresBanner,
   getCookieConsentMode,
   isAnalyticsAllowedByConsent,
+  isMarketingAllowedByConsent,
   parseAnalyticsConsent,
 } from "@/lib/analytics/consent";
 
@@ -30,6 +31,34 @@ describe("isAnalyticsAllowedByConsent", () => {
     expect(isAnalyticsAllowedByConsent(true, "pending")).toBe(false);
     expect(isAnalyticsAllowedByConsent(true, "denied")).toBe(false);
     expect(isAnalyticsAllowedByConsent(true, "granted")).toBe(true);
+  });
+});
+
+describe("isMarketingAllowedByConsent", () => {
+  const previous = process.env.NEXT_PUBLIC_COOKIE_CONSENT_MODE;
+
+  afterEach(() => {
+    if (previous === undefined) {
+      delete process.env.NEXT_PUBLIC_COOKIE_CONSENT_MODE;
+    } else {
+      process.env.NEXT_PUBLIC_COOKIE_CONSENT_MODE = previous;
+    }
+  });
+
+  it("allows marketing when consent mode is off", () => {
+    process.env.NEXT_PUBLIC_COOKIE_CONSENT_MODE = "off";
+    expect(isMarketingAllowedByConsent(false, "pending")).toBe(true);
+  });
+
+  it("allows marketing outside consent regions in eea mode", () => {
+    process.env.NEXT_PUBLIC_COOKIE_CONSENT_MODE = "eea";
+    expect(isMarketingAllowedByConsent(false, "pending")).toBe(true);
+  });
+
+  it("blocks marketing for EEA visitors who only accepted analytics", () => {
+    process.env.NEXT_PUBLIC_COOKIE_CONSENT_MODE = "eea";
+    expect(isMarketingAllowedByConsent(true, "granted")).toBe(false);
+    expect(isMarketingAllowedByConsent(true, "pending")).toBe(false);
   });
 });
 

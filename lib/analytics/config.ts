@@ -7,7 +7,7 @@ export function isGaConfigured(): boolean {
   return getGaMeasurementId().length > 0;
 }
 
-/** Reserved for future Google Ads conversion tags (not wired yet). */
+/** Google Ads conversion / remarketing tag ID (`AW-…`). */
 export function getGoogleAdsConversionId(): string {
   return process.env.NEXT_PUBLIC_GOOGLE_ADS_CONVERSION_ID?.trim() ?? "";
 }

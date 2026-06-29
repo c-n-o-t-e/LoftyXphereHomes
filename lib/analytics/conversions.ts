@@ -2,6 +2,11 @@ import {
   getGoogleAdsConversionId,
   isGoogleAdsConfigured,
 } from "@/lib/analytics/config";
+import {
+  readClientAnalyticsConsent,
+  readClientConsentRequired,
+  isMarketingAllowedByConsent,
+} from "@/lib/analytics/consent";
 import { sendGaEvent } from "@/lib/analytics/gtag";
 import type { AnalyticsEventCategory } from "@/lib/analytics/events";
 
@@ -33,6 +38,10 @@ export function sendGoogleAdsConversion(
   metadata: ConversionMetadata,
 ): void {
   if (!isGoogleAdsConfigured()) return;
+
+  const consentRequired = readClientConsentRequired();
+  const consent = readClientAnalyticsConsent();
+  if (!isMarketingAllowedByConsent(consentRequired, consent)) return;
 
   const conversionLabel = GOOGLE_ADS_CONVERSION_LABELS[conversionKey];
 

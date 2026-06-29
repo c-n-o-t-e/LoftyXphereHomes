@@ -17,6 +17,7 @@ export {
   parseAnalyticsConsent,
   consentRequiresBanner,
   isAnalyticsAllowedByConsent,
+  isMarketingAllowedByConsent,
 } from "@/lib/analytics/consent";
 export { isEeaOrUkCountry, EEA_UK_COUNTRY_CODES } from "@/lib/analytics/regions";
 export {

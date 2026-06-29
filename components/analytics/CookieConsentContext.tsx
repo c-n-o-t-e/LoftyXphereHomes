@@ -13,6 +13,7 @@ import {
   type AnalyticsConsentValue,
   consentRequiresBanner,
   isAnalyticsAllowedByConsent,
+  isMarketingAllowedByConsent,
   parseAnalyticsConsent,
   persistAnalyticsConsent,
   clearAnalyticsConsent,
@@ -23,6 +24,7 @@ type CookieConsentContextValue = {
   consent: AnalyticsConsentStatus;
   showBanner: boolean;
   analyticsEnabled: boolean;
+  marketingEnabled: boolean;
   acceptAnalytics: () => void;
   rejectAnalytics: () => void;
   reopenPreferences: () => void;
@@ -75,12 +77,18 @@ export function CookieConsentProvider({
     consent,
   );
 
+  const marketingEnabled = isMarketingAllowedByConsent(
+    consentRequired,
+    consent,
+  );
+
   const value = useMemo(
     () => ({
       consentRequired,
       consent,
       showBanner,
       analyticsEnabled,
+      marketingEnabled,
       acceptAnalytics,
       rejectAnalytics,
       reopenPreferences,
@@ -90,6 +98,7 @@ export function CookieConsentProvider({
       consent,
       showBanner,
       analyticsEnabled,
+      marketingEnabled,
       acceptAnalytics,
       rejectAnalytics,
       reopenPreferences,

@@ -39,6 +39,19 @@ export function isAnalyticsAllowedByConsent(
   return consent === "granted";
 }
 
+/**
+ * Ad / remarketing cookies. When consent mode is `off`, or the visitor is outside
+ * consent regions, marketing tracking is allowed without a banner choice.
+ */
+export function isMarketingAllowedByConsent(
+  consentRequired: boolean,
+  _consent: AnalyticsConsentStatus,
+): boolean {
+  if (getCookieConsentMode() === "off") return true;
+  if (!consentRequired) return true;
+  return false;
+}
+
 export function readClientAnalyticsConsent(): AnalyticsConsentStatus {
   if (typeof window === "undefined") return "pending";
 

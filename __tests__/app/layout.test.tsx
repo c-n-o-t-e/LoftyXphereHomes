@@ -41,5 +41,11 @@ describe('Root Layout', () => {
     expect(metadata.title).toHaveProperty('template')
     expect(metadata.title?.template).toContain('LoftyXphereHomes')
   })
+
+  it('includes Meta domain verification meta tag', () => {
+    expect(metadata.other).toEqual({
+      'facebook-domain-verification': 'yy2ha6g9oowjl43f3cmtgdnz6lsin7',
+    })
+  })
 })
 

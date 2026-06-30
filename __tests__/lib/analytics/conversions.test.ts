@@ -6,18 +6,26 @@ import {
 } from "@/lib/analytics/conversions";
 
 const mockGtag = jest.fn();
+const mockFbq = jest.fn();
 
 beforeEach(() => {
   mockGtag.mockReset();
+  mockFbq.mockReset();
   window.gtag = mockGtag;
+  window.fbq = mockFbq;
   process.env.NEXT_PUBLIC_GA_MEASUREMENT_ID = "G-TEST123";
+  process.env.NEXT_PUBLIC_META_PIXEL_ID = "1234567890";
+  document.cookie = "lxh-consent-required=0; path=/";
   delete process.env.NEXT_PUBLIC_GOOGLE_ADS_CONVERSION_ID;
 });
 
 afterEach(() => {
   delete process.env.NEXT_PUBLIC_GA_MEASUREMENT_ID;
   delete process.env.NEXT_PUBLIC_GOOGLE_ADS_CONVERSION_ID;
+  delete process.env.NEXT_PUBLIC_META_PIXEL_ID;
   delete window.gtag;
+  delete window.fbq;
+  document.cookie = "lxh-consent-required=0; path=/; max-age=0";
 });
 
 describe("conversion tracking helpers", () => {
@@ -32,6 +40,12 @@ describe("conversion tracking helpers", () => {
       event_label: "Site-wide WhatsApp Float Button",
       apartment_id: undefined,
       transaction_id: undefined,
+    });
+
+    expect(mockFbq).toHaveBeenCalledWith("track", "Contact", {
+      content_name: "Site-wide WhatsApp Float Button",
+      content_category: "whatsapp",
+      content_ids: undefined,
     });
   });
 
@@ -75,6 +89,17 @@ describe("conversion tracking helpers", () => {
       value: undefined,
       currency: "NGN",
     });
+
+    expect(mockFbq).toHaveBeenCalledWith(
+      "track",
+      "Purchase",
+      expect.objectContaining({
+        currency: "NGN",
+        content_type: "product",
+        num_items: 1,
+      }),
+      { eventID: "ref-123" },
+    );
   });
 
   it("prepares Google Ads conversion events when conversion ID is set", () => {

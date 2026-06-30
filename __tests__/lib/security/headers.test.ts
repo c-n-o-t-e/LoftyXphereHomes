@@ -36,6 +36,22 @@ describe("buildContentSecurityPolicy", () => {
         }
     });
 
+    it("includes Meta Pixel hosts when pixel ID is configured", () => {
+        const previous = process.env.NEXT_PUBLIC_META_PIXEL_ID;
+        process.env.NEXT_PUBLIC_META_PIXEL_ID = "1234567890";
+
+        const csp = buildContentSecurityPolicy(false);
+
+        expect(csp).toContain("https://connect.facebook.net");
+        expect(csp).toContain("https://www.facebook.com");
+
+        if (previous === undefined) {
+            delete process.env.NEXT_PUBLIC_META_PIXEL_ID;
+        } else {
+            process.env.NEXT_PUBLIC_META_PIXEL_ID = previous;
+        }
+    });
+
     it("allows unsafe-eval in development for Next.js HMR", () => {
         const csp = buildContentSecurityPolicy(true);
 

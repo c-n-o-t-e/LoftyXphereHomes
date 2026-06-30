@@ -8,6 +8,7 @@ import { QueryProvider } from "@/components/providers/QueryProvider";
 import { PublicSiteChrome } from "@/components/PublicSiteChrome";
 import { Toaster } from "sonner";
 import { GoogleAnalytics } from "@/components/analytics/GoogleAnalytics";
+import { MetaPixel } from "@/components/analytics/MetaPixel";
 import {
   CookieConsentProvider,
 } from "@/components/analytics/CookieConsentContext";
@@ -116,6 +117,7 @@ export default async function RootLayout({
           </QueryProvider>
           <CookieConsentBanner />
           <GoogleAnalytics internalTrafficOptedOut={internalTrafficOptedOut} />
+          <MetaPixel internalTrafficOptedOut={internalTrafficOptedOut} />
         </CookieConsentProvider>
       </body>
     </html>

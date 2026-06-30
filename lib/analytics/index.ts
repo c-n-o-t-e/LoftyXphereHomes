@@ -1,8 +1,10 @@
 export {
   getGaMeasurementId,
   getGoogleAdsConversionId,
+  getMetaPixelId,
   isGaConfigured,
   isGoogleAdsConfigured,
+  isMetaPixelConfigured,
 } from "@/lib/analytics/config";
 export {
   ANALYTICS_EXCLUDED_PATH_PREFIXES,
@@ -27,6 +29,14 @@ export {
   readClientInternalTrafficOptedOut,
 } from "@/lib/analytics/internal";
 export { pageview, sendGaEvent } from "@/lib/analytics/gtag";
+export {
+  trackMetaPageView,
+  trackMetaViewContent,
+  trackMetaInitiateCheckout,
+  trackMetaLead,
+  trackMetaPurchase,
+  trackMetaContact,
+} from "@/lib/analytics/metaPixel";
 export {
   trackEvent,
   trackApartmentView,

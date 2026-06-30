@@ -8,6 +8,11 @@ import {
   isMarketingAllowedByConsent,
 } from "@/lib/analytics/consent";
 import { sendGaEvent } from "@/lib/analytics/gtag";
+import {
+  trackMetaContact,
+  trackMetaLead,
+  trackMetaPurchase,
+} from "@/lib/analytics/metaPixel";
 import type { AnalyticsEventCategory } from "@/lib/analytics/events";
 
 export type ConversionMetadata = {
@@ -67,6 +72,18 @@ function trackEngagementConversion(
   });
 
   sendGoogleAdsConversion(conversionKey, metadata);
+
+  trackMetaContact({
+    label: metadata.label,
+    channel: metaChannelFromConversionKey(conversionKey),
+    apartmentId: metadata.apartmentId,
+  });
+}
+
+function metaChannelFromConversionKey(
+  conversionKey: GoogleAdsConversionKey,
+): "whatsapp" | "phone" {
+  return conversionKey === "phone" ? "phone" : "whatsapp";
 }
 
 /** WhatsApp CTA click — GA4 now, Google Ads conversion when configured. */
@@ -94,6 +111,8 @@ export function trackContactFormConversion(metadata: {
     label: metadata.label ?? "Contact Form",
     category: "inquiry",
   });
+
+  trackMetaLead({ label: metadata.label ?? "Contact Form" });
 }
 
 /** Successful booking — GA4 now, Google Ads conversion when configured. */
@@ -114,6 +133,12 @@ export function trackBookingConversion(metadata: {
     label: metadata.label ?? "Booking Success Page",
     category: "conversion",
     transactionId: metadata.reference,
+    value: metadata.value,
+    currency: "NGN",
+  });
+
+  trackMetaPurchase({
+    reference: metadata.reference,
     value: metadata.value,
     currency: "NGN",
   });

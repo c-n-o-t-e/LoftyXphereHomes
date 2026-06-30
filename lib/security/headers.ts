@@ -5,6 +5,7 @@ export type SecurityHeader = {
 
 export function buildContentSecurityPolicy(isDev: boolean): string {
     const gaEnabled = Boolean(process.env.NEXT_PUBLIC_GA_MEASUREMENT_ID?.trim());
+    const metaEnabled = Boolean(process.env.NEXT_PUBLIC_META_PIXEL_ID?.trim());
 
     const scriptSrcParts = ["'self'", "'unsafe-inline'"];
     if (isDev) {
@@ -12,6 +13,9 @@ export function buildContentSecurityPolicy(isDev: boolean): string {
     }
     if (gaEnabled) {
         scriptSrcParts.push("https://www.googletagmanager.com");
+    }
+    if (metaEnabled) {
+        scriptSrcParts.push("https://connect.facebook.net");
     }
 
     const connectSrcParts = [
@@ -28,6 +32,12 @@ export function buildContentSecurityPolicy(isDev: boolean): string {
             "https://stats.g.doubleclick.net",
         );
     }
+    if (metaEnabled) {
+        connectSrcParts.push(
+            "https://www.facebook.com",
+            "https://connect.facebook.net",
+        );
+    }
 
     const imgSrcParts = [
         "'self'",
@@ -41,6 +51,9 @@ export function buildContentSecurityPolicy(isDev: boolean): string {
             "https://www.google-analytics.com",
             "https://www.googletagmanager.com",
         );
+    }
+    if (metaEnabled) {
+        imgSrcParts.push("https://www.facebook.com");
     }
 
     const directives = [

@@ -15,3 +15,12 @@ export function getGoogleAdsConversionId(): string {
 export function isGoogleAdsConfigured(): boolean {
   return getGoogleAdsConversionId().length > 0;
 }
+
+/** Meta (Facebook / Instagram) Pixel ID — numeric string from Events Manager. */
+export function getMetaPixelId(): string {
+  return process.env.NEXT_PUBLIC_META_PIXEL_ID?.trim() ?? "";
+}
+
+export function isMetaPixelConfigured(): boolean {
+  return getMetaPixelId().length > 0;
+}

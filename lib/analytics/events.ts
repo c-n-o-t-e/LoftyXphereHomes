@@ -1,4 +1,8 @@
 import { sendGaEvent } from "@/lib/analytics/gtag";
+import {
+  trackMetaInitiateCheckout,
+  trackMetaViewContent,
+} from "@/lib/analytics/metaPixel";
 
 export type AnalyticsEventCategory =
   | "engagement"
@@ -45,6 +49,11 @@ export function trackApartmentView(params: {
     label: params.label ?? "Apartment Detail Page",
     apartment_id: params.apartmentId,
     apartment_name: params.apartmentName,
+  });
+
+  trackMetaViewContent({
+    apartmentId: params.apartmentId,
+    apartmentName: params.apartmentName,
   });
 }
 
@@ -162,4 +171,6 @@ export function trackLandingPageView(params: {
     utm_term: params.utmTerm,
     utm_content: params.utmContent,
   });
+
+  trackMetaInitiateCheckout();
 }

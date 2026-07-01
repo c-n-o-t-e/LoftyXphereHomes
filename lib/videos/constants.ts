@@ -8,7 +8,7 @@ export const HERO_VIDEO_MAX_BYTES =
     1024;
 
 export const HERO_VIDEO_MAX_DURATION_SEC =
-    Number.parseInt(process.env.HERO_VIDEO_MAX_SECONDS ?? "60", 10) || 60;
+    Number.parseInt(process.env.HERO_VIDEO_MAX_SECONDS ?? "12", 10) || 12;
 
 export const ALLOWED_HERO_VIDEO_MIME_TYPES = new Set([
     "video/mp4",

@@ -17,7 +17,8 @@ type RouteError = {
 const completeUploadBodySchema = z
     .object({
         heroId: z.string().trim().min(1),
-        mimeType: z.string().trim().min(1).max(100),
+        mobileMimeType: z.string().trim().min(1).max(100),
+        desktopMimeType: z.string().trim().min(1).max(100),
     })
     .strict();
 
@@ -47,7 +48,8 @@ export async function POST(request: NextRequest) {
     try {
         const row = await completeHeroVideoDirectUpload({
             heroId: parsed.data.heroId,
-            mimeType: parsed.data.mimeType,
+            mobileMimeType: parsed.data.mobileMimeType,
+            desktopMimeType: parsed.data.desktopMimeType,
         });
         return NextResponse.json({
             ok: true,

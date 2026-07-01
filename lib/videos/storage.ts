@@ -1,7 +1,7 @@
 import { createServerSupabaseClient } from "@/lib/supabase/server";
 import { ensureApartmentImagesBucket } from "@/lib/images/bucket";
 import { HERO_STORAGE_PREFIX, HERO_VIDEO_BUCKET, APARTMENT_VIDEO_STORAGE_PREFIX } from "./constants";
-import type { HeroVideoUrls } from "./types";
+import type { HeroVideoUploadSlot, HeroVideoUrls } from "./types";
 
 function requireSupabaseUploadEnv() {
     const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL?.replace(/\/$/, "");
@@ -22,8 +22,8 @@ export function buildHeroStorageKeyBase(heroId: string) {
     return `${HERO_STORAGE_PREFIX}/${heroId}`;
 }
 
-export function buildHeroRawUploadKey(heroId: string) {
-    return `${buildHeroStorageKeyBase(heroId)}/raw-upload`;
+export function buildHeroRawUploadKey(heroId: string, slot: HeroVideoUploadSlot) {
+    return `${buildHeroStorageKeyBase(heroId)}/raw-upload-${slot}`;
 }
 
 export function buildPublicHeroStorageUrl(storageKey: string): string {
@@ -104,6 +104,8 @@ export async function deleteHeroVideoStorage(storageKeyBase: string) {
         `${storageKeyBase}/desktop.mp4`,
         `${storageKeyBase}/poster.webp`,
         `${storageKeyBase}/raw-upload`,
+        `${storageKeyBase}/raw-upload-mobile`,
+        `${storageKeyBase}/raw-upload-desktop`,
     ];
     const { error } = await supabase.storage.from(HERO_VIDEO_BUCKET).remove(keys);
     if (error) {
@@ -111,9 +113,12 @@ export async function deleteHeroVideoStorage(storageKeyBase: string) {
     }
 }
 
-export async function downloadHeroRawUpload(heroId: string): Promise<Buffer> {
+export async function downloadHeroRawUpload(
+    heroId: string,
+    slot: HeroVideoUploadSlot,
+): Promise<Buffer> {
     const { supabaseUrl, serviceKey } = requireSupabaseUploadEnv();
-    const storageKey = buildHeroRawUploadKey(heroId);
+    const storageKey = buildHeroRawUploadKey(heroId, slot);
     const response = await fetch(
         `${supabaseUrl}/storage/v1/object/${HERO_VIDEO_BUCKET}/${storageKey}`,
         { headers: { Authorization: `Bearer ${serviceKey}` } },
@@ -124,10 +129,13 @@ export async function downloadHeroRawUpload(heroId: string): Promise<Buffer> {
     return Buffer.from(await response.arrayBuffer());
 }
 
-export async function createHeroRawUploadSignedUrl(heroId: string) {
+export async function createHeroRawUploadSignedUrl(
+    heroId: string,
+    slot: HeroVideoUploadSlot,
+) {
     await ensureApartmentImagesBucket();
     const supabase = createServerSupabaseClient();
-    const path = buildHeroRawUploadKey(heroId);
+    const path = buildHeroRawUploadKey(heroId, slot);
     const { data, error } = await supabase.storage
         .from(HERO_VIDEO_BUCKET)
         .createSignedUploadUrl(path);
@@ -141,9 +149,9 @@ export async function createHeroRawUploadSignedUrl(heroId: string) {
     return { path: data.path, token: data.token };
 }
 
-export async function deleteHeroRawUpload(heroId: string) {
+export async function deleteHeroRawUpload(heroId: string, slot: HeroVideoUploadSlot) {
     const supabase = createServerSupabaseClient();
-    const path = buildHeroRawUploadKey(heroId);
+    const path = buildHeroRawUploadKey(heroId, slot);
     const { error } = await supabase.storage.from(HERO_VIDEO_BUCKET).remove([path]);
     if (error) {
         throw new Error(`Failed to delete temporary hero upload: ${error.message}`);

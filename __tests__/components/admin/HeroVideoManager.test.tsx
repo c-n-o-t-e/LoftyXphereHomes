@@ -32,6 +32,8 @@ describe("HeroVideoManager", () => {
         render(<HeroVideoManager />);
 
         expect(await screen.findByText(/no hero video yet/i)).toBeInTheDocument();
+        expect(screen.getByLabelText(/desktop video/i)).toBeInTheDocument();
+        expect(screen.getByLabelText(/mobile video/i)).toBeInTheDocument();
     });
 
     it("shows configured hero video details", async () => {
@@ -55,7 +57,11 @@ describe("HeroVideoManager", () => {
         expect(
             await screen.findByRole("heading", { name: /^current hero$/i }),
         ).toBeInTheDocument();
-        expect(await screen.findByRole("button", { name: /replace hero video/i })).toBeInTheDocument();
+        expect(
+            await screen.findByRole("button", { name: /replace hero videos/i }),
+        ).toBeInTheDocument();
+        expect(screen.getByText(/^desktop$/i)).toBeInTheDocument();
+        expect(screen.getByText(/^mobile$/i)).toBeInTheDocument();
     });
 
     it("surfaces load errors from the admin API", async () => {

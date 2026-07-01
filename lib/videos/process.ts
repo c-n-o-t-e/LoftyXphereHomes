@@ -19,7 +19,7 @@ import {
     probeVideoDurationSec,
     runFfmpeg,
 } from "./ffmpeg";
-import type { ProcessedHeroVideoResult, ProcessedHeroVideoVariant } from "./types";
+import type { HeroVideoUploadSlot, ProcessedHeroVideoResult, ProcessedHeroVideoVariant } from "./types";
 
 export type ValidateVideoInputResult =
     | { ok: true; mimeType: string }
@@ -350,6 +350,84 @@ export async function processHeroVideo(input: Buffer): Promise<ProcessedHeroVide
         variants: HERO_VIDEO_VARIANTS,
         workDirPrefix: "hero-video",
     });
+}
+
+export async function processHeroVideoSlot(
+    input: Buffer,
+    slot: HeroVideoUploadSlot,
+): Promise<Buffer> {
+    const workDir = join(tmpdir(), `hero-video-${slot}-${randomUUID()}`);
+    await mkdir(workDir, { recursive: true });
+
+    const slotConfig = HERO_VIDEO_VARIANTS[slot];
+    const inputPath = join(workDir, "source.bin");
+    const outputPath = join(workDir, slotConfig.fileName);
+
+    try {
+        await writeFile(inputPath, input);
+
+        const duration = await probeVideoDurationSec(inputPath);
+        if (duration > HERO_VIDEO_MAX_DURATION_SEC + 1) {
+            throw new Error(
+                `Videos must be ${HERO_VIDEO_MAX_DURATION_SEC} seconds or shorter.`,
+            );
+        }
+
+        const effectiveDuration = Math.max(
+            1,
+            Math.min(duration, HERO_VIDEO_MAX_DURATION_SEC),
+        );
+
+        const buffer = await transcodeMp4ToFit({
+            inputPath,
+            outputPath,
+            label: slot === "mobile" ? "Mobile video" : "Desktop video",
+            maxWidth: slotConfig.maxWidth,
+            crf: slotConfig.crf,
+            maxDurationSec: HERO_VIDEO_MAX_DURATION_SEC,
+            durationSec: effectiveDuration,
+            includeAudio: false,
+            maxBytes: slotConfig.maxBytes,
+        });
+        return buffer;
+    } finally {
+        await rm(workDir, { recursive: true, force: true });
+    }
+}
+
+export async function extractHeroVideoPoster(input: Buffer): Promise<Buffer> {
+    const workDir = join(tmpdir(), `hero-video-poster-${randomUUID()}`);
+    await mkdir(workDir, { recursive: true });
+
+    const inputPath = join(workDir, "source.bin");
+    const posterPath = join(workDir, HERO_VIDEO_VARIANTS.poster.fileName);
+
+    try {
+        await writeFile(inputPath, input);
+
+        const duration = await probeVideoDurationSec(inputPath);
+        if (duration > HERO_VIDEO_MAX_DURATION_SEC + 1) {
+            throw new Error(
+                `Videos must be ${HERO_VIDEO_MAX_DURATION_SEC} seconds or shorter.`,
+            );
+        }
+
+        const posterBuffer = await extractPosterWebp(
+            inputPath,
+            posterPath,
+            HERO_VIDEO_VARIANTS.poster,
+        );
+
+        assertMaxBytes(
+            posterBuffer,
+            HERO_VIDEO_VARIANTS.poster.maxBytes,
+            "Poster image",
+        );
+
+        return posterBuffer;
+    } finally {
+        await rm(workDir, { recursive: true, force: true });
+    }
 }
 
 export async function processApartmentVideo(

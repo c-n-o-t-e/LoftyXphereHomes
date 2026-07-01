@@ -28,18 +28,42 @@ describe('Hero', () => {
     expect(screen.getByText('Stay Different.')).toBeVisible()
   })
 
-  it('renders video with metadata preload and poster for LCP', () => {
+  it('renders separate mobile and desktop videos for responsive playback', () => {
     const { container } = render(<Hero heroVideo={mockHeroVideo} />)
-    const video = container.querySelector('video')
-    expect(video).toBeInTheDocument()
-    expect(video).toHaveAttribute('preload', 'metadata')
-    expect(video).toHaveAttribute('poster', mockHeroVideo.posterUrl)
-    expect(video).not.toHaveClass('opacity-0')
+    const videos = container.querySelectorAll('video')
+    expect(videos.length).toBe(2)
 
-    const sources = video?.querySelectorAll('source')
-    expect(sources?.length).toBe(2)
-    expect(sources?.[0]?.getAttribute('src')).toBe(mockHeroVideo.mobileMp4Url)
-    expect(sources?.[1]?.getAttribute('src')).toBe(mockHeroVideo.desktopMp4Url)
+    const mobileVideo = videos[0]
+    const desktopVideo = videos[1]
+
+    expect(mobileVideo).toHaveClass('md:hidden')
+    expect(desktopVideo).toHaveClass('hidden', 'md:block')
+
+    expect(mobileVideo).toHaveAttribute('preload', 'metadata')
+    expect(mobileVideo).toHaveAttribute('poster', mockHeroVideo.posterUrl)
+    expect(mobileVideo.querySelector('source')?.getAttribute('src')).toBe(
+      mockHeroVideo.mobileMp4Url,
+    )
+    expect(desktopVideo.querySelector('source')?.getAttribute('src')).toBe(
+      mockHeroVideo.desktopMp4Url,
+    )
+  })
+
+  it('renders a single video when only one variant is configured', () => {
+    const { container } = render(
+      <Hero
+        heroVideo={{
+          ...mockHeroVideo,
+          mobileMp4Url: '',
+          desktopMp4Url: mockHeroVideo.desktopMp4Url,
+        }}
+      />,
+    )
+    const videos = container.querySelectorAll('video')
+    expect(videos.length).toBe(1)
+    expect(videos[0].querySelector('source')?.getAttribute('src')).toBe(
+      mockHeroVideo.desktopMp4Url,
+    )
   })
 
   it('does not render a separate poster image layer', () => {

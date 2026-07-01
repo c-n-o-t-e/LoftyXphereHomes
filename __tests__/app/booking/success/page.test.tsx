@@ -149,6 +149,49 @@ describe('Booking Success Page', () => {
     expect(jest.mocked(payments.getPaymentProvider)).toHaveBeenCalledWith('flutterwave')
   })
 
+  it('uses flutterwave provider when query param is uppercase FLUTTERWAVE', async () => {
+    mockVerifyPayment.mockResolvedValueOnce({
+      ...verifiedPayment,
+      reference: 'ref_fw_query',
+      provider: 'flutterwave',
+    })
+    jest.mocked(confirmBookingFromPayment).mockResolvedValueOnce({
+      id: 'booking_fw_query_1',
+    } as never)
+
+    await renderSuccessPage({ reference: 'ref_fw_query', provider: 'FLUTTERWAVE' })
+    expect(jest.mocked(payments.getPaymentProvider)).toHaveBeenCalledWith('flutterwave')
+  })
+
+  it('uses flutterwave provider from query param when booking record is missing', async () => {
+    jest.mocked(getBookingByReference).mockResolvedValueOnce(null)
+    mockVerifyPayment.mockResolvedValueOnce({
+      ...verifiedPayment,
+      reference: 'ref_fw_race',
+      provider: 'flutterwave',
+    })
+    jest.mocked(confirmBookingFromPayment).mockResolvedValueOnce({
+      id: 'booking_fw_race_1',
+    } as never)
+
+    await renderSuccessPage({ reference: 'ref_fw_race', provider: 'flutterwave' })
+    expect(jest.mocked(payments.getPaymentProvider)).toHaveBeenCalledWith('flutterwave')
+  })
+
+  it('uses paystack provider from query param when booking record is missing', async () => {
+    jest.mocked(getBookingByReference).mockResolvedValueOnce(null)
+    mockVerifyPayment.mockResolvedValueOnce({
+      ...verifiedPayment,
+      reference: 'ref_ps_race',
+    })
+    jest.mocked(confirmBookingFromPayment).mockResolvedValueOnce({
+      id: 'booking_ps_race_1',
+    } as never)
+
+    await renderSuccessPage({ reference: 'ref_ps_race', provider: 'paystack' })
+    expect(jest.mocked(payments.getPaymentProvider)).toHaveBeenCalledWith('paystack')
+  })
+
   it('does not call verifyPayment when reference is empty', async () => {
     await renderSuccessPage({})
     await renderSuccessPage({ reference: '' })

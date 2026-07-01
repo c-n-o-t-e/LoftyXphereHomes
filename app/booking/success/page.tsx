@@ -24,11 +24,19 @@ export const metadata: Metadata = {
   description: "Your payment was successful. Thank you for booking with LoftyXphereHomes.",
 };
 
+function normalizeProviderSlug(value: string | undefined): string | undefined {
+  const normalized = value?.trim().toLowerCase();
+  return normalized || undefined;
+}
+
 function resolveProviderId(
   bookingProvider: string | undefined,
   queryProvider: string | undefined,
 ): PaymentProviderId {
-  if (bookingProvider === "FLUTTERWAVE" || queryProvider === "flutterwave") {
+  if (
+    normalizeProviderSlug(bookingProvider) === "flutterwave" ||
+    normalizeProviderSlug(queryProvider) === "flutterwave"
+  ) {
     return "flutterwave";
   }
   return "paystack";

@@ -40,10 +40,6 @@ export const positiveIntStringToNumberSchema = z
     message: "Must be greater than 0.",
   });
 
-/**
- * `amount` is optional: ignored for charging (server recomputes). Kept for strict-schema
- * compatibility with older clients/CDN bundles that still send it.
- */
 export const paystackInitializeBodySchema = z
   .object({
     email: emailSchema,
@@ -73,6 +69,9 @@ export const paystackInitializeBodySchema = z
     checkOut: data.checkOut,
   }));
 
+/** Shared body for Paystack and Flutterwave initialize routes. */
+export const paymentInitializeBodySchema = paystackInitializeBodySchema;
+
 export const paystackWebhookPayloadSchema = z
   .object({
     event: nonEmptyTrimmedString,
@@ -93,6 +92,31 @@ export const paystackWebhookPayloadSchema = z
         code: z.ZodIssueCode.custom,
         message: "reference is required for charge.success events",
         path: ["data", "reference"],
+      });
+    }
+  });
+
+export const flutterwaveWebhookPayloadSchema = z
+  .object({
+    event: nonEmptyTrimmedString,
+    data: z
+      .object({
+        tx_ref: z.string().trim().optional(),
+        status: z.string().trim().optional(),
+      })
+      .passthrough()
+      .optional(),
+  })
+  .passthrough()
+  .superRefine((payload, ctx) => {
+    if (
+      payload.event === "charge.completed" &&
+      !payload.data?.tx_ref?.trim()
+    ) {
+      ctx.addIssue({
+        code: z.ZodIssueCode.custom,
+        message: "tx_ref is required for charge.completed events",
+        path: ["data", "tx_ref"],
       });
     }
   });

@@ -14,10 +14,19 @@ describe("YourReservationCard", () => {
     };
 
     beforeEach(() => {
-        jest.spyOn(globalThis, "fetch").mockResolvedValue({
-            ok: true,
-            json: async () => ({ blockedDates: [], bookingRanges: [] }),
-        } as Response);
+        jest.spyOn(globalThis, "fetch").mockImplementation(async (input) => {
+            const url = String(input);
+            if (url.includes("/api/payments/available")) {
+                return {
+                    ok: true,
+                    json: async () => ({ providers: ["paystack"] }),
+                } as Response;
+            }
+            return {
+                ok: true,
+                json: async () => ({ blockedDates: [], bookingRanges: [] }),
+            } as Response;
+        });
     });
 
     afterEach(() => {
@@ -105,6 +114,12 @@ describe("YourReservationCard", () => {
 
         const fetchMock = jest.spyOn(globalThis, "fetch").mockImplementation(async (input) => {
             const url = String(input);
+            if (url.includes("/api/payments/available")) {
+                return {
+                    ok: true,
+                    json: async () => ({ providers: ["paystack"] }),
+                } as Response;
+            }
             if (url.includes("/api/availability")) {
                 return {
                     ok: true,
@@ -166,6 +181,12 @@ describe("YourReservationCard", () => {
 
         jest.spyOn(globalThis, "fetch").mockImplementation(async (input) => {
             const url = String(input);
+            if (url.includes("/api/payments/available")) {
+                return {
+                    ok: true,
+                    json: async () => ({ providers: ["paystack"] }),
+                } as Response;
+            }
             if (url.includes("/api/availability")) {
                 return {
                     ok: true,

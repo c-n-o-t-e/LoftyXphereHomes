@@ -2,7 +2,7 @@ import {
   getEffectiveNightlyRate,
   getStayDiscountAmount,
   getStayDiscountPerNight,
-  PAYSTACK_FEE,
+  PAYMENT_PROCESSING_FEE,
 } from "./constants";
 
 /**
@@ -52,13 +52,13 @@ export interface BookingQuote {
   subtotal: number;
   discountAmount: number;
   hasDiscount: boolean;
-  /** Accommodation after discount, excluding Paystack fee. */
+  /** Accommodation after discount, excluding processing fee. */
   accommodationTotalNgn: number;
   effectiveNightlyRateNgn: number;
   totalNgn: number;
 }
 
-/** Total payable in NGN (integer) for Paystack, from rack rate and stay dates. */
+/** Total payable in NGN (integer), from rack rate and stay dates. */
 export function computeBookingQuote(
   rackRateNgn: number,
   checkIn: string,
@@ -70,7 +70,7 @@ export function computeBookingQuote(
   const discountAmount = getStayDiscountAmount(nights);
   const effectiveNightlyRateNgn = getEffectiveNightlyRate(rackRateNgn, nights);
   const accommodationTotalNgn = effectiveNightlyRateNgn * nights;
-  const totalNgn = accommodationTotalNgn + PAYSTACK_FEE;
+  const totalNgn = accommodationTotalNgn + PAYMENT_PROCESSING_FEE;
   return {
     nights,
     subtotal,

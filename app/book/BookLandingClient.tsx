@@ -202,7 +202,7 @@ function BookLandingContent({
               Book a premium shortlet in Wuye, Abuja
             </h1>
             <p className="text-base sm:text-lg text-black/70 max-w-2xl mx-auto mb-2 px-4">
-              Instant online booking · Secure Paystack payment · Pool, gym & breakfast included
+              Instant online booking · Secure payment (Paystack or Flutterwave) · Pool, gym & breakfast included
             </p>
             {isLoadingAvailability ? (
               <p className="text-sm text-black/60 px-4">Checking availability…</p>

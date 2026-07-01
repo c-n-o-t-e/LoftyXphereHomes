@@ -1,5 +1,5 @@
-import type { PaystackVerifyData } from "./paystack";
-import { initiateRefund } from "./paystack";
+import type { VerifiedPayment } from "@/lib/payments/types";
+import { getPaymentProvider } from "@/lib/payments";
 import { getApartmentById, normalizeApartmentId } from "./data/apartments";
 import { prisma } from "./db";
 import {
@@ -17,7 +17,14 @@ import {
     finalizeRefundResult,
     tryClaimRefundProcessing,
 } from "./booking/refund";
-import { sendAdminAlertBookingConflictRefund } from "./email/admin-alerts";
+import {
+    resolveBookerEmail,
+} from "./booking/email";
+import {
+    sendAdminAlertBookingConflictRefund,
+} from "./email/admin-alerts";
+import type { PaystackVerifyData } from "./paystack";
+import { paymentProviderIdToDb } from "./payments";
 
 export { BookingDateConflictError } from "./booking/conflict";
 
@@ -27,22 +34,21 @@ function parseDate(s: string): Date {
     return d;
 }
 
-function validatePaystackBookingInput(data: PaystackVerifyData) {
-    if (data.status !== "success") {
+function validateVerifiedPaymentInput(payment: VerifiedPayment) {
+    if (payment.status !== "success") {
         throw new Error(
-            `Cannot create booking from non-successful Paystack transaction: ${data.status}`,
+            `Cannot create booking from non-successful payment: ${payment.status}`,
         );
     }
 
-    const meta = data.metadata ?? {};
+    const meta = payment.metadata;
     const apartmentId = normalizeApartmentId(String(meta.apartment_id));
     const checkInStr = meta.check_in;
     const checkOutStr = meta.check_out;
-    const email = data.customer?.email?.trim();
 
-    if (!apartmentId || !checkInStr || !checkOutStr || !email) {
+    if (!apartmentId || !checkInStr || !checkOutStr) {
         throw new Error(
-            "Missing apartment_id, check_in, check_out, or customer email",
+            "Missing apartment_id, check_in, or check_out",
         );
     }
 
@@ -61,9 +67,9 @@ function validatePaystackBookingInput(data: PaystackVerifyData) {
     }
 
     const expectedKobo = totalNgnToKobo(quote.totalNgn);
-    if (data.amount !== expectedKobo) {
+    if (payment.amountMinor !== expectedKobo) {
         throw new Error(
-            `Payment amount does not match server price (expected ${expectedKobo} kobo, received ${data.amount})`,
+            `Payment amount does not match server price (expected ${expectedKobo} kobo, received ${payment.amountMinor})`,
         );
     }
 
@@ -72,16 +78,15 @@ function validatePaystackBookingInput(data: PaystackVerifyData) {
         apartmentId,
         checkInStr,
         checkOutStr,
-        email,
         checkIn: parseDate(checkInStr),
         checkOut: parseDate(checkOutStr),
         nights: nightsBetweenStayDates(checkInStr, checkOutStr),
-        amountPaidNgn: Math.round(data.amount / 100),
+        amountPaidNgn: Math.round(payment.amountMinor / 100),
     };
 }
 
 async function persistConflictAuditBooking(args: {
-    data: PaystackVerifyData;
+    payment: VerifiedPayment;
     apartmentId: string;
     checkIn: Date;
     checkOut: Date;
@@ -92,9 +97,9 @@ async function persistConflictAuditBooking(args: {
     bookerPhone: string | null;
 }) {
     await prisma.booking.upsert({
-        where: { reference: args.data.reference },
+        where: { reference: args.payment.reference },
         create: {
-            reference: args.data.reference,
+            reference: args.payment.reference,
             apartmentId: args.apartmentId,
             checkIn: args.checkIn,
             checkOut: args.checkOut,
@@ -102,6 +107,8 @@ async function persistConflictAuditBooking(args: {
             amountPaid: args.amountPaidNgn,
             status: "CANCELLED",
             source: "WEBSITE",
+            paymentProvider: paymentProviderIdToDb(args.payment.provider),
+            providerTransactionId: args.payment.providerTransactionId ?? null,
             bookerEmail: args.email,
             bookerName: args.bookerName,
             bookerPhone: args.bookerPhone,
@@ -116,17 +123,18 @@ async function persistConflictAuditBooking(args: {
 }
 
 async function handleBookingDateConflict(
-    data: PaystackVerifyData,
-    validated: ReturnType<typeof validatePaystackBookingInput>,
+    payment: VerifiedPayment,
+    validated: ReturnType<typeof validateVerifiedPaymentInput>,
+    bookerEmail: string,
 ): Promise<never> {
     const auditArgs = {
-        data,
+        payment,
         apartmentId: validated.apartmentId,
         checkIn: validated.checkIn,
         checkOut: validated.checkOut,
         nights: validated.nights,
         amountPaidNgn: validated.amountPaidNgn,
-        email: validated.email,
+        email: bookerEmail,
         bookerName: validated.meta.booker_name ?? null,
         bookerPhone: validated.meta.booker_phone ?? null,
     };
@@ -137,7 +145,7 @@ async function handleBookingDateConflict(
         console.error("Failed to persist conflict audit booking:", auditErr);
     }
 
-    const claim = await tryClaimRefundProcessing(data.reference);
+    const claim = await tryClaimRefundProcessing(payment.reference);
 
     if (claim.action === "already_refunded") {
         throw new BookingDateConflictError(
@@ -153,26 +161,29 @@ async function handleBookingDateConflict(
         );
     }
 
-    const refund = await initiateRefund({
-        transaction: data.reference,
-        amount: data.amount,
+    const provider = getPaymentProvider(payment.provider);
+    const refund = await provider.initiateRefund({
+        reference: payment.reference,
+        amountMinor: payment.amountMinor,
+        providerTransactionId: payment.providerTransactionId,
     });
 
     try {
-        await finalizeRefundResult({ reference: data.reference, refund });
+        await finalizeRefundResult({ reference: payment.reference, refund });
     } catch (finalizeErr) {
         console.error("Failed to persist refund result:", finalizeErr);
     }
 
     await sendAdminAlertBookingConflictRefund({
-        reference: data.reference,
+        reference: payment.reference,
         apartmentId: validated.apartmentId,
         checkIn: validated.checkInStr,
         checkOut: validated.checkOutStr,
-        bookerEmail: validated.email,
+        bookerEmail,
         refundInitiated: refund.ok,
         refundMessage: refund.message,
-        paystackData: data,
+        paymentProvider: payment.provider,
+        verifiedPayment: payment,
     });
 
     throw new BookingDateConflictError(
@@ -182,13 +193,13 @@ async function handleBookingDateConflict(
 }
 
 async function confirmBookingInTransaction(
-    data: PaystackVerifyData,
-    validated: ReturnType<typeof validatePaystackBookingInput>,
+    payment: VerifiedPayment,
+    validated: ReturnType<typeof validateVerifiedPaymentInput>,
+    bookerEmail: string,
 ) {
     const {
         meta,
         apartmentId,
-        email,
         checkIn,
         checkOut,
         nights,
@@ -197,7 +208,7 @@ async function confirmBookingInTransaction(
 
     return withApartmentBookingTransaction(apartmentId, async (tx) => {
         const existing = await tx.booking.findUnique({
-            where: { reference: data.reference },
+            where: { reference: payment.reference },
         });
 
         if (existing?.status === "PAID") {
@@ -214,19 +225,22 @@ async function confirmBookingInTransaction(
                 apartmentId,
                 checkIn,
                 checkOut,
-                excludeReference: data.reference,
+                excludeReference: payment.reference,
             });
             if (overlap) {
                 throw new BookingDateConflictError("Overlapping booking exists");
             }
 
             return tx.booking.update({
-                where: { reference: data.reference },
+                where: { reference: payment.reference },
                 data: {
                     status: "PAID",
                     amountPaid: amountPaidNgn,
                     expiresAt: null,
-                    bookerEmail: email,
+                    paymentProvider: paymentProviderIdToDb(payment.provider),
+                    providerTransactionId:
+                        payment.providerTransactionId ?? existing.providerTransactionId,
+                    bookerEmail,
                     bookerName: meta.booker_name ?? existing.bookerName,
                     bookerPhone: meta.booker_phone ?? existing.bookerPhone,
                     updatedAt: new Date(),
@@ -238,7 +252,7 @@ async function confirmBookingInTransaction(
             apartmentId,
             checkIn,
             checkOut,
-            excludeReference: data.reference,
+            excludeReference: payment.reference,
         });
         if (overlap) {
             throw new BookingDateConflictError("Overlapping booking exists");
@@ -246,7 +260,7 @@ async function confirmBookingInTransaction(
 
         return tx.booking.create({
             data: {
-                reference: data.reference,
+                reference: payment.reference,
                 apartmentId,
                 checkIn,
                 checkOut,
@@ -254,7 +268,9 @@ async function confirmBookingInTransaction(
                 amountPaid: amountPaidNgn,
                 status: "PAID",
                 source: "WEBSITE",
-                bookerEmail: email,
+                paymentProvider: paymentProviderIdToDb(payment.provider),
+                providerTransactionId: payment.providerTransactionId ?? null,
+                bookerEmail,
                 bookerName: meta.booker_name ?? null,
                 bookerPhone: meta.booker_phone ?? null,
                 expiresAt: null,
@@ -263,20 +279,59 @@ async function confirmBookingInTransaction(
     });
 }
 
-export async function upsertBookingFromPaystack(data: PaystackVerifyData) {
-    const validated = validatePaystackBookingInput(data);
+export async function confirmBookingFromPayment(payment: VerifiedPayment) {
+    const validated = validateVerifiedPaymentInput(payment);
+
+    const existing = await prisma.booking.findUnique({
+        where: { reference: payment.reference },
+        select: { bookerEmail: true },
+    });
+    const bookerEmail = resolveBookerEmail({
+        holdEmail: existing?.bookerEmail,
+        paymentEmail: payment.customerEmail,
+    });
 
     try {
-        return await confirmBookingInTransaction(data, validated);
+        return await confirmBookingInTransaction(
+            payment,
+            validated,
+            bookerEmail,
+        );
     } catch (err) {
         if (
             err instanceof BookingDateConflictError ||
             isExclusionConstraintViolation(err)
         ) {
-            await handleBookingDateConflict(data, validated);
+            await handleBookingDateConflict(
+                payment,
+                validated,
+                bookerEmail,
+            );
         }
         throw err;
     }
+}
+
+function paystackDataToVerifiedPayment(data: PaystackVerifyData): VerifiedPayment {
+    return {
+        reference: data.reference,
+        provider: "paystack",
+        status: data.status,
+        amountMinor: data.amount,
+        metadata: {
+            apartment_id: String(data.metadata?.apartment_id ?? ""),
+            check_in: String(data.metadata?.check_in ?? ""),
+            check_out: String(data.metadata?.check_out ?? ""),
+            booker_name: data.metadata?.booker_name,
+            booker_phone: data.metadata?.booker_phone,
+        },
+        customerEmail: data.customer?.email,
+    };
+}
+
+/** @deprecated Use confirmBookingFromPayment */
+export async function upsertBookingFromPaystack(data: PaystackVerifyData) {
+    return confirmBookingFromPayment(paystackDataToVerifiedPayment(data));
 }
 
 export async function cancelBookingHold(reference: string): Promise<void> {
@@ -299,4 +354,15 @@ export function formatBookingConflictMessage(
         day: "numeric",
     });
     return `This apartment is already booked from ${conflictStart} to ${conflictEnd}. Please select different dates.`;
+}
+
+export async function getBookingByReference(reference: string) {
+    return prisma.booking.findUnique({
+        where: { reference },
+        select: {
+            reference: true,
+            paymentProvider: true,
+            status: true,
+        },
+    });
 }

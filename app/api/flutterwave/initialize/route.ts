@@ -6,11 +6,12 @@ import { getClientIp } from "@/lib/http/client-ip";
 import { checkPaymentInitRateLimit } from "@/lib/rate-limit/payment-init";
 import { parseJsonBody } from "@/lib/validation/http";
 import { paymentInitializeBodySchema } from "@/lib/validation/schemas";
+import { isFlutterwaveConfigured } from "@/lib/flutterwave";
 
 export async function POST(request: NextRequest) {
-    if (!process.env.PAYSTACK_SECRET_KEY) {
+    if (!isFlutterwaveConfigured()) {
         return NextResponse.json(
-            { error: "Paystack is not configured" },
+            { error: "Flutterwave is not configured" },
             { status: 500 },
         );
     }
@@ -36,7 +37,7 @@ export async function POST(request: NextRequest) {
             );
         }
     } catch (rateLimitError) {
-        console.error("paystack initialize: rate limit check failed", rateLimitError);
+        console.error("flutterwave initialize: rate limit check failed", rateLimitError);
         return NextResponse.json(
             {
                 error: "Payment is temporarily unavailable. Please try again shortly.",
@@ -53,7 +54,7 @@ export async function POST(request: NextRequest) {
         apartmentId,
         checkIn,
         checkOut,
-        paymentProvider: "paystack",
+        paymentProvider: "flutterwave",
     });
 
     if (!hold.ok) {
@@ -67,7 +68,7 @@ export async function POST(request: NextRequest) {
     const callbackUrl = `${baseUrl}/booking/success?reference=${hold.reference}`;
 
     try {
-        const provider = getPaymentProvider("paystack");
+        const provider = getPaymentProvider("flutterwave");
         const init = await provider.initializeCheckout({
             email,
             name,
@@ -84,14 +85,14 @@ export async function POST(request: NextRequest) {
             authorization_url: init.authorizationUrl,
             reference: init.reference,
         });
-    } catch (paystackError) {
+    } catch (flutterwaveError) {
         await cancelBookingHold(hold.reference);
-        console.error("Paystack initialize request failed:", paystackError);
+        console.error("Flutterwave initialize request failed:", flutterwaveError);
         return NextResponse.json(
             {
                 error:
-                    paystackError instanceof Error
-                        ? paystackError.message
+                    flutterwaveError instanceof Error
+                        ? flutterwaveError.message
                         : "Failed to initialize payment",
             },
             { status: 502 },

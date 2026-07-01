@@ -1,4 +1,4 @@
-import type { PaystackVerifyData } from "@/lib/paystack";
+import type { VerifiedPayment } from "@/lib/payments/types";
 import { sendResendEmail } from "./resendSend";
 
 type BookingJobAlertBooking = {
@@ -60,22 +60,30 @@ async function sendAdminAlertEmail(args: {
 
 export async function sendAdminAlertBookingPersistenceFailed(args: {
     reference: string;
-    paystackData?: PaystackVerifyData;
+    paymentProvider?: string;
+    verifiedPayment?: VerifiedPayment;
+    /** @deprecated Use verifiedPayment */
+    paystackData?: unknown;
     error: unknown;
 }): Promise<void> {
+    const provider = args.paymentProvider ?? args.verifiedPayment?.provider ?? "paystack";
+    const paymentData = args.verifiedPayment ?? args.paystackData ?? null;
+
     await sendAdminAlertEmail({
-        subject: `Booking persistence failed (Paystack charge.success) — ${args.reference}`,
+        subject: `Booking persistence failed (${provider}) — ${args.reference}`,
         lines: [
-            "A Paystack payment appears successful, but saving the booking failed.",
+            "A payment appears successful, but saving the booking failed.",
             "",
             `reference: ${args.reference}`,
+            `paymentProvider: ${provider}`,
             `error: ${safeErrorMessage(args.error)}`,
             "",
-            "paystackData:",
-            safeStringify(args.paystackData ?? null),
+            "paymentData:",
+            safeStringify(paymentData),
         ],
         logContext: {
             reference: args.reference,
+            paymentProvider: provider,
             error: args.error,
         },
     });
@@ -89,17 +97,24 @@ export async function sendAdminAlertBookingConflictRefund(args: {
     bookerEmail?: string | null;
     refundInitiated: boolean;
     refundMessage?: string;
-    paystackData?: PaystackVerifyData;
+    paymentProvider?: string;
+    verifiedPayment?: VerifiedPayment;
+    /** @deprecated Use verifiedPayment */
+    paystackData?: unknown;
 }): Promise<void> {
+    const provider = args.paymentProvider ?? args.verifiedPayment?.provider ?? "paystack";
+    const paymentData = args.verifiedPayment ?? args.paystackData ?? null;
+
     await sendAdminAlertEmail({
         subject: `Booking date conflict — refund ${args.refundInitiated ? "queued" : "FAILED"} — ${args.reference}`,
         lines: [
-            "A successful Paystack payment could not be confirmed due to a date conflict.",
+            `A successful ${provider} payment could not be confirmed due to a date conflict.`,
             args.refundInitiated
-                ? "An automatic refund was queued with Paystack."
+                ? `An automatic refund was queued with ${provider}.`
                 : "Automatic refund FAILED — manual refund required.",
             "",
             `reference: ${args.reference}`,
+            `paymentProvider: ${provider}`,
             `apartmentId: ${args.apartmentId}`,
             `checkIn: ${args.checkIn}`,
             `checkOut: ${args.checkOut}`,
@@ -107,12 +122,13 @@ export async function sendAdminAlertBookingConflictRefund(args: {
             `refundInitiated: ${args.refundInitiated}`,
             ...(args.refundMessage ? [`refundMessage: ${args.refundMessage}`] : []),
             "",
-            "paystackData:",
-            safeStringify(args.paystackData ?? null),
+            "paymentData:",
+            safeStringify(paymentData),
         ],
         logContext: {
             reference: args.reference,
             apartmentId: args.apartmentId,
+            paymentProvider: provider,
             refundInitiated: args.refundInitiated,
         },
     });

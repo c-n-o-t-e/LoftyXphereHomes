@@ -38,8 +38,11 @@ export function getStayDiscountAmount(nights: number): number {
   return getStayDiscountPerNight(nights) * nights;
 }
 
-/** Fixed Paystack processing fee in NGN. */
-export const PAYSTACK_FEE = 1250;
+/** Fixed online payment processing fee in NGN (Paystack and Flutterwave). */
+export const PAYMENT_PROCESSING_FEE = 1250;
+
+/** @deprecated Use PAYMENT_PROCESSING_FEE */
+export const PAYSTACK_FEE = PAYMENT_PROCESSING_FEE;
 
 export const STANDARD_AMENITIES = [
   "24/7 Power",

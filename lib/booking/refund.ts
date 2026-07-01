@@ -1,5 +1,5 @@
 import { prisma } from "@/lib/db";
-import type { PaystackRefundResult } from "@/lib/paystack";
+import type { RefundResult } from "@/lib/payments/types";
 
 /** Re-claim stale PENDING rows after a crashed refund attempt. */
 export const STALE_REFUND_PENDING_MS = 5 * 60 * 1000;
@@ -9,17 +9,27 @@ export type RefundClaimResult =
     | { action: "already_refunded" }
     | { action: "blocked" };
 
-export function extractPaystackRefundReference(data: unknown): string | null {
+export function extractProviderRefundReference(data: unknown): string | null {
     if (!data || typeof data !== "object") return null;
-    const record = data as { id?: unknown; transaction?: { id?: unknown } };
+    const record = data as {
+        id?: unknown;
+        transaction?: { id?: unknown };
+        data?: { id?: unknown };
+    };
     if (record.id != null) return String(record.id);
     if (record.transaction?.id != null) return String(record.transaction.id);
+    if (record.data && typeof record.data === "object" && "id" in record.data) {
+        return String((record.data as { id: unknown }).id);
+    }
     return null;
 }
 
+/** @deprecated Use extractProviderRefundReference */
+export const extractPaystackRefundReference = extractProviderRefundReference;
+
 /**
  * Atomically claim refund processing for a booking reference.
- * Prevents duplicate Paystack refund API calls on webhook replay.
+ * Prevents duplicate refund API calls on webhook replay.
  */
 export async function tryClaimRefundProcessing(
     reference: string,
@@ -58,17 +68,17 @@ export async function tryClaimRefundProcessing(
 
 export async function finalizeRefundResult(args: {
     reference: string;
-    refund: PaystackRefundResult;
+    refund: RefundResult;
 }): Promise<void> {
-    const paystackRefundReference = args.refund.ok
-        ? extractPaystackRefundReference(args.refund.data)
+    const providerRefundReference = args.refund.ok
+        ? extractProviderRefundReference(args.refund.data)
         : null;
 
     await prisma.booking.update({
         where: { reference: args.reference },
         data: {
             refundStatus: args.refund.ok ? "REFUNDED" : "FAILED",
-            paystackRefundReference,
+            providerRefundReference,
             refundedAt: args.refund.ok ? new Date() : null,
         },
     });

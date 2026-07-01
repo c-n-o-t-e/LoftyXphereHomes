@@ -1,4 +1,4 @@
-import { PAYSTACK_FEE } from "@/lib/constants";
+import { PAYMENT_PROCESSING_FEE } from "@/lib/constants";
 import { getApartmentById } from "@/lib/data/apartments";
 import { computeBookingQuote } from "@/lib/pricing";
 
@@ -7,7 +7,7 @@ export type InvoiceFinancials = {
     subtotalNgn: number;
     /** Total length-of-stay discount (rack subtotal − accommodation). */
     discountNgn: number;
-    /** Accommodation after discount — excludes Paystack fee. */
+    /** Accommodation after discount — excludes processing fee. */
     accommodationNgn: number;
     /** What the guest actually paid (includes processing fee when applicable). */
     amountPaidNgn: number;
@@ -51,7 +51,7 @@ export function resolveInvoiceFinancials(args: {
             discountNgn: quote.discountAmount,
             accommodationNgn: quote.accommodationTotalNgn,
             amountPaidNgn,
-            processingFeeNgn: PAYSTACK_FEE,
+            processingFeeNgn: PAYMENT_PROCESSING_FEE,
             lineItemNgn: quote.subtotal,
             rackRateNgn: apartment?.pricePerNight,
             nights: quote.nights,

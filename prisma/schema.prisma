@@ -10,11 +10,11 @@ datasource db {
   provider = "postgresql"
 }
 
-// --- Booking (created when Paystack payment succeeds) ---
+// --- Booking (created when online payment succeeds) ---
 
 model Booking {
   id           String   @id @default(cuid())
-  reference    String   @unique // Paystack transaction reference (e.g. lxh_meridian-suite_1234567890)
+  reference    String   @unique // Payment transaction reference (e.g. lxh_meridian-suite_1234567890)
   apartmentId  String   // e.g. meridian-suite
   checkIn      DateTime @db.Date
   checkOut     DateTime @db.Date
@@ -26,7 +26,10 @@ model Booking {
 
   source       BookingSource @default(WEBSITE)
 
-  // Booker details (from Paystack / form)
+  paymentProvider         PaymentProvider @default(PAYSTACK)
+  providerTransactionId   String?
+
+  // Booker details (from payment provider / form)
   bookerEmail  String?
   bookerName   String?
   bookerPhone  String?
@@ -42,9 +45,9 @@ model Booking {
   // Optional: Link to Supabase Auth user (set when user verifies email)
   userId       String?  // Supabase auth.users.id
 
-  // Paystack refund state for date-conflict / overlap cancellations
+  // Refund state for date-conflict / overlap cancellations
   refundStatus            BookingRefundStatus @default(NONE)
-  paystackRefundReference String?
+  providerRefundReference String?
   refundedAt              DateTime?
 
   createdAt DateTime @default(now())
@@ -65,9 +68,14 @@ model Booking {
   @@index([status, expiresAt])
 }
 
+enum PaymentProvider {
+  PAYSTACK
+  FLUTTERWAVE
+}
+
 enum BookingStatus {
   PENDING   // payment initiated, not yet confirmed
-  PAID      // Paystack charge successful
+  PAID      // online charge successful
   CANCELLED
 }
 

@@ -35,9 +35,18 @@ jest.mock("@/lib/booking/conflict", () => {
     };
 });
 
-jest.mock("@/lib/paystack", () => ({
-    initiateRefund: jest.fn(),
-}));
+jest.mock("@/lib/payments", () => {
+    const initiateRefund = jest.fn();
+    return {
+        getPaymentProvider: jest.fn(() => ({
+            id: "paystack",
+            initiateRefund,
+        })),
+        paymentProviderIdToDb: (id: string) =>
+            id === "flutterwave" ? "FLUTTERWAVE" : "PAYSTACK",
+        __initiateRefundMock: initiateRefund,
+    };
+});
 
 jest.mock("@/lib/email/admin-alerts", () => ({
     sendAdminAlertBookingConflictRefund: jest.fn(),
@@ -46,7 +55,8 @@ jest.mock("@/lib/email/admin-alerts", () => ({
 const { prisma } = require("@/lib/db");
 const { withApartmentBookingTransaction, findOverlappingBooking } =
     require("@/lib/booking/conflict");
-const { initiateRefund } = require("@/lib/paystack");
+const { getPaymentProvider, __initiateRefundMock: initiateRefund } =
+    require("@/lib/payments");
 const { sendAdminAlertBookingConflictRefund } = require("@/lib/email/admin-alerts");
 
 describe("upsertBookingFromPaystack", () => {
@@ -68,7 +78,7 @@ describe("upsertBookingFromPaystack", () => {
         };
 
         await expect(upsertBookingFromPaystack(data)).rejects.toThrow(
-            /non-successful Paystack transaction/,
+            /non-successful payment/,
         );
         expect(withApartmentBookingTransaction).not.toHaveBeenCalled();
     });
@@ -220,15 +230,16 @@ describe("upsertBookingFromPaystack", () => {
         );
 
         expect(initiateRefund).toHaveBeenCalledWith({
-            transaction: "ref_conflict",
-            amount: kobo,
+            reference: "ref_conflict",
+            amountMinor: kobo,
+            providerTransactionId: undefined,
         });
         expect(prisma.booking.update).toHaveBeenCalledWith(
             expect.objectContaining({
                 where: { reference: "ref_conflict" },
                 data: expect.objectContaining({
                     refundStatus: "REFUNDED",
-                    paystackRefundReference: "rf_123",
+                    providerRefundReference: "rf_123",
                 }),
             }),
         );

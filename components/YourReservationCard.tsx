@@ -7,7 +7,8 @@ import { Calendar, Users, Bed, Bath, Loader2, Info } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { PAYSTACK_FEE } from "@/lib/constants";
+import { PAYMENT_PROCESSING_FEE } from "@/lib/constants";
+import type { PaymentProviderId } from "@/lib/payments/types";
 import { computeBookingQuote, getStayDiscountTiers } from "@/lib/pricing";
 import { DatePickerCalendar } from "@/components/DatePickerCalendar";
 import { StayDiscountPromo } from "@/components/StayDiscountPromo";
@@ -40,6 +41,18 @@ function messageFromApiError(data: {
       .join(" · ");
   }
   return data.error ?? "Unable to start payment. Please try again.";
+}
+
+function isPaymentProviderId(value: string): value is PaymentProviderId {
+  return value === "paystack" || value === "flutterwave";
+}
+
+function parseAvailableProviders(raw: unknown): PaymentProviderId[] {
+  if (!Array.isArray(raw)) return ["paystack"];
+  const providers = raw.filter(
+    (id): id is PaymentProviderId => typeof id === "string" && isPaymentProviderId(id),
+  );
+  return providers.length > 0 ? providers : ["paystack"];
 }
 
 export interface YourReservationCardProps {
@@ -80,9 +93,33 @@ export function YourReservationCard({
   const [phone, setPhone] = useState("");
   const [payError, setPayError] = useState<string | null>(null);
   const [isRedirecting, setIsRedirecting] = useState(false);
+  const [paymentProvider, setPaymentProvider] = useState<PaymentProviderId>("paystack");
+  const [availableProviders, setAvailableProviders] = useState<PaymentProviderId[]>(["paystack"]);
 
   // Calendar popup state
   const [openCalendar, setOpenCalendar] = useState<"checkIn" | "checkOut" | null>(null);
+
+  useEffect(() => {
+    let cancelled = false;
+    void fetch("/api/payments/available")
+      .then((res) => res.json())
+      .then((data: { providers?: unknown }) => {
+        if (cancelled) return;
+        const providers = parseAvailableProviders(data.providers);
+        setAvailableProviders(providers);
+        setPaymentProvider((current) =>
+          providers.includes(current) ? current : (providers[0] ?? "paystack"),
+        );
+      })
+      .catch(() => {
+        if (!cancelled) {
+          setAvailableProviders(["paystack"]);
+        }
+      });
+    return () => {
+      cancelled = true;
+    };
+  }, []);
 
   useEffect(() => {
     if (
@@ -131,7 +168,7 @@ export function YourReservationCard({
     return buildCheckoutDisabledDates(checkIn, bookingRanges);
   }, [checkIn, bookingRanges]);
 
-  const handlePaystackBook = async () => {
+  const handleBook = async () => {
     setPayError(null);
     if (!calculation) {
       setPayError("Please select check-in and check-out dates.");
@@ -159,7 +196,7 @@ export function YourReservationCard({
     }
     setIsRedirecting(true);
     try {
-      const res = await fetch("/api/paystack/initialize", {
+      const res = await fetch(`/api/${paymentProvider}/initialize`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
@@ -383,14 +420,70 @@ export function YourReservationCard({
             <span>{formatPrice(calculation.subtotal - calculation.discountAmount)}</span>
           </div>
           <div className="flex justify-between text-black/80">
-            <span>Paystack Fee</span>
-            <span>{formatPrice(PAYSTACK_FEE)}</span>
+            <span>Processing fee</span>
+            <span>{formatPrice(PAYMENT_PROCESSING_FEE)}</span>
           </div>
           <div className="flex justify-between font-bold text-black pt-2 border-t border-black/10">
             <span>Your Price</span>
             <span>{formatPrice(calculation.total)}</span>
           </div>
         </div>
+      )}
+
+      {!bookingUrl && calculation && availableProviders.length > 1 && (
+        <fieldset className="mb-4">
+          <legend className="text-xs uppercase tracking-wide text-black/80 mb-2">
+            Payment method
+          </legend>
+          <div className="grid grid-cols-2 gap-2" role="radiogroup" aria-label="Payment method">
+            {availableProviders.includes("paystack") && (
+              <label
+                className={`flex items-center justify-center h-11 rounded-lg border text-sm font-medium cursor-pointer transition-colors ${
+                  paymentProvider === "paystack"
+                    ? "border-[#FA5C5C] bg-[#FA5C5C]/5 text-black"
+                    : "border-black/20 text-black/70 hover:border-black/40"
+                }`}
+              >
+                <input
+                  type="radio"
+                  name="payment-provider"
+                  value="paystack"
+                  checked={paymentProvider === "paystack"}
+                  onChange={() => {
+                    setPaymentProvider("paystack");
+                    setPayError(null);
+                  }}
+                  className="sr-only"
+                  disabled={isRedirecting}
+                />
+                Paystack
+              </label>
+            )}
+            {availableProviders.includes("flutterwave") && (
+              <label
+                className={`flex items-center justify-center h-11 rounded-lg border text-sm font-medium cursor-pointer transition-colors ${
+                  paymentProvider === "flutterwave"
+                    ? "border-[#FA5C5C] bg-[#FA5C5C]/5 text-black"
+                    : "border-black/20 text-black/70 hover:border-black/40"
+                }`}
+              >
+                <input
+                  type="radio"
+                  name="payment-provider"
+                  value="flutterwave"
+                  checked={paymentProvider === "flutterwave"}
+                  onChange={() => {
+                    setPaymentProvider("flutterwave");
+                    setPayError(null);
+                  }}
+                  className="sr-only"
+                  disabled={isRedirecting}
+                />
+                Flutterwave
+              </label>
+            )}
+          </div>
+        </fieldset>
       )}
 
       {!bookingUrl && calculation && (
@@ -478,7 +571,7 @@ export function YourReservationCard({
       ) : (
         <Button
           type="button"
-          onClick={handlePaystackBook}
+          onClick={handleBook}
           disabled={isRedirecting || !calculation}
           className="w-full h-12 rounded-lg text-base font-medium bg-[#FA5C5C] hover:bg-[#E84A4A] text-white disabled:opacity-70"
           size="lg"
@@ -486,7 +579,7 @@ export function YourReservationCard({
           {isRedirecting ? (
             <>
               <Loader2 className="mr-2 h-5 w-5 animate-spin" />
-              Redirecting to Paystack…
+              Redirecting to payment…
             </>
           ) : (
             "Book Apartment"

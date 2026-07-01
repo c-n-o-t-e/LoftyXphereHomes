@@ -584,6 +584,11 @@ describe("API validation integration", () => {
         apartmentId: "horizon-suite",
       }),
     );
+    const [, initOptions] = fetchSpy.mock.calls[0] as [string, RequestInit];
+    const initBody = JSON.parse(String(initOptions.body));
+    expect(initBody.callback_url).toContain("/booking/success?");
+    expect(initBody.callback_url).toContain("reference=ref_hold");
+    expect(initBody.callback_url).toContain("provider=paystack");
     expect(cancelBookingHold).not.toHaveBeenCalled();
 
     fetchSpy.mockRestore();

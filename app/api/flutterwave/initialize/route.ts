@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { cancelBookingHold } from "@/lib/booking";
 import { getPaymentProvider } from "@/lib/payments";
+import { buildBookingSuccessCallbackUrl } from "@/lib/payments/successCallbackUrl";
 import { createCheckoutHold } from "@/lib/payments/createCheckoutHold";
 import { getClientIp } from "@/lib/http/client-ip";
 import { checkPaymentInitRateLimit } from "@/lib/rate-limit/payment-init";
@@ -65,7 +66,11 @@ export async function POST(request: NextRequest) {
     }
 
     const baseUrl = process.env.NEXT_PUBLIC_SITE_URL || request.nextUrl.origin;
-    const callbackUrl = `${baseUrl}/booking/success?reference=${hold.reference}`;
+    const callbackUrl = buildBookingSuccessCallbackUrl(
+        baseUrl,
+        hold.reference,
+        "flutterwave",
+    );
 
     try {
         const provider = getPaymentProvider("flutterwave");

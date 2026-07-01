@@ -8,38 +8,58 @@ type HeroProps = {
   heroVideo?: HeroVideoConfig | null;
 };
 
+const heroVideoClassName = "absolute inset-0 h-full w-full object-cover";
+
+function HeroBackgroundVideo({ heroVideo }: { heroVideo: HeroVideoConfig }) {
+  const poster = heroVideo.posterUrl || undefined;
+  const sharedProps = {
+    autoPlay: true,
+    muted: true,
+    loop: true,
+    playsInline: true,
+    preload: "metadata" as const,
+    poster,
+    "aria-hidden": true,
+  };
+
+  const mobileSrc = heroVideo.mobileMp4Url?.trim() || undefined;
+  const desktopSrc = heroVideo.desktopMp4Url?.trim() || undefined;
+
+  if (mobileSrc && desktopSrc) {
+    return (
+      <>
+        <video {...sharedProps} className={`${heroVideoClassName} md:hidden`}>
+          <source src={mobileSrc} type="video/mp4" />
+        </video>
+        <video
+          {...sharedProps}
+          className={`${heroVideoClassName} hidden md:block`}
+        >
+          <source src={desktopSrc} type="video/mp4" />
+        </video>
+      </>
+    );
+  }
+
+  const fallbackSrc = mobileSrc ?? desktopSrc;
+  if (!fallbackSrc) return null;
+
+  return (
+    <video {...sharedProps} className={heroVideoClassName}>
+      <source src={fallbackSrc} type="video/mp4" />
+    </video>
+  );
+}
+
 export default function Hero({ heroVideo = null }: HeroProps) {
   const hasVideo = Boolean(
-    heroVideo?.mobileMp4Url || heroVideo?.desktopMp4Url,
+    heroVideo?.mobileMp4Url?.trim() || heroVideo?.desktopMp4Url?.trim(),
   );
 
   return (
     <section className="relative min-h-screen w-full flex items-center justify-center overflow-hidden">
       <div className="absolute inset-0 z-0">
-        {hasVideo && heroVideo ? (
-          <video
-            autoPlay
-            muted
-            loop
-            playsInline
-            preload="metadata"
-            poster={heroVideo.posterUrl || undefined}
-            className="absolute inset-0 h-full w-full object-cover"
-          >
-            {heroVideo.mobileMp4Url ? (
-              <source
-                src={heroVideo.mobileMp4Url}
-                type="video/mp4"
-                media="(max-width: 768px)"
-              />
-            ) : null}
-            {heroVideo.desktopMp4Url ? (
-              <source src={heroVideo.desktopMp4Url} type="video/mp4" />
-            ) : heroVideo.mobileMp4Url ? (
-              <source src={heroVideo.mobileMp4Url} type="video/mp4" />
-            ) : null}
-          </video>
-        ) : null}
+        {hasVideo && heroVideo ? <HeroBackgroundVideo heroVideo={heroVideo} /> : null}
 
         <div className="absolute inset-0 bg-gradient-to-b from-black/25 via-black/10 to-black/30" />
         <div className="absolute inset-0 bg-gradient-to-r from-black/10 via-transparent to-black/10" />

@@ -1,5 +1,8 @@
 export type HeroVideoVariantName = "mobile" | "desktop" | "poster";
 
+/** Admin upload slot — separate source clips for mobile vs desktop hero loops. */
+export type HeroVideoUploadSlot = "mobile" | "desktop";
+
 export type ProcessedHeroVideoVariant = {
     name: HeroVideoVariantName;
     buffer: Buffer;

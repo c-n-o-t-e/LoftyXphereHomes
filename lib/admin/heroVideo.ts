@@ -2,7 +2,11 @@ import { unstable_noStore as noStore } from "next/cache";
 import { randomUUID } from "crypto";
 import { prisma } from "@/lib/db";
 import { HERO_VIDEO_BUCKET } from "@/lib/videos/constants";
-import { processHeroVideo, validateHeroVideoUpload } from "@/lib/videos/process";
+import {
+    extractHeroVideoPoster,
+    processHeroVideoSlot,
+    validateHeroVideoUpload,
+} from "@/lib/videos/process";
 import {
     createHeroRawUploadSignedUrl,
     deleteHeroRawUpload,
@@ -10,7 +14,7 @@ import {
     downloadHeroRawUpload,
     uploadHeroVideoVariants,
 } from "@/lib/videos/storage";
-import type { HeroVideoConfig } from "@/lib/videos/types";
+import type { HeroVideoConfig, HeroVideoUploadSlot } from "@/lib/videos/types";
 
 type HeroVideoRow = {
     id: string;
@@ -22,6 +26,25 @@ type HeroVideoRow = {
     createdAt: Date;
     updatedAt: Date;
 };
+
+type HeroVideoUploadMeta = {
+    mimeType: string;
+    fileSize: number;
+};
+
+function validateUploadMeta(args: HeroVideoUploadMeta, label: string) {
+    const mimeType = args.mimeType.toLowerCase().split(";")[0]?.trim() ?? "";
+    if (!mimeType) {
+        throw Object.assign(new Error(`Missing ${label} video type.`), {
+            statusCode: 400,
+        });
+    }
+    if (args.fileSize <= 0) {
+        throw Object.assign(new Error(`${label} video file is empty.`), {
+            statusCode: 400,
+        });
+    }
+}
 
 export function serializeHeroVideo(row: HeroVideoRow): HeroVideoConfig {
     return {
@@ -51,25 +74,32 @@ export async function getPublicHeroVideo(): Promise<HeroVideoConfig | null> {
     return row ? serializeHeroVideo(row) : null;
 }
 
-export async function initHeroVideoDirectUpload(args: {
-    mimeType: string;
-    fileSize: number;
+export async function initHeroVideoPairUpload(args: {
+    mobile: HeroVideoUploadMeta;
+    desktop: HeroVideoUploadMeta;
 }) {
-    const mimeType = args.mimeType.toLowerCase().split(";")[0]?.trim() ?? "";
-    if (!mimeType) {
-        throw Object.assign(new Error("Missing video type."), { statusCode: 400 });
-    }
-    if (args.fileSize <= 0) {
-        throw Object.assign(new Error("Video file is empty."), { statusCode: 400 });
-    }
+    validateUploadMeta(args.mobile, "Mobile");
+    validateUploadMeta(args.desktop, "Desktop");
 
     const heroId = randomUUID();
-    const signed = await createHeroRawUploadSignedUrl(heroId);
+    const [mobileSigned, desktopSigned] = await Promise.all([
+        createHeroRawUploadSignedUrl(heroId, "mobile"),
+        createHeroRawUploadSignedUrl(heroId, "desktop"),
+    ]);
+
     return {
         heroId,
         bucket: HERO_VIDEO_BUCKET,
-        path: signed.path,
-        token: signed.token,
+        uploads: {
+            mobile: {
+                path: mobileSigned.path,
+                token: mobileSigned.token,
+            },
+            desktop: {
+                path: desktopSigned.path,
+                token: desktopSigned.token,
+            },
+        },
     };
 }
 
@@ -89,27 +119,49 @@ async function deactivateExistingHeroVideos() {
     }
 }
 
+async function cleanupHeroRawUploads(heroId: string) {
+    const slots: HeroVideoUploadSlot[] = ["mobile", "desktop"];
+    for (const slot of slots) {
+        try {
+            await deleteHeroRawUpload(heroId, slot);
+        } catch (cleanupError) {
+            console.warn(`Failed to delete temporary hero ${slot} upload:`, cleanupError);
+        }
+    }
+}
+
 export async function completeHeroVideoDirectUpload(args: {
     heroId: string;
-    mimeType: string;
+    mobileMimeType: string;
+    desktopMimeType: string;
 }) {
     try {
-        const buffer = await downloadHeroRawUpload(args.heroId);
-        const validation = validateHeroVideoUpload({
-            buffer,
-            mimeType: args.mimeType,
+        const [mobileRaw, desktopRaw] = await Promise.all([
+            downloadHeroRawUpload(args.heroId, "mobile"),
+            downloadHeroRawUpload(args.heroId, "desktop"),
+        ]);
+
+        const mobileValidation = validateHeroVideoUpload({
+            buffer: mobileRaw,
+            mimeType: args.mobileMimeType,
         });
-        if (!validation.ok) {
-            throw Object.assign(new Error(validation.error), { statusCode: 400 });
+        if (!mobileValidation.ok) {
+            throw Object.assign(new Error(mobileValidation.error), { statusCode: 400 });
         }
 
-        const processed = await processHeroVideo(buffer);
-        const mobile = processed.variants.find((v) => v.name === "mobile")?.buffer;
-        const desktop = processed.variants.find((v) => v.name === "desktop")?.buffer;
-        const poster = processed.variants.find((v) => v.name === "poster")?.buffer;
-        if (!mobile || !desktop || !poster) {
-            throw new Error("Video processing failed to produce all variants.");
+        const desktopValidation = validateHeroVideoUpload({
+            buffer: desktopRaw,
+            mimeType: args.desktopMimeType,
+        });
+        if (!desktopValidation.ok) {
+            throw Object.assign(new Error(desktopValidation.error), { statusCode: 400 });
         }
+
+        const [mobile, desktop, poster] = await Promise.all([
+            processHeroVideoSlot(mobileRaw, "mobile"),
+            processHeroVideoSlot(desktopRaw, "desktop"),
+            extractHeroVideoPoster(desktopRaw),
+        ]);
 
         await deactivateExistingHeroVideos();
 
@@ -129,11 +181,7 @@ export async function completeHeroVideoDirectUpload(args: {
             },
         });
     } finally {
-        try {
-            await deleteHeroRawUpload(args.heroId);
-        } catch (cleanupError) {
-            console.warn("Failed to delete temporary hero upload:", cleanupError);
-        }
+        await cleanupHeroRawUploads(args.heroId);
     }
 }
 

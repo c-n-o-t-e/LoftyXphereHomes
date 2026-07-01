@@ -210,6 +210,28 @@ export default function HeroSearchBar({
     setOpenCalendar(null);
   };
 
+  const isHeroVariant = variant === "hero";
+  const heroMobileShadow = "drop-shadow-[0_1px_3px_rgba(0,0,0,0.85)] md:drop-shadow-none";
+  const labelClass = isHeroVariant
+    ? `text-[10px] sm:text-xs font-semibold text-white/95 md:text-black/70 block uppercase tracking-wide ${heroMobileShadow}`
+    : "text-[10px] sm:text-xs font-semibold text-black/70 block uppercase tracking-wide";
+  const fieldButtonClass = isHeroVariant
+    ? `w-full flex items-center justify-start gap-1.5 sm:gap-2 h-8 sm:h-10 md:h-10 rounded-md text-left text-white md:text-black text-xs sm:text-sm bg-transparent hover:bg-white/5 md:hover:bg-black/5 focus:outline-none ${heroMobileShadow}`
+    : "w-full flex items-center justify-start gap-1.5 sm:gap-2 h-8 sm:h-10 md:h-10 rounded-md text-left text-black text-xs sm:text-sm bg-transparent hover:bg-black/5 focus:outline-none";
+  const fieldIconClass = isHeroVariant
+    ? `h-3.5 w-3.5 sm:h-4 sm:w-4 text-white/75 md:text-black/40 shrink-0 ${heroMobileShadow}`
+    : "h-3.5 w-3.5 sm:h-4 sm:w-4 text-black/40 shrink-0";
+  const fieldValueClass = (filled: boolean) =>
+    isHeroVariant
+      ? `truncate ${heroMobileShadow} ${filled ? "text-white md:text-black" : "text-white/75 md:text-black/50"}`
+      : `truncate ${filled ? "text-black" : "text-black/50"}`;
+  const fieldBorderClass = isHeroVariant
+    ? "border-r border-white/35 md:border-black/10"
+    : "border-r border-black/10";
+  const mobileDividerClass = isHeroVariant
+    ? "h-px bg-white/35 my-3 md:hidden"
+    : "h-px bg-black/10 my-3 md:hidden";
+
   return (
     <div className={`w-full max-w-6xl mx-auto ${variant === "nav" || variant === "landing" ? "mt-0" : ""}`}>
       {variant === "hero" && (
@@ -248,21 +270,23 @@ export default function HeroSearchBar({
         className={
           variant === "landing"
             ? "bg-white rounded-2xl shadow-lg border border-black/10 p-4 sm:p-5 flex flex-col md:flex-row gap-0 items-stretch md:items-center md:w-fit mx-auto"
-            : "bg-white/95 backdrop-blur-md rounded-2xl md:rounded-full shadow-2xl shadow-black/20 p-4 sm:p-5 md:py-2 md:px-3 flex flex-col md:flex-row gap-0 md:gap-0 items-stretch md:items-center md:w-fit mx-4 md:mx-auto border border-white/20"
+            : isHeroVariant
+              ? "bg-transparent backdrop-blur-[2px] rounded-2xl md:rounded-full md:bg-white/95 md:backdrop-blur-md shadow-none md:shadow-2xl md:shadow-black/25 p-4 sm:p-5 md:py-2 md:px-3 flex flex-col md:flex-row gap-0 md:gap-0 items-stretch md:items-center md:w-fit mx-4 md:mx-auto border border-white/35 md:border-white/20"
+              : "bg-white/95 backdrop-blur-md rounded-2xl md:rounded-full shadow-2xl shadow-black/20 p-4 sm:p-5 md:py-2 md:px-3 flex flex-col md:flex-row gap-0 md:gap-0 items-stretch md:items-center md:w-fit mx-4 md:mx-auto border border-white/20"
         }
       >
         {/* Mobile: Grid layout for dates, Desktop: inline */}
         <div className="grid grid-cols-2 md:flex md:flex-row gap-0 w-full md:w-auto">
           {/* Check-in Date */}
-          <div className="relative md:w-40 md:flex-none border-r border-black/10 pr-3 md:pr-2 md:pl-2">
-            <Label className="text-[10px] sm:text-xs font-semibold text-black/70 block uppercase tracking-wide">Check-in</Label>
+          <div className={`relative md:w-40 md:flex-none ${fieldBorderClass} pr-3 md:pr-2 md:pl-2`}>
+            <Label className={labelClass}>Check-in</Label>
             <button
               type="button"
               onClick={() => setOpenCalendar("checkIn")}
-              className="w-full flex items-center justify-start gap-1.5 sm:gap-2 h-8 sm:h-10 md:h-10 rounded-md text-left text-black text-xs sm:text-sm bg-transparent hover:bg-black/5 focus:outline-none"
+              className={fieldButtonClass}
             >
-              <Calendar className="h-3.5 w-3.5 sm:h-4 sm:w-4 text-black/40 shrink-0" />
-              <span className={`truncate ${checkIn ? "text-black" : "text-black/50"}`}>
+              <Calendar className={fieldIconClass} />
+              <span className={fieldValueClass(Boolean(checkIn))}>
                 {checkIn ? formatDisplayDate(checkIn) : "Select"}
               </span>
             </button>
@@ -287,8 +311,12 @@ export default function HeroSearchBar({
           </div>
 
           {/* Check-out Date */}
-          <div className="relative md:w-40 md:flex-none md:border-r border-black/10 pl-3 md:px-2">
-            <Label className="text-[10px] sm:text-xs font-semibold text-black/70 block uppercase tracking-wide">Check-out</Label>
+          <div
+            className={`relative md:w-40 md:flex-none pl-3 md:px-2 md:border-r ${
+              isHeroVariant ? "md:border-white/35 md:border-black/10" : "border-black/10"
+            }`}
+          >
+            <Label className={labelClass}>Check-out</Label>
             <button
               type="button"
               onClick={() => {
@@ -298,10 +326,10 @@ export default function HeroSearchBar({
                 }
                 setOpenCalendar(openCalendar === "checkOut" ? null : "checkOut");
               }}
-              className="w-full flex items-center justify-start gap-1.5 sm:gap-2 h-8 sm:h-10 md:h-10 rounded-md text-left text-black text-xs sm:text-sm bg-transparent hover:bg-black/5 focus:outline-none"
+              className={fieldButtonClass}
             >
-              <Calendar className="h-3.5 w-3.5 sm:h-4 sm:w-4 text-black/40 shrink-0" />
-              <span className={`truncate ${checkOut ? "text-black" : "text-black/50"}`}>
+              <Calendar className={fieldIconClass} />
+              <span className={fieldValueClass(Boolean(checkOut))}>
                 {checkOut ? formatDisplayDate(checkOut) : "Select"}
               </span>
             </button>
@@ -324,13 +352,13 @@ export default function HeroSearchBar({
         </div>
 
         {/* Divider for mobile */}
-        <div className="h-px bg-black/10 my-3 md:hidden"></div>
+        <div className={mobileDividerClass}></div>
 
         {/* Guests + Search row on mobile */}
         <div className="flex items-center gap-3 md:contents">
           {/* Guests */}
-          <div className="relative flex-1 md:w-36 md:flex-none md:border-r border-black/10 md:px-2" ref={guestPickerRef}>
-            <Label className="text-[10px] sm:text-xs font-semibold text-black/70 block uppercase tracking-wide">
+          <div className={`relative flex-1 md:w-36 md:flex-none md:border-r ${fieldBorderClass} md:px-2`} ref={guestPickerRef}>
+            <Label className={labelClass}>
               Guests
             </Label>
             <button
@@ -339,10 +367,10 @@ export default function HeroSearchBar({
                 setOpenCalendar(null);
                 setOpenGuestPicker(!openGuestPicker);
               }}
-              className="w-full flex items-center justify-start gap-2 h-8 sm:h-10 md:h-10 rounded-md text-left text-black text-xs sm:text-sm bg-transparent hover:bg-black/5 focus:outline-none"
+              className={fieldButtonClass}
             >
-              <Users className="h-3.5 w-3.5 sm:h-4 sm:w-4 text-black/40 shrink-0" />
-              <span className="text-black truncate">
+              <Users className={fieldIconClass} />
+              <span className={`truncate ${isHeroVariant ? `text-white md:text-black ${heroMobileShadow}` : "text-black"}`}>
                 {adults} adult{adults !== 1 ? "s" : ""}
                 {children > 0 ? `, ${children} child${children !== 1 ? "ren" : ""}` : ""}
               </span>

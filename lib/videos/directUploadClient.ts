@@ -104,6 +104,7 @@ export async function uploadHeroVideoDirect(args: {
             mobileMp4Url: string;
             desktopMp4Url: string;
             posterUrl: string;
+            mobilePosterUrl: string | null;
             updatedAt: string;
         };
     }>(completeRes);

@@ -18,6 +18,7 @@ export type HeroVideoUrls = {
     mobileMp4Url: string;
     desktopMp4Url: string;
     posterUrl: string;
+    mobilePosterUrl: string;
 };
 
 export type HeroVideoConfig = {
@@ -25,6 +26,7 @@ export type HeroVideoConfig = {
     mobileMp4Url: string;
     desktopMp4Url: string;
     posterUrl: string;
+    mobilePosterUrl: string | null;
     updatedAt: string;
 };
 

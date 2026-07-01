@@ -10,33 +10,57 @@ type HeroProps = {
 
 const heroVideoClassName = "absolute inset-0 h-full w-full object-cover";
 
-function HeroBackgroundVideo({ heroVideo }: { heroVideo: HeroVideoConfig }) {
-  const poster = heroVideo.posterUrl || undefined;
-  const sharedProps = {
-    autoPlay: true,
-    muted: true,
-    loop: true,
-    playsInline: true,
-    preload: "metadata" as const,
-    poster,
-    "aria-hidden": true,
-  };
+type HeroVideoElementProps = {
+  src: string;
+  poster?: string;
+  className: string;
+  preload: "auto" | "metadata" | "none";
+};
 
+function HeroVideoElement({
+  src,
+  poster,
+  className,
+  preload,
+}: HeroVideoElementProps) {
+  return (
+    <video
+      autoPlay
+      muted
+      loop
+      playsInline
+      preload={preload}
+      poster={poster}
+      aria-hidden
+      className={className}
+    >
+      <source src={src} type="video/mp4" />
+    </video>
+  );
+}
+
+function HeroBackgroundVideo({ heroVideo }: { heroVideo: HeroVideoConfig }) {
   const mobileSrc = heroVideo.mobileMp4Url?.trim() || undefined;
   const desktopSrc = heroVideo.desktopMp4Url?.trim() || undefined;
+  const desktopPoster = heroVideo.posterUrl?.trim() || undefined;
+  const mobilePoster =
+    heroVideo.mobilePosterUrl?.trim() || desktopPoster || undefined;
 
   if (mobileSrc && desktopSrc) {
     return (
       <>
-        <video {...sharedProps} className={`${heroVideoClassName} md:hidden`}>
-          <source src={mobileSrc} type="video/mp4" />
-        </video>
-        <video
-          {...sharedProps}
+        <HeroVideoElement
+          src={mobileSrc}
+          poster={mobilePoster}
+          preload="auto"
+          className={`${heroVideoClassName} md:hidden`}
+        />
+        <HeroVideoElement
+          src={desktopSrc}
+          poster={desktopPoster}
+          preload="auto"
           className={`${heroVideoClassName} hidden md:block`}
-        >
-          <source src={desktopSrc} type="video/mp4" />
-        </video>
+        />
       </>
     );
   }
@@ -45,9 +69,12 @@ function HeroBackgroundVideo({ heroVideo }: { heroVideo: HeroVideoConfig }) {
   if (!fallbackSrc) return null;
 
   return (
-    <video {...sharedProps} className={heroVideoClassName}>
-      <source src={fallbackSrc} type="video/mp4" />
-    </video>
+    <HeroVideoElement
+      src={fallbackSrc}
+      poster={mobileSrc ? mobilePoster : desktopPoster}
+      preload="auto"
+      className={heroVideoClassName}
+    />
   );
 }
 

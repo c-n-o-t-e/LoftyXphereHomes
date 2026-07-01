@@ -221,11 +221,12 @@ model SiteImageSlot {
 // --- Homepage hero video (optimized variants in Supabase Storage) ---
 
 model HeroVideo {
-  id             String   @id @default(cuid())
-  mobileMp4Url   String
-  desktopMp4Url  String
-  posterUrl      String
-  storageKeyBase   String
+  id              String   @id @default(cuid())
+  mobileMp4Url    String
+  desktopMp4Url   String
+  posterUrl       String
+  mobilePosterUrl String?
+  storageKeyBase  String
   isActive       Boolean  @default(true)
   createdAt      DateTime @default(now())
   updatedAt      DateTime @updatedAt

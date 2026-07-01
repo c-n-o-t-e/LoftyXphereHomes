@@ -68,6 +68,7 @@ export async function uploadHeroVideoVariants(args: {
         mobile: Buffer;
         desktop: Buffer;
         poster: Buffer;
+        mobilePoster: Buffer;
     };
 }): Promise<HeroVideoUrls & { storageKeyBase: string }> {
     await ensureApartmentImagesBucket();
@@ -88,12 +89,20 @@ export async function uploadHeroVideoVariants(args: {
         args.variants.poster,
         "image/webp",
     );
+    await uploadBinaryObject(
+        `${storageKeyBase}/mobile-poster.webp`,
+        args.variants.mobilePoster,
+        "image/webp",
+    );
 
     return {
         storageKeyBase,
         mobileMp4Url: buildPublicHeroStorageUrl(`${storageKeyBase}/mobile.mp4`),
         desktopMp4Url: buildPublicHeroStorageUrl(`${storageKeyBase}/desktop.mp4`),
         posterUrl: buildPublicHeroStorageUrl(`${storageKeyBase}/poster.webp`),
+        mobilePosterUrl: buildPublicHeroStorageUrl(
+            `${storageKeyBase}/mobile-poster.webp`,
+        ),
     };
 }
 
@@ -103,6 +112,7 @@ export async function deleteHeroVideoStorage(storageKeyBase: string) {
         `${storageKeyBase}/mobile.mp4`,
         `${storageKeyBase}/desktop.mp4`,
         `${storageKeyBase}/poster.webp`,
+        `${storageKeyBase}/mobile-poster.webp`,
         `${storageKeyBase}/raw-upload`,
         `${storageKeyBase}/raw-upload-mobile`,
         `${storageKeyBase}/raw-upload-desktop`,

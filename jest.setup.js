@@ -25,6 +25,13 @@ if (typeof HTMLMediaElement !== "undefined") {
     HTMLMediaElement.prototype.play = jest.fn().mockResolvedValue(undefined);
 }
 
+// next/cache pulls in Web Request APIs unavailable in jsdom at import time
+jest.mock("next/cache", () => ({
+    unstable_noStore: jest.fn(),
+    revalidateTag: jest.fn(),
+    revalidatePath: jest.fn(),
+}));
+
 // Mock next/navigation
 jest.mock("next/navigation", () => ({
     useRouter() {

@@ -11,6 +11,15 @@ jest.mock('next/link', () => {
 
 jest.mock('next/navigation', () => ({
   notFound: jest.fn(),
+  redirect: jest.fn(),
+  useRouter: () => ({
+    push: jest.fn(),
+    replace: jest.fn(),
+    prefetch: jest.fn(),
+    back: jest.fn(),
+  }),
+  useSearchParams: () => new URLSearchParams(),
+  usePathname: () => '/',
 }))
 
 jest.mock('@/lib/data/getApartmentImages', () => ({
@@ -21,6 +30,10 @@ jest.mock('@/lib/data/getApartmentImages', () => ({
       large: 'https://example.com/large.jpg',
     },
   ]),
+}))
+
+jest.mock('@/lib/admin/apartmentVideo', () => ({
+  getPublicApartmentVideo: jest.fn(async () => null),
 }))
 
 describe('Apartment Detail Page - Extended Coverage', () => {
@@ -63,9 +76,7 @@ describe('Apartment Detail Page - Extended Coverage', () => {
     const params = Promise.resolve({ id: 'skyline-suite' })
     renderWithQueryClient(await ApartmentDetailPage({ params }))
     await waitForReservationCard()
-    expect(screen.getByText(/₦200,000/i)).toBeInTheDocument()
-    // Price format may vary, just check that price is displayed
-    expect(screen.getByText(/₦/i)).toBeInTheDocument()
+    expect(screen.getAllByText(/₦200,000/i).length).toBeGreaterThan(0)
   })
 
   it('renders apartment images', async () => {

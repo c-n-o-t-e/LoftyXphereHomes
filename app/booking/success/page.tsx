@@ -3,11 +3,15 @@ import Link from "next/link";
 import { after } from "next/server";
 import { CheckCircle, XCircle, ArrowRight, ShieldCheck, FileText } from "lucide-react";
 import { Button } from "@/components/ui/button";
-import { verifyTransaction } from "@/lib/paystack";
 import {
   BookingDateConflictError,
-  upsertBookingFromPaystack,
+  confirmBookingFromPayment,
+  getBookingByReference,
 } from "@/lib/booking";
+import {
+  getPaymentProvider,
+} from "@/lib/payments";
+import type { PaymentProviderId } from "@/lib/payments/types";
 import { sendAdminAlertBookingPersistenceFailed } from "@/lib/email/admin-alerts";
 import {
   enqueuePostBookingJobs,
@@ -20,23 +24,43 @@ export const metadata: Metadata = {
   description: "Your payment was successful. Thank you for booking with LoftyXphereHomes.",
 };
 
+function resolveProviderId(
+  bookingProvider: string | undefined,
+  queryProvider: string | undefined,
+): PaymentProviderId {
+  if (bookingProvider === "FLUTTERWAVE" || queryProvider === "flutterwave") {
+    return "flutterwave";
+  }
+  return "paystack";
+}
+
 export default async function BookingSuccessPage({
   searchParams,
 }: {
-  searchParams: Promise<{ reference?: string }>;
+  searchParams: Promise<{ reference?: string; provider?: string }>;
 }) {
-  const { reference: refParam } = await searchParams;
+  const params = await searchParams;
+  const refParam = params.reference;
   const reference = typeof refParam === "string" ? refParam : Array.isArray(refParam) ? refParam[0] ?? "" : "";
+  const queryProvider = typeof params.provider === "string" ? params.provider : undefined;
   let verifyError: string | null = null;
   let didVerifyPaymentSuccess = false;
   let conflictRefundInitiated = false;
 
   if (reference.trim()) {
-    const result = await verifyTransaction(reference.trim());
-    if (result?.status && result.data?.status === "success") {
+    const trimmedReference = reference.trim();
+    const existingBooking = await getBookingByReference(trimmedReference);
+    const providerId = resolveProviderId(
+      existingBooking?.paymentProvider,
+      queryProvider,
+    );
+    const provider = getPaymentProvider(providerId);
+    const verified = await provider.verifyPayment(trimmedReference);
+
+    if (verified?.status === "success") {
       didVerifyPaymentSuccess = true;
       try {
-        const booking = await upsertBookingFromPaystack(result.data);
+        const booking = await confirmBookingFromPayment(verified);
         await enqueuePostBookingJobs(booking.id);
         after(async () => {
           await flushPostBookingJobsForBooking(booking.id);
@@ -51,8 +75,9 @@ export default async function BookingSuccessPage({
         } else {
           try {
             await sendAdminAlertBookingPersistenceFailed({
-              reference: reference.trim(),
-              paystackData: result.data,
+              reference: trimmedReference,
+              paymentProvider: providerId,
+              verifiedPayment: verified,
               error,
             });
           } catch {
@@ -60,10 +85,10 @@ export default async function BookingSuccessPage({
           }
         }
       }
-    } else if (result?.data?.status) {
+    } else if (verified?.status) {
       verifyError = "Payment was not successful.";
     } else {
-      verifyError = result?.message ?? "Could not verify payment.";
+      verifyError = "Could not verify payment.";
     }
   }
   

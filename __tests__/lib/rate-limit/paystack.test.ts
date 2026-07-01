@@ -14,7 +14,7 @@ const { checkPaystackInitRateLimit } = require("@/lib/rate-limit/paystack");
 describe("buildPaystackInitRateLimitKey", () => {
   it("normalizes email casing", () => {
     expect(buildPaystackInitRateLimitKey("1.2.3.4", " User@Example.COM ")).toBe(
-      "paystack-init:1.2.3.4:user@example.com",
+      "payment-init:1.2.3.4:user@example.com",
     );
   });
 });
@@ -33,7 +33,7 @@ describe("checkPaystackInitRateLimit", () => {
     await checkPaystackInitRateLimit("9.9.9.9", "guest@test.com");
 
     expect(consumeRateLimit).toHaveBeenCalledWith(
-      "paystack-init:9.9.9.9:guest@test.com",
+      "payment-init:9.9.9.9:guest@test.com",
       {
         windowMs: PAYSTACK_INIT_RATE_LIMIT_WINDOW_MS,
         max: PAYSTACK_INIT_RATE_LIMIT_MAX,

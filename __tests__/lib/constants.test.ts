@@ -14,6 +14,7 @@ import {
   getStayDiscountPerNight,
   getStayDiscountAmount,
   PAYSTACK_FEE,
+  PAYMENT_PROCESSING_FEE,
   WHATSAPP_DEFAULT_MESSAGE,
   getWhatsAppChatUrl,
   normalizeWhatsAppPhoneDigits,
@@ -76,8 +77,9 @@ describe('constants', () => {
     expect(DISCOUNT_PER_NIGHT_1_MONTH_PLUS).toBe(20_000)
   })
 
-  it('exports PAYSTACK_FEE', () => {
-    expect(PAYSTACK_FEE).toBe(1250)
+  it('exports PAYMENT_PROCESSING_FEE and PAYSTACK_FEE alias', () => {
+    expect(PAYMENT_PROCESSING_FEE).toBe(1250)
+    expect(PAYSTACK_FEE).toBe(PAYMENT_PROCESSING_FEE)
   })
 
   describe('getStayDiscountPerNight', () => {

@@ -11,6 +11,7 @@ This document describes how LoftyXphereHomes is operated in production and what 
 | **Supabase Auth** | Customer + staff login (magic links) |
 | **Supabase Storage** | Apartment images, hero video, invoices |
 | **Paystack** | Card payments + webhooks |
+| **Flutterwave** | Card payments + webhooks (optional second provider) |
 | **Resend** | Transactional email |
 | **Google Sheets** | Ops ledger (secondary to Postgres) |
 
@@ -50,6 +51,13 @@ This document describes how LoftyXphereHomes is operated in production and what 
 1. Guest lands on `/booking/success?reference=…` — backup path upserts booking and enqueues jobs.
 2. If still missing, verify transaction in Paystack dashboard and re-post webhook or create manual booking in admin.
 
+### Flutterwave webhook missed
+
+1. Same success-page backup path applies (`/booking/success?reference=…`).
+2. Verify in Flutterwave dashboard, then re-post `charge.completed` to `https://<site>/api/flutterwave/webhook`.
+3. Webhook requests must include valid `verif-hash` header matching `FLUTTERWAVE_SECRET_HASH`.
+4. Webhook handler **API-verifies** the transaction by `tx_ref` before confirming (same defense-in-depth as Paystack).
+
 ### Database unavailable
 
 - Site shows 503 on booking/contact; do **not** take payments until DB is healthy.
@@ -70,6 +78,7 @@ This document describes how LoftyXphereHomes is operated in production and what 
 See `.env.example`. Required for full operation:
 
 - `DIRECT_URL`, Supabase keys, `PAYSTACK_SECRET_KEY`, `NEXT_PUBLIC_SITE_URL`
+- `FLUTTERWAVE_SECRET_KEY`, `FLUTTERWAVE_SECRET_HASH` (if offering Flutterwave at checkout)
 - `BOOKING_JOBS_SECRET` / `CRON_SECRET`
 - `RESEND_API_KEY`, `ADMIN_ALERT_EMAIL`
 - Google Sheets credentials (if ops sync enabled)

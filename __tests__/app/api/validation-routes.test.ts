@@ -28,16 +28,23 @@ jest.mock("@/lib/paystack", () => ({
   verifyWebhookSignature: jest.fn(),
 }));
 
-jest.mock("@/lib/rate-limit/paystack", () => ({
-  checkPaystackInitRateLimit: jest.fn().mockResolvedValue({ limited: false, count: 1 }),
+jest.mock("@/lib/rate-limit/payment-init", () => ({
+  checkPaymentInitRateLimit: jest.fn().mockResolvedValue({ limited: false, count: 1 }),
+}));
+
+jest.mock("@/lib/payments/createCheckoutHold", () => ({
+  createCheckoutHold: jest.fn(),
+  generateBookingReference: jest.fn(),
 }));
 
 jest.mock("@/lib/booking", () => {
   const actual = jest.requireActual("@/lib/booking");
   return {
     ...actual,
+    confirmBookingFromPayment: jest.fn(),
     upsertBookingFromPaystack: jest.fn(),
     cancelBookingHold: jest.fn(),
+    getBookingByReference: jest.fn(),
   };
 });
 
@@ -112,7 +119,8 @@ const { POST: postAdminBooking } = require("@/app/api/admin/bookings/route");
 const { POST: postPaystackWebhook } = require("@/app/api/paystack/webhook/route");
 const { POST: postPaystackInitialize } = require("@/app/api/paystack/initialize/route");
 const { verifyTransaction, verifyWebhookSignature } = require("@/lib/paystack");
-const { upsertBookingFromPaystack, cancelBookingHold } = require("@/lib/booking");
+const { createCheckoutHold } = require("@/lib/payments/createCheckoutHold");
+const { upsertBookingFromPaystack, confirmBookingFromPayment, cancelBookingHold } = require("@/lib/booking");
 const {
   withApartmentBookingTransaction,
   findOverlappingBooking,
@@ -367,8 +375,8 @@ describe("API validation integration", () => {
       },
     });
 
-    const { upsertBookingFromPaystack } = require("@/lib/booking");
-    (upsertBookingFromPaystack as jest.Mock).mockResolvedValueOnce({
+    const { confirmBookingFromPayment } = require("@/lib/booking");
+    (confirmBookingFromPayment as jest.Mock).mockResolvedValueOnce({
       id: "booking_website_1",
       bookerEmail: null,
       status: "PAID",
@@ -416,7 +424,7 @@ describe("API validation integration", () => {
     });
 
     const { upsertBookingFromPaystack } = require("@/lib/booking");
-    (upsertBookingFromPaystack as jest.Mock).mockRejectedValueOnce(
+    (confirmBookingFromPayment as jest.Mock).mockRejectedValueOnce(
       new Error("db down")
     );
 
@@ -500,9 +508,10 @@ describe("API validation integration", () => {
 
   it("returns 409 when initialize finds an overlapping booking hold", async () => {
     process.env.PAYSTACK_SECRET_KEY = "sk_test_abc123";
-    (findOverlappingBooking as jest.Mock).mockResolvedValueOnce({
-      checkIn: new Date("2026-05-01T00:00:00.000Z"),
-      checkOut: new Date("2026-05-03T00:00:00.000Z"),
+    (createCheckoutHold as jest.Mock).mockResolvedValueOnce({
+      ok: false,
+      status: 409,
+      error: "This apartment is already booked from May 1 to May 3. Please select different dates.",
     });
 
     const request = makeNextRequest("http://localhost/api/paystack/initialize", {
@@ -523,14 +532,16 @@ describe("API validation integration", () => {
 
     expect(response.status).toBe(409);
     expect(json.error).toEqual(expect.any(String));
-    expect(mockBookingTx.booking.create).not.toHaveBeenCalled();
+    expect(createCheckoutHold).toHaveBeenCalled();
   });
 
   it("creates a PENDING hold and initializes Paystack", async () => {
     process.env.PAYSTACK_SECRET_KEY = "sk_test_abc123";
-    (findOverlappingBooking as jest.Mock).mockResolvedValueOnce(null);
-    (mockBookingTx.booking.create as jest.Mock).mockResolvedValueOnce({
+    (createCheckoutHold as jest.Mock).mockResolvedValueOnce({
+      ok: true,
       reference: "ref_hold",
+      quote: { totalNgn: 201_250 },
+      apartment: { pricePerNight: 100_000 },
     });
 
     const fetchSpy = jest.spyOn(global, "fetch").mockResolvedValueOnce({
@@ -567,12 +578,10 @@ describe("API validation integration", () => {
         authorization_url: "https://checkout.paystack.com/test",
       }),
     );
-    expect(mockBookingTx.booking.create).toHaveBeenCalledWith(
+    expect(createCheckoutHold).toHaveBeenCalledWith(
       expect.objectContaining({
-        data: expect.objectContaining({
-          status: "PENDING",
-          expiresAt: expect.any(Date),
-        }),
+        paymentProvider: "paystack",
+        apartmentId: "horizon-suite",
       }),
     );
     expect(cancelBookingHold).not.toHaveBeenCalled();
@@ -582,9 +591,11 @@ describe("API validation integration", () => {
 
   it("cancels the hold when Paystack initialize fails", async () => {
     process.env.PAYSTACK_SECRET_KEY = "sk_test_abc123";
-    (findOverlappingBooking as jest.Mock).mockResolvedValueOnce(null);
-    (mockBookingTx.booking.create as jest.Mock).mockResolvedValueOnce({
+    (createCheckoutHold as jest.Mock).mockResolvedValueOnce({
+      ok: true,
       reference: "ref_hold",
+      quote: { totalNgn: 201_250 },
+      apartment: { pricePerNight: 100_000 },
     });
 
     const fetchSpy = jest.spyOn(global, "fetch").mockResolvedValueOnce({
@@ -607,7 +618,7 @@ describe("API validation integration", () => {
     });
 
     const response = await postPaystackInitialize(request);
-    expect(response.status).toBe(400);
+    expect(response.status).toBe(502);
     expect(cancelBookingHold).toHaveBeenCalled();
 
     fetchSpy.mockRestore();

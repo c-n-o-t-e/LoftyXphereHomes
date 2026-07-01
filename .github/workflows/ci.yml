@@ -14,6 +14,9 @@ jobs:
       NEXT_PUBLIC_SUPABASE_URL: https://example.supabase.co
       NEXT_PUBLIC_SUPABASE_ANON_KEY: ci_anon_key
       PAYSTACK_SECRET_KEY: sk_test_ci_placeholder
+      FLUTTERWAVE_SECRET_KEY: flw_test_ci_placeholder
+      FLUTTERWAVE_SECRET_HASH: ci_flutterwave_hash
+      E2E_MOCK_FLUTTERWAVE: "false"
       NEXT_PUBLIC_SITE_URL: https://example.com
     steps:
       - uses: actions/checkout@v4

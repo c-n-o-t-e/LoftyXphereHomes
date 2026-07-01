@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { after } from "next/server";
-import { verifyWebhookSignature } from "@/lib/paystack";
+import { verifyWebhookHash } from "@/lib/flutterwave";
 import {
     BookingDateConflictError,
     confirmBookingFromPayment,
@@ -8,7 +8,7 @@ import {
 import { getPaymentProvider } from "@/lib/payments";
 import { inviteUserByEmail } from "@/lib/supabase/server";
 import { validationErrorResponse } from "@/lib/validation/http";
-import { paystackWebhookPayloadSchema } from "@/lib/validation/schemas";
+import { flutterwaveWebhookPayloadSchema } from "@/lib/validation/schemas";
 import { sendAdminAlertBookingPersistenceFailed } from "@/lib/email/admin-alerts";
 import {
     enqueuePostBookingJobs,
@@ -19,58 +19,51 @@ import {
 export const maxDuration = 60;
 
 /**
- * POST /api/paystack/webhook
- * Paystack sends events here (e.g. charge.success).
- * Configure this URL in Paystack Dashboard: Settings → Webhooks.
+ * POST /api/flutterwave/webhook
+ * Flutterwave sends events here (e.g. charge.completed).
+ * Configure this URL in Flutterwave Dashboard → Settings → Webhooks.
  */
 export async function POST(request: NextRequest) {
-    const signature = request.headers.get("x-paystack-signature");
-    if (!signature) {
+    const verifHash = request.headers.get("verif-hash");
+    if (!verifHash) {
         return NextResponse.json(
-            { error: "Missing signature" },
+            { error: "Missing verif-hash" },
             { status: 401 },
         );
     }
 
-    let body: string;
-    try {
-        body = await request.text();
-    } catch {
-        return NextResponse.json({ error: "Invalid body" }, { status: 400 });
-    }
-
-    if (!verifyWebhookSignature(body, signature)) {
+    if (!verifyWebhookHash(verifHash)) {
         return NextResponse.json(
-            { error: "Invalid signature" },
+            { error: "Invalid verif-hash" },
             { status: 401 },
         );
     }
 
     let payload: unknown;
     try {
-        payload = JSON.parse(body);
+        payload = await request.json();
     } catch {
         return NextResponse.json({ error: "Invalid JSON" }, { status: 400 });
     }
 
-    const parsedPayload = paystackWebhookPayloadSchema.safeParse(payload);
+    const parsedPayload = flutterwaveWebhookPayloadSchema.safeParse(payload);
     if (!parsedPayload.success) {
         return validationErrorResponse(parsedPayload.error);
     }
 
-    if (parsedPayload.data.event !== "charge.success") {
+    if (parsedPayload.data.event !== "charge.completed") {
         return NextResponse.json({ received: true });
     }
 
-    const reference = parsedPayload.data.data?.reference?.trim();
+    const reference = parsedPayload.data.data?.tx_ref?.trim();
     if (!reference) {
         return NextResponse.json(
-            { error: "Missing reference" },
+            { error: "Missing tx_ref" },
             { status: 400 },
         );
     }
 
-    const provider = getPaymentProvider("paystack");
+    const provider = getPaymentProvider("flutterwave");
     const verified = await provider.verifyPayment(reference);
     if (!verified || verified.status !== "success") {
         return NextResponse.json(
@@ -102,11 +95,11 @@ export async function POST(request: NextRequest) {
             });
         }
 
-        console.error("Webhook booking upsert error:", err);
+        console.error("Flutterwave webhook booking upsert error:", err);
         try {
             await sendAdminAlertBookingPersistenceFailed({
                 reference,
-                paymentProvider: "paystack",
+                paymentProvider: "flutterwave",
                 verifiedPayment: verified,
                 error: err,
             });

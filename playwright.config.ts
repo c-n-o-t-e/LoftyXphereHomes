@@ -33,8 +33,13 @@ export default defineConfig({
                   ...process.env,
                   PORT: port,
                   E2E_MOCK_PAYSTACK: "true",
+                  E2E_MOCK_FLUTTERWAVE: "true",
                   PAYSTACK_SECRET_KEY:
                       process.env.PAYSTACK_SECRET_KEY ?? "sk_test_e2e",
+                  FLUTTERWAVE_SECRET_KEY:
+                      process.env.FLUTTERWAVE_SECRET_KEY ?? "flw_test_e2e",
+                  FLUTTERWAVE_SECRET_HASH:
+                      process.env.FLUTTERWAVE_SECRET_HASH ?? "e2e_flw_hash",
                   NEXT_PUBLIC_SITE_URL: baseURL,
               },
           },

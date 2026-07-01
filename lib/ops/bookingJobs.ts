@@ -1,12 +1,13 @@
 import { generateInvoicePdf } from "./invoicePdf";
 import { appendBookingRowToSheet } from "./googleSheets";
 import { sendAdminAlertBookingJobFailed } from "@/lib/email/admin-alerts";
+import { resolveBookerEmail } from "@/lib/booking/email";
 
 const INVOICE_STORAGE_BUCKET =
     process.env.INVOICE_STORAGE_BUCKET?.trim() || "Invoices";
 
 const MAX_ATTEMPTS = 5;
-const ADMIN_ALERT_ATTEMPT_THRESHOLD = 2;
+const ADMIN_ALERT_ATTEMPT_THRESHOLD = 1;
 
 type BookingJobType = "INVOICE_PDF" | "GUEST_BOOKING_EMAIL" | "GOOGLE_SHEETS";
 
@@ -175,9 +176,11 @@ async function runGuestBookingEmailJob(bookingId: string) {
         return;
     }
 
-    const email = booking.bookerEmail?.trim();
-    if (!email) {
-        console.warn("[booking-jobs] skip guest email: no bookerEmail", {
+    let email: string;
+    try {
+        email = resolveBookerEmail({ holdEmail: booking.bookerEmail });
+    } catch {
+        console.warn("[booking-jobs] skip guest email: invalid bookerEmail", {
             bookingId,
         });
         return;

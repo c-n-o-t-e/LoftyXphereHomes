@@ -243,6 +243,9 @@ export function HeroVideoManager() {
                                     loop
                                     playsInline
                                     poster={heroVideo.mobilePosterUrl ?? heroVideo.posterUrl}
+                                >
+                                    <source
+                                        src={heroVideo.mobileMp4Url}
                                         type="video/mp4"
                                     />
                                 </video>

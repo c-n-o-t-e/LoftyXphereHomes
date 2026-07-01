@@ -1,7 +1,7 @@
 import { createServerSupabaseClient } from "@/lib/supabase/server";
 import { ensureApartmentImagesBucket } from "@/lib/images/bucket";
 import { HERO_STORAGE_PREFIX, HERO_VIDEO_BUCKET, APARTMENT_VIDEO_STORAGE_PREFIX } from "./constants";
-import type { HeroVideoUploadSlot, HeroVideoUrls } from "./types";
+import type { HeroVideoUploadSlot, HeroVideoUrls, VideoVariantUrls } from "./types";
 
 function requireSupabaseUploadEnv() {
     const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL?.replace(/\/$/, "");
@@ -184,7 +184,7 @@ export async function uploadApartmentVideoVariants(args: {
         desktop: Buffer;
         poster: Buffer;
     };
-}): Promise<HeroVideoUrls & { storageKeyBase: string }> {
+}): Promise<VideoVariantUrls & { storageKeyBase: string }> {
     await ensureApartmentImagesBucket();
     const storageKeyBase = buildApartmentVideoStorageKeyBase(
         args.apartmentId,

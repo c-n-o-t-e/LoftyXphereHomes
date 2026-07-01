@@ -14,14 +14,29 @@ import { ArrowRight } from "lucide-react";
 
 export default async function Home() {
   const heroVideo = await getPublicHeroVideo();
+  const mobilePoster =
+    heroVideo?.mobilePosterUrl?.trim() ||
+    heroVideo?.posterUrl?.trim() ||
+    null;
+  const desktopPoster = heroVideo?.posterUrl?.trim() || null;
 
   return (
     <>
-      {heroVideo?.posterUrl ? (
+      {mobilePoster ? (
         <link
           rel="preload"
           as="image"
-          href={heroVideo.posterUrl}
+          href={mobilePoster}
+          media="(max-width: 767px)"
+          fetchPriority="high"
+        />
+      ) : null}
+      {desktopPoster ? (
+        <link
+          rel="preload"
+          as="image"
+          href={desktopPoster}
+          media="(min-width: 768px)"
           fetchPriority="high"
         />
       ) : null}

@@ -8,9 +8,17 @@ jest.mock('next/link', () => {
   }
 })
 
-// Mock next/navigation
 jest.mock('next/navigation', () => ({
   notFound: jest.fn(),
+  redirect: jest.fn(),
+  useRouter: () => ({
+    push: jest.fn(),
+    replace: jest.fn(),
+    prefetch: jest.fn(),
+    back: jest.fn(),
+  }),
+  useSearchParams: () => new URLSearchParams(),
+  usePathname: () => '/',
 }))
 
 jest.mock('@/lib/data/getApartmentImages', () => ({
@@ -21,6 +29,10 @@ jest.mock('@/lib/data/getApartmentImages', () => ({
       large: 'https://example.com/large.jpg',
     },
   ]),
+}))
+
+jest.mock('@/lib/admin/apartmentVideo', () => ({
+  getPublicApartmentVideo: jest.fn(async () => null),
 }))
 
 describe('Apartment Detail Page', () => {

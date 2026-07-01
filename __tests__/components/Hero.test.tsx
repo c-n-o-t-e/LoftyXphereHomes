@@ -17,7 +17,8 @@ const mockHeroVideo = {
   id: 'hero-1',
   mobileMp4Url: 'https://example.supabase.co/mobile.mp4',
   desktopMp4Url: 'https://example.supabase.co/desktop.mp4',
-  posterUrl: 'https://example.supabase.co/poster.webp',
+  posterUrl: 'https://example.supabase.co/desktop-poster.webp',
+  mobilePosterUrl: 'https://example.supabase.co/mobile-poster.webp',
   updatedAt: new Date().toISOString(),
 }
 
@@ -28,7 +29,7 @@ describe('Hero', () => {
     expect(screen.getByText('Stay Different.')).toBeVisible()
   })
 
-  it('renders separate mobile and desktop videos for responsive playback', () => {
+  it('renders paired mobile and desktop videos with matching posters', () => {
     const { container } = render(<Hero heroVideo={mockHeroVideo} />)
     const videos = container.querySelectorAll('video')
     expect(videos.length).toBe(2)
@@ -39,14 +40,27 @@ describe('Hero', () => {
     expect(mobileVideo).toHaveClass('md:hidden')
     expect(desktopVideo).toHaveClass('hidden', 'md:block')
 
-    expect(mobileVideo).toHaveAttribute('preload', 'metadata')
-    expect(mobileVideo).toHaveAttribute('poster', mockHeroVideo.posterUrl)
+    expect(mobileVideo).toHaveAttribute('poster', mockHeroVideo.mobilePosterUrl)
     expect(mobileVideo.querySelector('source')?.getAttribute('src')).toBe(
       mockHeroVideo.mobileMp4Url,
     )
+    expect(desktopVideo).toHaveAttribute('poster', mockHeroVideo.posterUrl)
     expect(desktopVideo.querySelector('source')?.getAttribute('src')).toBe(
       mockHeroVideo.desktopMp4Url,
     )
+  })
+
+  it('falls back to the desktop poster on mobile when no mobile poster exists', () => {
+    const { container } = render(
+      <Hero
+        heroVideo={{
+          ...mockHeroVideo,
+          mobilePosterUrl: null,
+        }}
+      />,
+    )
+    const mobileVideo = container.querySelector('video')
+    expect(mobileVideo).toHaveAttribute('poster', mockHeroVideo.posterUrl)
   })
 
   it('renders a single video when only one variant is configured', () => {
@@ -55,6 +69,7 @@ describe('Hero', () => {
         heroVideo={{
           ...mockHeroVideo,
           mobileMp4Url: '',
+          mobilePosterUrl: null,
           desktopMp4Url: mockHeroVideo.desktopMp4Url,
         }}
       />,
@@ -64,6 +79,7 @@ describe('Hero', () => {
     expect(videos[0].querySelector('source')?.getAttribute('src')).toBe(
       mockHeroVideo.desktopMp4Url,
     )
+    expect(videos[0]).toHaveAttribute('poster', mockHeroVideo.posterUrl)
   })
 
   it('does not render a separate poster image layer', () => {

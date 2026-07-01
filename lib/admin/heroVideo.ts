@@ -21,6 +21,7 @@ type HeroVideoRow = {
     mobileMp4Url: string;
     desktopMp4Url: string;
     posterUrl: string;
+    mobilePosterUrl: string | null;
     storageKeyBase: string;
     isActive: boolean;
     createdAt: Date;
@@ -52,6 +53,7 @@ export function serializeHeroVideo(row: HeroVideoRow): HeroVideoConfig {
         mobileMp4Url: row.mobileMp4Url,
         desktopMp4Url: row.desktopMp4Url,
         posterUrl: row.posterUrl,
+        mobilePosterUrl: row.mobilePosterUrl,
         updatedAt: row.updatedAt.toISOString(),
     };
 }
@@ -157,17 +159,23 @@ export async function completeHeroVideoDirectUpload(args: {
             throw Object.assign(new Error(desktopValidation.error), { statusCode: 400 });
         }
 
-        const [mobile, desktop, poster] = await Promise.all([
+        const [mobile, desktop, desktopPoster, mobilePoster] = await Promise.all([
             processHeroVideoSlot(mobileRaw, "mobile"),
             processHeroVideoSlot(desktopRaw, "desktop"),
             extractHeroVideoPoster(desktopRaw),
+            extractHeroVideoPoster(mobileRaw),
         ]);
 
         await deactivateExistingHeroVideos();
 
         const urls = await uploadHeroVideoVariants({
             heroId: args.heroId,
-            variants: { mobile, desktop, poster },
+            variants: {
+                mobile,
+                desktop,
+                poster: desktopPoster,
+                mobilePoster,
+            },
         });
 
         return prisma.heroVideo.create({
@@ -176,6 +184,7 @@ export async function completeHeroVideoDirectUpload(args: {
                 mobileMp4Url: urls.mobileMp4Url,
                 desktopMp4Url: urls.desktopMp4Url,
                 posterUrl: urls.posterUrl,
+                mobilePosterUrl: urls.mobilePosterUrl,
                 storageKeyBase: urls.storageKeyBase,
                 isActive: true,
             },

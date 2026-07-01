@@ -14,10 +14,14 @@ export type ProcessedHeroVideoResult = {
     variants: ProcessedHeroVideoVariant[];
 };
 
-export type HeroVideoUrls = {
+export type VideoVariantUrls = {
     mobileMp4Url: string;
     desktopMp4Url: string;
     posterUrl: string;
+};
+
+export type HeroVideoUrls = VideoVariantUrls & {
+    mobilePosterUrl: string;
 };
 
 export type HeroVideoConfig = {
@@ -25,6 +29,7 @@ export type HeroVideoConfig = {
     mobileMp4Url: string;
     desktopMp4Url: string;
     posterUrl: string;
+    mobilePosterUrl: string | null;
     updatedAt: string;
 };
 

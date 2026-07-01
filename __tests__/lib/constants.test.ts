@@ -70,10 +70,10 @@ describe('constants', () => {
   })
 
   it('exports discount constants', () => {
-    expect(DISCOUNT_PER_NIGHT_2_NIGHTS).toBe(10_000)
-    expect(DISCOUNT_PER_NIGHT_3_6).toBe(20_000)
-    expect(DISCOUNT_PER_NIGHT_1_WEEK_TO_3_WEEKS).toBe(30_000)
-    expect(DISCOUNT_PER_NIGHT_1_MONTH_PLUS).toBe(40_000)
+    expect(DISCOUNT_PER_NIGHT_2_NIGHTS).toBe(5_000)
+    expect(DISCOUNT_PER_NIGHT_3_6).toBe(10_000)
+    expect(DISCOUNT_PER_NIGHT_1_WEEK_TO_3_WEEKS).toBe(15_000)
+    expect(DISCOUNT_PER_NIGHT_1_MONTH_PLUS).toBe(20_000)
   })
 
   it('exports PAYSTACK_FEE', () => {
@@ -86,36 +86,36 @@ describe('constants', () => {
       expect(getStayDiscountPerNight(1)).toBe(0)
     })
     it('returns DISCOUNT_PER_NIGHT_2_NIGHTS for 2 nights', () => {
-      expect(getStayDiscountPerNight(2)).toBe(10_000)
+      expect(getStayDiscountPerNight(2)).toBe(5_000)
     })
     it('returns DISCOUNT_PER_NIGHT_3_6 for 3–6 nights', () => {
-      expect(getStayDiscountPerNight(3)).toBe(20_000)
-      expect(getStayDiscountPerNight(6)).toBe(20_000)
+      expect(getStayDiscountPerNight(3)).toBe(10_000)
+      expect(getStayDiscountPerNight(6)).toBe(10_000)
     })
     it('returns DISCOUNT_PER_NIGHT_1_WEEK_TO_3_WEEKS for 7–21 nights', () => {
-      expect(getStayDiscountPerNight(7)).toBe(30_000)
-      expect(getStayDiscountPerNight(21)).toBe(30_000)
+      expect(getStayDiscountPerNight(7)).toBe(15_000)
+      expect(getStayDiscountPerNight(21)).toBe(15_000)
     })
     it('returns DISCOUNT_PER_NIGHT_1_MONTH_PLUS for 28+ nights', () => {
-      expect(getStayDiscountPerNight(28)).toBe(40_000)
-      expect(getStayDiscountPerNight(100)).toBe(40_000)
+      expect(getStayDiscountPerNight(28)).toBe(20_000)
+      expect(getStayDiscountPerNight(100)).toBe(20_000)
     })
   })
 
   describe('getEffectiveNightlyRate', () => {
     it('returns tiered 2-bedroom rates', () => {
-      expect(getEffectiveNightlyRate(250_000, 1)).toBe(250_000)
-      expect(getEffectiveNightlyRate(250_000, 2)).toBe(240_000)
-      expect(getEffectiveNightlyRate(250_000, 4)).toBe(230_000)
-      expect(getEffectiveNightlyRate(250_000, 7)).toBe(220_000)
-      expect(getEffectiveNightlyRate(250_000, 28)).toBe(210_000)
+      expect(getEffectiveNightlyRate(200_000, 1)).toBe(200_000)
+      expect(getEffectiveNightlyRate(200_000, 2)).toBe(195_000)
+      expect(getEffectiveNightlyRate(200_000, 4)).toBe(190_000)
+      expect(getEffectiveNightlyRate(200_000, 7)).toBe(185_000)
+      expect(getEffectiveNightlyRate(200_000, 28)).toBe(180_000)
     })
     it('returns tiered 1-bedroom rates', () => {
-      expect(getEffectiveNightlyRate(120_000, 1)).toBe(120_000)
-      expect(getEffectiveNightlyRate(120_000, 2)).toBe(110_000)
-      expect(getEffectiveNightlyRate(120_000, 4)).toBe(100_000)
-      expect(getEffectiveNightlyRate(120_000, 7)).toBe(90_000)
-      expect(getEffectiveNightlyRate(120_000, 28)).toBe(80_000)
+      expect(getEffectiveNightlyRate(100_000, 1)).toBe(100_000)
+      expect(getEffectiveNightlyRate(100_000, 2)).toBe(95_000)
+      expect(getEffectiveNightlyRate(100_000, 4)).toBe(90_000)
+      expect(getEffectiveNightlyRate(100_000, 7)).toBe(85_000)
+      expect(getEffectiveNightlyRate(100_000, 28)).toBe(80_000)
     })
   })
 
@@ -125,10 +125,10 @@ describe('constants', () => {
       expect(getStayDiscountAmount(1)).toBe(0)
     })
     it('returns discount per night × nights', () => {
-      expect(getStayDiscountAmount(2)).toBe(20_000)
-      expect(getStayDiscountAmount(4)).toBe(80_000)
-      expect(getStayDiscountAmount(14)).toBe(420_000)
-      expect(getStayDiscountAmount(30)).toBe(1_200_000)
+      expect(getStayDiscountAmount(2)).toBe(10_000)
+      expect(getStayDiscountAmount(4)).toBe(40_000)
+      expect(getStayDiscountAmount(14)).toBe(210_000)
+      expect(getStayDiscountAmount(30)).toBe(600_000)
     })
   })
 

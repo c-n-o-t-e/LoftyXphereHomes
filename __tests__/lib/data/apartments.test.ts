@@ -35,19 +35,19 @@ describe('apartments data', () => {
     })
   })
 
-  it('active one-bedroom suites are priced at ₦120,000', () => {
+  it('active one-bedroom suites are priced at ₦100,000', () => {
     getActiveApartments()
       .filter((apt) => apt.beds === 1)
       .forEach((apt) => {
-        expect(apt.pricePerNight).toBe(120_000)
+        expect(apt.pricePerNight).toBe(100_000)
       })
   })
 
-  it('active two-bedroom suites are priced at ₦250,000', () => {
+  it('active two-bedroom suites are priced at ₦200,000', () => {
     getActiveApartments()
       .filter((apt) => apt.beds === 2)
       .forEach((apt) => {
-        expect(apt.pricePerNight).toBe(250_000)
+        expect(apt.pricePerNight).toBe(200_000)
       })
   })
 

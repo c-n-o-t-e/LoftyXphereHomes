@@ -1,4 +1,5 @@
 import { Apartment } from "../types";
+import { ONE_BED_RACK_RATE_NGN, TWO_BED_RACK_RATE_NGN } from "../constants";
 
 const LOCATION = { city: "Abuja", area: "Wuye" } as const;
 
@@ -53,8 +54,8 @@ const SHARED_HOUSE_RULES = [
     "Respect neighbors (noise control after 10PM)",
 ] as const;
 
-const ONE_BED_PRICE = 120_000;
-const TWO_BED_PRICE = 250_000;
+const ONE_BED_PRICE = ONE_BED_RACK_RATE_NGN;
+const TWO_BED_PRICE = TWO_BED_RACK_RATE_NGN;
 
 /** Canonical IDs shown first on the site and in featured sections. */
 export const FEATURED_APARTMENT_IDS = ["meridian-suite", "lumen-suite"] as const;

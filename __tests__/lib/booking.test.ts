@@ -76,7 +76,7 @@ describe("upsertBookingFromPaystack", () => {
     it("rejects when Paystack amount does not match server-computed price", async () => {
         const checkIn = "2026-03-20";
         const checkOut = "2026-03-24";
-        const quote = computeBookingQuote(120_000, checkIn, checkOut);
+        const quote = computeBookingQuote(100_000, checkIn, checkOut);
         expect(quote).not.toBeNull();
         const wrongKobo = totalNgnToKobo(quote!.totalNgn) - 100;
 
@@ -101,7 +101,7 @@ describe("upsertBookingFromPaystack", () => {
     it("upgrades an active PENDING hold to PAID", async () => {
         const checkIn = "2026-03-20";
         const checkOut = "2026-03-24";
-        const quote = computeBookingQuote(120_000, checkIn, checkOut);
+        const quote = computeBookingQuote(100_000, checkIn, checkOut);
         expect(quote).not.toBeNull();
         const kobo = totalNgnToKobo(quote!.totalNgn);
 
@@ -144,7 +144,7 @@ describe("upsertBookingFromPaystack", () => {
     it("creates a PAID booking for legacy references without a hold", async () => {
         const checkIn = "2026-03-20";
         const checkOut = "2026-03-24";
-        const quote = computeBookingQuote(120_000, checkIn, checkOut);
+        const quote = computeBookingQuote(100_000, checkIn, checkOut);
         expect(quote).not.toBeNull();
         const kobo = totalNgnToKobo(quote!.totalNgn);
 
@@ -180,7 +180,7 @@ describe("upsertBookingFromPaystack", () => {
     it("refunds and alerts when dates conflict during confirmation", async () => {
         const checkIn = "2026-03-20";
         const checkOut = "2026-03-24";
-        const quote = computeBookingQuote(120_000, checkIn, checkOut);
+        const quote = computeBookingQuote(100_000, checkIn, checkOut);
         expect(quote).not.toBeNull();
         const kobo = totalNgnToKobo(quote!.totalNgn);
 
@@ -243,7 +243,7 @@ describe("upsertBookingFromPaystack", () => {
     it("does not call Paystack refund again when refund is already REFUNDED", async () => {
         const checkIn = "2026-03-20";
         const checkOut = "2026-03-24";
-        const quote = computeBookingQuote(120_000, checkIn, checkOut);
+        const quote = computeBookingQuote(100_000, checkIn, checkOut);
         expect(quote).not.toBeNull();
         const kobo = totalNgnToKobo(quote!.totalNgn);
 

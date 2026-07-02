@@ -29,6 +29,7 @@ import type {
     FlyerTemplateKey,
 } from "@/lib/flyers/types";
 import { FlyerExportOverlay } from "@/components/admin/flyers/FlyerExportOverlay";
+import { FlyerAmenityIcon } from "@/components/admin/flyers/FlyerAmenityIcon";
 import { FlyerPreview } from "@/components/admin/flyers/FlyerPreview";
 import { FlyerImageGalleryPicker } from "@/components/admin/flyers/FlyerImageGalleryPicker";
 import { Button } from "@/components/ui/button";
@@ -602,9 +603,10 @@ export function FlyerBuilder({ flyerId }: FlyerBuilderProps) {
                         {FLYER_AMENITY_OPTIONS.map((amenity) => (
                             <span
                                 key={amenity.key}
-                                className="rounded-full border border-[#FA5C5C]/20 bg-[#FA5C5C]/10 px-3 py-1 text-xs text-[#FA5C5C]"
+                                className="inline-flex items-center gap-1.5 rounded-full border border-[#FA5C5C]/20 bg-[#FA5C5C]/10 px-3 py-1 text-xs text-[#FA5C5C]"
                             >
-                                {amenity.icon} {amenity.label}
+                                <FlyerAmenityIcon amenityKey={amenity.key} size="0.85rem" />
+                                {amenity.label}
                             </span>
                         ))}
                     </div>

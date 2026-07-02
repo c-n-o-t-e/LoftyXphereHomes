@@ -1,8 +1,8 @@
 "use client";
 
 import type { CSSProperties } from "react";
-import { getAmenityIconByKey } from "@/lib/amenities/suiteAmenities";
 import { getFlyerDimensions } from "@/lib/flyers/dimensions";
+import { FlyerAmenityIcon } from "@/components/admin/flyers/FlyerAmenityIcon";
 import { getFlyerTemplate } from "@/lib/flyers/templates";
 import type {
     FlyerPageSize,
@@ -91,38 +91,29 @@ export function FlyerPage({
 export function FlyerAmenityChip({
     label,
     amenityKey,
-    icon,
+    color,
 }: {
     label: string;
     amenityKey?: string;
+    color?: string;
     icon?: string;
     accentColor?: string;
     style?: "check" | "dot";
 }) {
-    const chipIcon = icon ?? (amenityKey ? getAmenityIconByKey(amenityKey) : "✨");
     const chipStyle: CSSProperties = {
         display: "inline-flex",
         alignItems: "flex-start",
-        gap: "0.3em",
+        gap: "0.35em",
         fontSize: "0.58em",
         letterSpacing: "0.02em",
         lineHeight: 1.25,
         minWidth: 0,
+        color: color ?? "inherit",
     };
 
     return (
         <span style={chipStyle}>
-            <span
-                aria-hidden
-                style={{
-                    flexShrink: 0,
-                    fontSize: "1.1em",
-                    lineHeight: 1.1,
-                    marginTop: "0.05em",
-                }}
-            >
-                {chipIcon}
-            </span>
+            <FlyerAmenityIcon amenityKey={amenityKey} size="0.95em" />
             <span style={{ minWidth: 0 }}>{label}</span>
         </span>
     );

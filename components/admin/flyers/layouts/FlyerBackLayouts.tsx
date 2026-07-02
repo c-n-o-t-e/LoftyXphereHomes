@@ -135,6 +135,7 @@ function AmenitiesSection({
                         key={key}
                         amenityKey={key}
                         label={amenityLabel(key)}
+                        color={payload.theme.textColor}
                     />
                 ))}
             </div>

@@ -35,7 +35,7 @@ function ImageGrid({
                 height: gridHeight,
                 maxHeight: gridHeight,
                 flexShrink: 0,
-                marginBottom: tight ? 0 : "1.25em",
+                marginBottom: tight ? 0 : "0.85em",
             }}
         >
             <div
@@ -232,23 +232,15 @@ function GridAmenitiesBack({ payload, template, qrDataUrl, amenityLabel }: Flyer
                 boxSizing: "border-box",
                 display: "flex",
                 flexDirection: "column",
-                gap: "0.75em",
+                gap: "0.5em",
             }}
         >
-            <ImageGrid payload={payload} gridHeight="40%" />
-            <div
-                style={{
-                    flex: 1,
-                    display: "flex",
-                    flexDirection: "column",
-                    gap: "0.55em",
-                    minHeight: 0,
-                }}
-            >
-                <AmenitiesSection payload={payload} template={template} amenityLabel={amenityLabel} />
-                <PerfectForSection payload={payload} template={template} />
+            <ImageGrid payload={payload} gridHeight="52%" />
+            <AmenitiesSection payload={payload} template={template} amenityLabel={amenityLabel} />
+            <PerfectForSection payload={payload} template={template} />
+            <div style={{ marginTop: "auto", flexShrink: 0 }}>
+                <FlyerFooter payload={payload} qrDataUrl={qrDataUrl} />
             </div>
-            <FlyerFooter payload={payload} qrDataUrl={qrDataUrl} />
         </div>
     );
 }
@@ -265,7 +257,7 @@ function MagazineGridBack({ payload, template, qrDataUrl, amenityLabel }: FlyerB
                 gap: "0.75em",
             }}
         >
-            <ImageGrid payload={payload} gridHeight="38%" />
+            <ImageGrid payload={payload} gridHeight="48%" />
             <AmenitiesSection payload={payload} template={template} amenityLabel={amenityLabel} />
             <PerfectForSection payload={payload} template={template} />
             <FlyerFooter payload={payload} qrDataUrl={qrDataUrl} />
@@ -289,7 +281,7 @@ function HotelColumnsBack({ payload, template, qrDataUrl, amenityLabel }: FlyerB
                 Premium Shortlet Experience
             </div>
             <div style={{ padding: "4% 6%", flex: 1, display: "flex", flexDirection: "column", gap: "0.5em" }}>
-                <ImageGrid payload={payload} gridHeight="38%" />
+                <ImageGrid payload={payload} gridHeight="48%" />
                 <AmenitiesSection
                     payload={payload}
                     template={template}

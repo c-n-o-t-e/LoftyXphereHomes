@@ -8,10 +8,11 @@ import {
 } from "@/lib/data/apartments";
 import { getApartmentImageSets } from "@/lib/data/getApartmentImages";
 import { getPublicApartmentVideo } from "@/lib/admin/apartmentVideo";
-import { MapPin, Check } from "lucide-react";
-import { YourReservationCardFromUrl } from "@/components/YourReservationCardFromUrl";
+import { MapPin } from "lucide-react";
+import { AmenityWithIcon } from "@/components/AmenityWithIcon";
 import { ApartmentImageGallery } from "@/components/ApartmentImageGallery";
 import { ApartmentPageTracker } from "@/components/analytics/ApartmentPageTracker";
+import { YourReservationCardFromUrl } from "@/components/YourReservationCardFromUrl";
 import { IncludedWithStayStrip } from "@/components/IncludedWithStayStrip";
 import { CHECK_IN_TIME, CHECK_OUT_TIME } from "@/lib/constants";
 
@@ -105,10 +106,7 @@ export default async function ApartmentDetailPage({ params }: PageProps) {
               <h2 className="text-2xl font-bold text-black mb-4">In your suite</h2>
               <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
                 {apartment.amenities.map((amenity) => (
-                  <div key={amenity} className="flex items-center text-black/80">
-                    <Check className="h-5 w-5 text-[#FA5C5C] mr-2 shrink-0" />
-                    <span>{amenity}</span>
-                  </div>
+                  <AmenityWithIcon key={amenity} label={amenity} />
                 ))}
               </div>
             </div>

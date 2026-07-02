@@ -3,6 +3,7 @@ import {
     Building2,
     CalendarDays,
     Clapperboard,
+    FileImage,
     Images,
     LayoutDashboard,
     Palette,
@@ -110,6 +111,15 @@ export const ADMIN_NAV_ITEMS: AdminNavItem[] = [
         icon: Images,
         roles: ["admin"],
         group: "website",
+    },
+    {
+        href: "/admin/flyers",
+        label: "Flyer Builder",
+        description: "Print-ready luxury marketing flyers",
+        icon: FileImage,
+        roles: ["admin"],
+        group: "website",
+        matchPrefix: true,
     },
     {
         href: "/admin/hero-video",

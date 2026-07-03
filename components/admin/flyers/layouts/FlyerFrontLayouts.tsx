@@ -4,6 +4,7 @@ import type { CSSProperties } from "react";
 import type { FlyerTemplateDefinition } from "@/lib/flyers/templates";
 import type { FlyerPayload } from "@/lib/flyers/types";
 import { FlyerInlineContact } from "@/components/admin/flyers/FlyerContactIcons";
+import { FlyerBedroomBadge } from "@/components/admin/flyers/FlyerBedroomBadge";
 
 type FlyerFrontLayoutsProps = {
     payload: FlyerPayload;
@@ -135,7 +136,7 @@ function HeroDominantFront({
                     top: 0,
                     left: 0,
                     right: 0,
-                    height: "70%",
+                    height: "68%",
                     overflow: "hidden",
                     backgroundColor: "#f3f3f3",
                 }}
@@ -187,17 +188,18 @@ function HeroDominantFront({
                     left: 0,
                     right: 0,
                     bottom: 0,
-                    height: "30%",
+                    height: "32%",
                     backgroundColor: payload.theme.backgroundColor,
-                    padding: "3.5% 7%",
+                    padding: "3.5% 7% 6%",
                     display: "flex",
                     flexDirection: "column",
-                    justifyContent: "space-between",
+                    justifyContent: "flex-start",
+                    gap: "0.55em",
                     boxSizing: "border-box",
                     color: payload.theme.textColor,
                 }}
             >
-                <div>
+                <div style={{ flex: "1 1 auto", minHeight: 0 }}>
                     <div
                         style={{
                             width: "2.5em",
@@ -219,6 +221,7 @@ function HeroDominantFront({
                     >
                         {payload.headline}
                     </h1>
+                    <FlyerBedroomBadge payload={payload} template={template} />
                     <p
                         style={{
                             marginTop: "0.4em",
@@ -239,6 +242,9 @@ function HeroDominantFront({
                         alignItems: "flex-end",
                         justifyContent: "space-between",
                         gap: "4%",
+                        flexShrink: 0,
+                        marginTop: "auto",
+                        paddingBottom: "0.35em",
                     }}
                 >
                     <div style={{ flex: 1, minWidth: 0 }}>
@@ -309,6 +315,7 @@ function SplitFront({
                     >
                         {payload.headline}
                     </h1>
+                    <FlyerBedroomBadge payload={payload} template={template} />
                     <p
                         style={{
                             marginTop: "1em",
@@ -384,6 +391,7 @@ function EditorialFront({
                 >
                     {payload.headline}
                 </h1>
+                <FlyerBedroomBadge payload={payload} template={template} />
                 <p
                     style={{
                         marginTop: "0.8em",
@@ -477,6 +485,7 @@ function CorporateFront({
                     >
                         {payload.headline}
                     </h1>
+                    <FlyerBedroomBadge payload={payload} template={template} />
                     <p
                         style={{
                             marginTop: "0.6em",

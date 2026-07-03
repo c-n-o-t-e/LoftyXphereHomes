@@ -395,6 +395,21 @@ export function FlyerBuilder({ flyerId }: FlyerBuilderProps) {
                         />
                     </div>
                     <div>
+                        <Label>Bedroom type</Label>
+                        <Input
+                            value={payload.bedroomLabel}
+                            onChange={(e) =>
+                                updatePayload({ bedroomLabel: e.target.value })
+                            }
+                            placeholder='e.g. "2 Bedroom" — leave empty to hide'
+                            className="mt-1"
+                        />
+                        <p className="mt-1 text-xs text-slate-500">
+                            Shown as a badge on the front page. Auto-filled when you apply an
+                            apartment preset.
+                        </p>
+                    </div>
+                    <div>
                         <Label>Subheadline</Label>
                         <Textarea
                             value={payload.subheadline}

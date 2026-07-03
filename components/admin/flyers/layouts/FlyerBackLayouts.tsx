@@ -229,15 +229,19 @@ function FlyerDiscoveryStrip({ payload }: { payload: FlyerPayload }) {
 function FlyerFooter({
     payload,
     qrDataUrl,
+    parentProvidesTopSpacing = false,
 }: {
     payload: FlyerPayload;
     qrDataUrl: string | null;
+    /** When true, parent flex gap already separates the footer from content above. */
+    parentProvidesTopSpacing?: boolean;
 }) {
     const hasDiscovery = payload.discoveryLine.trim().length > 0;
     const footerStyle: CSSProperties = {
         borderTop: `1px solid ${payload.theme.accentColor}44`,
         paddingTop: "0.75em",
-        marginTop: hasDiscovery ? 0 : "0.75em",
+        marginTop:
+            !hasDiscovery && !parentProvidesTopSpacing ? "0.75em" : undefined,
         display: "flex",
         alignItems: "center",
         justifyContent: "space-between",
@@ -248,7 +252,7 @@ function FlyerFooter({
     };
 
     return (
-        <div>
+        <div style={{ flexShrink: 0, width: "100%" }}>
             <FlyerDiscoveryStrip payload={payload} />
             <div style={footerStyle}>
                 <FlyerFooterContact payload={payload} />
@@ -308,7 +312,13 @@ function MagazineGridBack({ payload, template, qrDataUrl, amenityLabel }: FlyerB
             <ImageGrid payload={payload} gridHeight="48%" />
             <AmenitiesSection payload={payload} template={template} amenityLabel={amenityLabel} />
             <PerfectForSection payload={payload} template={template} />
-            <FlyerFooter payload={payload} qrDataUrl={qrDataUrl} />
+            <div style={{ marginTop: "auto", flexShrink: 0, width: "100%" }}>
+                <FlyerFooter
+                    payload={payload}
+                    qrDataUrl={qrDataUrl}
+                    parentProvidesTopSpacing
+                />
+            </div>
         </div>
     );
 }

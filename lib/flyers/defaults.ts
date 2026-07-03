@@ -14,6 +14,7 @@ import {
     getAmenityKeyForLabel,
     getDefaultFlyerAmenityKeys,
 } from "@/lib/amenities/suiteAmenities";
+import { formatFlyerBedroomLabel } from "@/lib/flyers/bedroomLabel";
 import type { FlyerImageSlotKey, FlyerPayload } from "@/lib/flyers/types";
 
 function mapApartmentAmenities(apartmentId: string): string[] {
@@ -35,6 +36,7 @@ export function createDefaultFlyerPayload(
     return {
         apartmentId: null,
         apartmentName: "",
+        bedroomLabel: "",
         headline: "LUXURY SHORTLET APARTMENTS IN ABUJA",
         subheadline: "Experience Comfort.\nExperience Luxury.\nFeel At Home.",
         ctaText: "BOOK TODAY",
@@ -90,6 +92,7 @@ export async function buildFlyerPayloadFromApartment(
     return {
         apartmentId: apartment.id,
         apartmentName: apartment.name,
+        bedroomLabel: formatFlyerBedroomLabel(apartment.beds),
         headline: "LUXURY SHORTLET APARTMENTS IN ABUJA",
         subheadline: `${apartment.name}\nExperience Comfort. Experience Luxury.\nFeel At Home.`,
         bodyCopy: apartment.shortDescription,

@@ -12,6 +12,8 @@ import {
     getDefaultGridImageOrder,
 } from "@/lib/flyers/constants";
 import { getDefaultFlyerAmenityKeys, normalizeFlyerAmenityKeys } from "@/lib/amenities/suiteAmenities";
+import { getApartmentById } from "@/lib/data/apartments";
+import { formatFlyerBedroomLabel } from "@/lib/flyers/bedroomLabel";
 
 const templateKeys = FLYER_TEMPLATE_OPTIONS.map((item) => item.key) as [
     string,
@@ -40,6 +42,7 @@ export const flyerPayloadSchema = z
     .object({
         apartmentId: z.string().nullable(),
         apartmentName: z.string(),
+        bedroomLabel: z.string().max(80),
         headline: z.string().trim().min(1).max(200),
         subheadline: z.string().max(500),
         ctaText: z.string().trim().min(1).max(60),
@@ -159,6 +162,19 @@ function normalizeFlyerPayload(raw: unknown): unknown {
 
     if (typeof payload.discoveryLine !== "string") {
         payload.discoveryLine = DEFAULT_FLYER_DISCOVERY_LINE;
+    }
+
+    if (typeof payload.bedroomLabel !== "string") {
+        payload.bedroomLabel = "";
+    }
+
+    const apartmentId =
+        typeof payload.apartmentId === "string" ? payload.apartmentId.trim() : "";
+    if (!String(payload.bedroomLabel).trim() && apartmentId) {
+        const apartment = getApartmentById(apartmentId);
+        if (apartment) {
+            payload.bedroomLabel = formatFlyerBedroomLabel(apartment.beds);
+        }
     }
 
     if (Array.isArray(payload.gridImageOrder)) {

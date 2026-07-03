@@ -1,4 +1,5 @@
 import { createDefaultFlyerPayload } from "@/lib/flyers/defaults";
+import { formatFlyerBedroomLabel } from "@/lib/flyers/bedroomLabel";
 import { FLYER_TEMPLATE_OPTIONS } from "@/lib/flyers/constants";
 import { parseFlyerPayload } from "@/lib/flyers/validation";
 import { resolveFlyerQrUrl } from "@/lib/flyers/qr";
@@ -15,6 +16,7 @@ describe("flyer defaults and validation", () => {
         expect(parsed.gridImageOrder).toHaveLength(6);
         expect(parsed.amenities).toEqual(getDefaultFlyerAmenityKeys());
         expect(parsed.discoveryLine).toContain("luxury apartments");
+        expect(parsed.bedroomLabel).toBe("");
     });
 
     it("exposes five premium templates", () => {
@@ -112,6 +114,33 @@ describe("flyer defaults and validation", () => {
         const parsed = parseFlyerPayload(legacy);
 
         expect(parsed.discoveryLine.length).toBeGreaterThan(0);
+    });
+
+    it("backfills bedroom label on legacy payloads", () => {
+        const payload = createDefaultFlyerPayload();
+        const { bedroomLabel: _removed, ...legacy } = payload;
+
+        const parsed = parseFlyerPayload(legacy);
+
+        expect(parsed.bedroomLabel).toBe("");
+    });
+
+    it("derives bedroom label from linked apartment on saved flyers", () => {
+        const legacy = createDefaultFlyerPayload({
+            apartmentId: "meridian-suite",
+            apartmentName: "Meridian Suite",
+        });
+        delete (legacy as Partial<typeof legacy>).bedroomLabel;
+
+        const parsed = parseFlyerPayload(legacy);
+
+        expect(parsed.bedroomLabel).toBe("2 Bedroom");
+    });
+
+    it("formats bedroom labels from bed count", () => {
+        expect(formatFlyerBedroomLabel(1)).toBe("1 Bedroom");
+        expect(formatFlyerBedroomLabel(2)).toBe("2 Bedroom");
+        expect(formatFlyerBedroomLabel(0)).toBe("");
     });
 
     it("maps amenity labels to representative icons", () => {

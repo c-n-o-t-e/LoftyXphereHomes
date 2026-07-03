@@ -71,6 +71,8 @@ export type FlyerQrConfig = {
 export type FlyerPayload = {
     apartmentId: string | null;
     apartmentName: string;
+    /** Front-page badge, e.g. "2 Bedroom"; empty string hides it. */
+    bedroomLabel: string;
     headline: string;
     subheadline: string;
     ctaText: string;

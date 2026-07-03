@@ -6,7 +6,10 @@ import { getDefaultFlyerAmenityKeys } from "@/lib/amenities/suiteAmenities";
 import type { FlyerTemplateDefinition } from "@/lib/flyers/templates";
 import type { FlyerImageSlotKey, FlyerPayload } from "@/lib/flyers/types";
 import { FlyerAmenityChip } from "@/components/admin/flyers/FlyerPage";
-import { FlyerFooterContact } from "@/components/admin/flyers/FlyerContactIcons";
+import {
+    FlyerFooterContact,
+    FlyerGlobeIcon,
+} from "@/components/admin/flyers/FlyerContactIcons";
 
 type FlyerBackLayoutsProps = {
     payload: FlyerPayload;
@@ -183,6 +186,46 @@ function PerfectForSection({
     );
 }
 
+function FlyerDiscoveryStrip({ payload }: { payload: FlyerPayload }) {
+    const line = payload.discoveryLine.trim();
+    if (!line) return null;
+
+    const color = payload.theme.textColor;
+    const accent = payload.theme.accentColor;
+
+    return (
+        <div
+            style={{
+                display: "flex",
+                alignItems: "center",
+                justifyContent: "center",
+                gap: "0.45em",
+                flexWrap: "wrap",
+                textAlign: "center",
+                fontSize: "0.52em",
+                letterSpacing: "0.1em",
+                textTransform: "uppercase",
+                color,
+                marginTop: "1em",
+                marginBottom: "1em",
+            }}
+        >
+            <FlyerGlobeIcon color={accent} size="1.1em" />
+            <span>
+                {line}
+                {payload.contact.website ? (
+                    <>
+                        {" — "}
+                        <span style={{ color: accent, fontWeight: 600 }}>
+                            {payload.contact.website}
+                        </span>
+                    </>
+                ) : null}
+            </span>
+        </div>
+    );
+}
+
 function FlyerFooter({
     payload,
     qrDataUrl,
@@ -190,10 +233,11 @@ function FlyerFooter({
     payload: FlyerPayload;
     qrDataUrl: string | null;
 }) {
+    const hasDiscovery = payload.discoveryLine.trim().length > 0;
     const footerStyle: CSSProperties = {
         borderTop: `1px solid ${payload.theme.accentColor}44`,
         paddingTop: "0.75em",
-        marginTop: "0.75em",
+        marginTop: hasDiscovery ? 0 : "0.75em",
         display: "flex",
         alignItems: "center",
         justifyContent: "space-between",
@@ -204,22 +248,25 @@ function FlyerFooter({
     };
 
     return (
-        <div style={footerStyle}>
-            <FlyerFooterContact payload={payload} />
-            {qrDataUrl ? (
-                // eslint-disable-next-line @next/next/no-img-element
-                <img
-                    src={qrDataUrl}
-                    alt="QR"
-                    style={{
-                        width: "4.5em",
-                        height: "4.5em",
-                        background: "#FFF",
-                        padding: "0.2em",
-                        border: `1px solid ${payload.theme.accentColor}`,
-                    }}
-                />
-            ) : null}
+        <div>
+            <FlyerDiscoveryStrip payload={payload} />
+            <div style={footerStyle}>
+                <FlyerFooterContact payload={payload} />
+                {qrDataUrl ? (
+                    // eslint-disable-next-line @next/next/no-img-element
+                    <img
+                        src={qrDataUrl}
+                        alt="QR"
+                        style={{
+                            width: "4.5em",
+                            height: "4.5em",
+                            background: "#FFF",
+                            padding: "0.2em",
+                            border: `1px solid ${payload.theme.accentColor}`,
+                        }}
+                    />
+                ) : null}
+            </div>
         </div>
     );
 }

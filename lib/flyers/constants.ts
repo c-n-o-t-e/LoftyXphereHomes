@@ -94,6 +94,9 @@ export const FLYER_PAGE_SIZE_OPTIONS: { key: FlyerPageSize; label: string }[] = 
     { key: "us-letter", label: "US Letter (8.5 × 11 in)" },
 ];
 
+export const DEFAULT_FLYER_DISCOVERY_LINE =
+    "Discover more luxury apartments at our website";
+
 export const DEFAULT_FLYER_CONTACT = {
     website: INVOICE_WEBSITE_DISPLAY,
     phone: process.env.BUSINESS_PHONE || process.env.CONTACT_PHONE || "08161122328",

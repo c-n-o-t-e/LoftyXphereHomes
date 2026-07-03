@@ -1,6 +1,7 @@
 import { z } from "zod";
 import type { FlyerPayload } from "@/lib/flyers/types";
 import {
+    DEFAULT_FLYER_DISCOVERY_LINE,
     FLYER_AMENITY_OPTIONS,
     FLYER_BACK_GRID_IMAGE_COUNT,
     FLYER_GRID_IMAGE_SLOT_KEYS,
@@ -42,6 +43,7 @@ export const flyerPayloadSchema = z
         headline: z.string().trim().min(1).max(200),
         subheadline: z.string().max(500),
         ctaText: z.string().trim().min(1).max(60),
+        discoveryLine: z.string().max(200),
         bodyCopy: z.string().max(1200),
         location: z.string().trim().min(1).max(120),
         contact: z
@@ -153,6 +155,10 @@ function normalizeFlyerPayload(raw: unknown): unknown {
         payload.amenities = normalizeFlyerAmenityKeys(payload.amenities);
     } else {
         payload.amenities = getDefaultFlyerAmenityKeys();
+    }
+
+    if (typeof payload.discoveryLine !== "string") {
+        payload.discoveryLine = DEFAULT_FLYER_DISCOVERY_LINE;
     }
 
     if (Array.isArray(payload.gridImageOrder)) {

@@ -412,6 +412,21 @@ export function FlyerBuilder({ flyerId }: FlyerBuilderProps) {
                         />
                     </div>
                     <div>
+                        <Label>Back-page discovery line</Label>
+                        <Input
+                            value={payload.discoveryLine}
+                            onChange={(e) =>
+                                updatePayload({ discoveryLine: e.target.value })
+                            }
+                            placeholder="Leave empty to hide on the back page"
+                            className="mt-1"
+                        />
+                        <p className="mt-1 text-xs text-slate-500">
+                            Shown above the back-page footer with your website. Encourages
+                            visitors to explore other apartments.
+                        </p>
+                    </div>
+                    <div>
                         <Label>Location</Label>
                         <Input
                             value={payload.location}

@@ -14,6 +14,7 @@ describe("flyer defaults and validation", () => {
         expect(parsed.amenities.length).toBeGreaterThan(15);
         expect(parsed.gridImageOrder).toHaveLength(6);
         expect(parsed.amenities).toEqual(getDefaultFlyerAmenityKeys());
+        expect(parsed.discoveryLine).toContain("luxury apartments");
     });
 
     it("exposes five premium templates", () => {
@@ -102,6 +103,15 @@ describe("flyer defaults and validation", () => {
             label: "Exterior",
         });
         expect(parsed.gridImageOrder).toHaveLength(6);
+    });
+
+    it("backfills discovery line on legacy payloads", () => {
+        const payload = createDefaultFlyerPayload();
+        const { discoveryLine: _removed, ...legacy } = payload;
+
+        const parsed = parseFlyerPayload(legacy);
+
+        expect(parsed.discoveryLine.length).toBeGreaterThan(0);
     });
 
     it("maps amenity labels to representative icons", () => {

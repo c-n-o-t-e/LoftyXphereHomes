@@ -3,6 +3,7 @@ import { prisma } from "@/lib/db";
 import {
     createEmptyFlyerImages,
     DEFAULT_FLYER_CONTACT,
+    DEFAULT_FLYER_DISCOVERY_LINE,
     DEFAULT_FLYER_LOGO,
     DEFAULT_FLYER_THEME,
     FLYER_PERFECT_FOR_OPTIONS,
@@ -37,6 +38,7 @@ export function createDefaultFlyerPayload(
         headline: "LUXURY SHORTLET APARTMENTS IN ABUJA",
         subheadline: "Experience Comfort.\nExperience Luxury.\nFeel At Home.",
         ctaText: "BOOK TODAY",
+        discoveryLine: DEFAULT_FLYER_DISCOVERY_LINE,
         bodyCopy:
             "Premium serviced apartments in Abuja — designed for comfort, security, and effortless stays.",
         location: "Abuja, Nigeria",

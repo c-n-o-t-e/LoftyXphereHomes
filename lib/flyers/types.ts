@@ -74,6 +74,8 @@ export type FlyerPayload = {
     headline: string;
     subheadline: string;
     ctaText: string;
+    /** Back-page cross-sell line; empty string hides it. */
+    discoveryLine: string;
     bodyCopy: string;
     location: string;
     contact: FlyerContact;

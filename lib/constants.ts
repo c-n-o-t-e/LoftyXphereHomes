@@ -1,8 +1,27 @@
 export const CHECK_IN_TIME = "2:00 PM";
 export const CHECK_OUT_TIME = "11:00 AM";
 
+function parseOptionalPositiveInt(value: string | undefined): number | undefined {
+  if (!value?.trim()) return undefined;
+  const parsed = Number.parseInt(value.trim(), 10);
+  return Number.isFinite(parsed) && parsed > 0 ? parsed : undefined;
+}
+
+/**
+ * Temporary override for live payment testing (e.g. ONE_BED_TEST_PRICE_NGN=1000).
+ * Set server-side for checkout; set NEXT_PUBLIC_ONE_BED_TEST_PRICE_NGN too so listing
+ * cards match without a server-only mismatch.
+ */
+function resolveOneBedRackRateNgn(): number {
+  return (
+    parseOptionalPositiveInt(process.env.ONE_BED_TEST_PRICE_NGN) ??
+    parseOptionalPositiveInt(process.env.NEXT_PUBLIC_ONE_BED_TEST_PRICE_NGN) ??
+    100_000
+  );
+}
+
 /** Rack rates (full single-night price before length-of-stay reductions). */
-export const ONE_BED_RACK_RATE_NGN = 100_000;
+export const ONE_BED_RACK_RATE_NGN = resolveOneBedRackRateNgn();
 export const TWO_BED_RACK_RATE_NGN = 200_000;
 
 /**

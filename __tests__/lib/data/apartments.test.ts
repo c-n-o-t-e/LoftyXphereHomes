@@ -5,6 +5,7 @@ import {
   getActiveApartments,
   getComingSoonApartments,
 } from '@/lib/data/apartments'
+import { ONE_BED_RACK_RATE_NGN, TWO_BED_RACK_RATE_NGN } from '@/lib/constants'
 
 describe('apartments data', () => {
   it('exports nine apartments', () => {
@@ -35,19 +36,19 @@ describe('apartments data', () => {
     })
   })
 
-  it('active one-bedroom suites are priced at ₦100,000', () => {
+  it('active one-bedroom suites use the configured rack rate', () => {
     getActiveApartments()
       .filter((apt) => apt.beds === 1)
       .forEach((apt) => {
-        expect(apt.pricePerNight).toBe(100_000)
+        expect(apt.pricePerNight).toBe(ONE_BED_RACK_RATE_NGN)
       })
   })
 
-  it('active two-bedroom suites are priced at ₦200,000', () => {
+  it('active two-bedroom suites use the configured rack rate', () => {
     getActiveApartments()
       .filter((apt) => apt.beds === 2)
       .forEach((apt) => {
-        expect(apt.pricePerNight).toBe(200_000)
+        expect(apt.pricePerNight).toBe(TWO_BED_RACK_RATE_NGN)
       })
   })
 

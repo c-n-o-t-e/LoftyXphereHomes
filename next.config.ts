@@ -31,6 +31,13 @@ const nextConfig: NextConfig = {
             },
         ];
     },
+    async redirects() {
+        return [
+            // Legacy WordPress homepage slug (Search Console 404: /home/)
+            { source: "/home", destination: "/", permanent: true },
+            { source: "/home/", destination: "/", permanent: true },
+        ];
+    },
 };
 
 export default nextConfig;

@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { requireAdmin } from "@/lib/admin/auth";
 import { getApartmentImageCounts } from "@/lib/data/getApartmentImages";
-import { getApartments } from "@/lib/data/apartments";
+import { apartments } from "@/lib/data/apartments";
 
 type RouteError = {
     httpResponse?: Response;
@@ -25,7 +25,7 @@ export async function GET(request: NextRequest) {
         const imageCounts = await getApartmentImageCounts();
         return NextResponse.json({
             ok: true,
-            apartments: getApartments().map((apartment) => ({
+            apartments: apartments.map((apartment) => ({
                 id: apartment.id,
                 name: apartment.name,
                 location: apartment.location,

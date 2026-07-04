@@ -1,31 +1,8 @@
 export const CHECK_IN_TIME = "2:00 PM";
 export const CHECK_OUT_TIME = "11:00 AM";
 
-function parseOptionalPositiveInt(value: string | undefined): number | undefined {
-  if (!value?.trim()) return undefined;
-  const parsed = Number.parseInt(value.trim(), 10);
-  return Number.isFinite(parsed) && parsed > 0 ? parsed : undefined;
-}
-
-/**
- * Default 1-bedroom rack rate when no test override env var is set.
- * Use getOneBedRackRateNgn() anywhere pricing must reflect current env.
- */
-export const ONE_BED_RACK_RATE_DEFAULT_NGN = 100_000;
-
-/**
- * Resolves the 1-bedroom rack rate from env on each call (server runtime override).
- * ONE_BED_TEST_PRICE_NGN applies without rebuild; NEXT_PUBLIC_ONE_BED_TEST_PRICE_NGN
- * is read at call time on the server but is fixed in client bundles until rebuild.
- */
-export function getOneBedRackRateNgn(): number {
-  return (
-    parseOptionalPositiveInt(process.env.ONE_BED_TEST_PRICE_NGN) ??
-    parseOptionalPositiveInt(process.env.NEXT_PUBLIC_ONE_BED_TEST_PRICE_NGN) ??
-    ONE_BED_RACK_RATE_DEFAULT_NGN
-  );
-}
-
+/** Rack rates (full single-night price before length-of-stay reductions). */
+export const ONE_BED_RACK_RATE_NGN = 100_000;
 export const TWO_BED_RACK_RATE_NGN = 200_000;
 
 /**

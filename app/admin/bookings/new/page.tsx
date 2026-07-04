@@ -10,7 +10,7 @@ import { useAdminContext } from "@/components/admin/AdminContext";
 import { AdminPageContainer } from "@/components/admin/AdminPageContainer";
 import { AdminPageHeader } from "@/components/admin/AdminPageHeader";
 import { getSupabaseClient } from "@/lib/supabase/client";
-import { getApartments } from "@/lib/data/apartments";
+import { apartments } from "@/lib/data/apartments";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
@@ -75,7 +75,7 @@ export default function NewManualBookingPage() {
         }
     }, [isLoading, user, router]);
 
-    const apartmentOptions = useMemo(() => getApartments(), []);
+    const apartmentOptions = useMemo(() => apartments, []);
     const selectedApartment = useMemo(
         () => apartmentOptions.find((a) => a.id === apartmentId),
         [apartmentId, apartmentOptions]

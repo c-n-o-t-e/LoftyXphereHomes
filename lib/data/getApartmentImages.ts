@@ -2,7 +2,7 @@ import {
     expandApartmentIdsForLookup,
     getActiveApartments,
     getApartmentIdLookupIds,
-    getApartments,
+    apartments,
     normalizeApartmentId,
 } from "@/lib/data/apartments";
 import { prisma } from "@/lib/db";
@@ -73,7 +73,7 @@ export async function getApartmentImageCounts(): Promise<Record<string, number>>
     });
 
     const counts: Record<string, number> = {};
-    for (const apartment of getApartments()) {
+    for (const apartment of apartments) {
         counts[apartment.id] = 0;
     }
     for (const row of grouped) {

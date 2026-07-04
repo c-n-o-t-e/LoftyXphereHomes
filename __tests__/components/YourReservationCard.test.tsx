@@ -19,7 +19,7 @@ describe("YourReservationCard", () => {
             if (url.includes("/api/payments/available")) {
                 return {
                     ok: true,
-                    json: async () => ({ providers: ["paystack"] }),
+                    json: async () => ({ providers: ["flutterwave"] }),
                 } as Response;
             }
             return {
@@ -104,7 +104,7 @@ describe("YourReservationCard", () => {
         jest.useRealTimers();
     });
 
-    it("redirects to Paystack when initialize succeeds", async () => {
+    it("redirects to Flutterwave when initialize succeeds", async () => {
         jest.useFakeTimers();
         jest.setSystemTime(new Date(2026, 5, 1));
 
@@ -117,7 +117,7 @@ describe("YourReservationCard", () => {
             if (url.includes("/api/payments/available")) {
                 return {
                     ok: true,
-                    json: async () => ({ providers: ["paystack"] }),
+                    json: async () => ({ providers: ["flutterwave"] }),
                 } as Response;
             }
             if (url.includes("/api/availability")) {
@@ -126,11 +126,11 @@ describe("YourReservationCard", () => {
                     json: async () => ({ blockedDates: [], bookingRanges: [] }),
                 } as Response;
             }
-            if (url.includes("/api/paystack/initialize")) {
+            if (url.includes("/api/flutterwave/initialize")) {
                 return {
                     ok: true,
                     json: async () => ({
-                        authorization_url: "https://checkout.paystack.com/test",
+                        authorization_url: "https://checkout.flutterwave.com/test",
                     }),
                 } as Response;
             }
@@ -160,7 +160,7 @@ describe("YourReservationCard", () => {
 
         await waitFor(() => {
             expect(fetchMock).toHaveBeenCalledWith(
-                "/api/paystack/initialize",
+                "/api/flutterwave/initialize",
                 expect.objectContaining({
                     method: "POST",
                     body: expect.stringContaining("jane@example.com"),
@@ -184,7 +184,7 @@ describe("YourReservationCard", () => {
             if (url.includes("/api/payments/available")) {
                 return {
                     ok: true,
-                    json: async () => ({ providers: ["paystack"] }),
+                    json: async () => ({ providers: ["flutterwave"] }),
                 } as Response;
             }
             if (url.includes("/api/availability")) {
@@ -193,7 +193,7 @@ describe("YourReservationCard", () => {
                     json: async () => ({ blockedDates: [], bookingRanges: [] }),
                 } as Response;
             }
-            if (url.includes("/api/paystack/initialize")) {
+            if (url.includes("/api/flutterwave/initialize")) {
                 return {
                     ok: false,
                     status: 409,

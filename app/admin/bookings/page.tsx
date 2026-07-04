@@ -10,7 +10,7 @@ import { useAdminContext } from "@/components/admin/AdminContext";
 import { AdminPageContainer } from "@/components/admin/AdminPageContainer";
 import { AdminPageHeader } from "@/components/admin/AdminPageHeader";
 import { getSupabaseClient } from "@/lib/supabase/client";
-import { apartments } from "@/lib/data/apartments";
+import { getApartmentById } from "@/lib/data/apartments";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
@@ -79,7 +79,7 @@ function useDebouncedValue<T>(value: T, delayMs: number) {
 }
 
 function getApartmentName(apartmentId: string) {
-    return apartments.find((a) => a.id === apartmentId)?.name ?? apartmentId;
+    return getApartmentById(apartmentId)?.name ?? apartmentId;
 }
 
 const VIEW_LABELS: Record<AdminBookingsView, string> = {

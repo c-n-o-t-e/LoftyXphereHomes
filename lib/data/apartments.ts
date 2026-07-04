@@ -1,5 +1,5 @@
 import { Apartment } from "../types";
-import { ONE_BED_RACK_RATE_NGN, TWO_BED_RACK_RATE_NGN } from "../constants";
+import { getOneBedRackRateNgn, ONE_BED_RACK_RATE_DEFAULT_NGN, TWO_BED_RACK_RATE_NGN } from "../constants";
 
 const LOCATION = { city: "Abuja", area: "Wuye" } as const;
 
@@ -54,8 +54,20 @@ const SHARED_HOUSE_RULES = [
     "Respect neighbors (noise control after 10PM)",
 ] as const;
 
-const ONE_BED_PRICE = ONE_BED_RACK_RATE_NGN;
+const ONE_BED_PRICE = ONE_BED_RACK_RATE_DEFAULT_NGN;
 const TWO_BED_PRICE = TWO_BED_RACK_RATE_NGN;
+
+/** Applies runtime 1-bedroom rack rate from env (see getOneBedRackRateNgn). */
+function withRuntimePricing(apartment: Apartment): Apartment {
+    if (apartment.beds === 1) {
+        return { ...apartment, pricePerNight: getOneBedRackRateNgn() };
+    }
+    return apartment;
+}
+
+function mapRuntimePricing(apartments: Apartment[]): Apartment[] {
+    return apartments.map(withRuntimePricing);
+}
 
 /** Canonical IDs shown first on the site and in featured sections. */
 export const FEATURED_APARTMENT_IDS = ["meridian-suite", "lumen-suite"] as const;
@@ -73,7 +85,7 @@ export const LEGACY_APARTMENT_IDS: Record<string, string> = {
     "lofty-ember-suite": "ember-suite",
 };
 
-export const apartments: Apartment[] = [
+const apartmentDefinitions: Apartment[] = [
     {
         id: "meridian-suite",
         name: "Meridian Suite",
@@ -233,6 +245,11 @@ export const apartments: Apartment[] = [
     },
 ];
 
+/** All apartments with runtime 1-bedroom pricing applied. */
+export function getApartments(): Apartment[] {
+    return mapRuntimePricing(apartmentDefinitions);
+}
+
 export function normalizeApartmentId(id: string): string {
     return LEGACY_APARTMENT_IDS[id] ?? id;
 }
@@ -253,7 +270,8 @@ export function expandApartmentIdsForLookup(ids: string[]): string[] {
 
 export function getApartmentById(id: string): Apartment | undefined {
     const normalizedId = normalizeApartmentId(id);
-    return apartments.find((apt) => apt.id === normalizedId);
+    const apartment = apartmentDefinitions.find((apt) => apt.id === normalizedId);
+    return apartment ? withRuntimePricing(apartment) : undefined;
 }
 
 export function isApartmentBookable(apartment: Apartment): boolean {
@@ -261,11 +279,11 @@ export function isApartmentBookable(apartment: Apartment): boolean {
 }
 
 export function getActiveApartments(): Apartment[] {
-    return apartments.filter((apt) => apt.status === "active");
+    return mapRuntimePricing(apartmentDefinitions.filter((apt) => apt.status === "active"));
 }
 
 export function getComingSoonApartments(): Apartment[] {
-    return apartments.filter((apt) => apt.status === "coming_soon");
+    return mapRuntimePricing(apartmentDefinitions.filter((apt) => apt.status === "coming_soon"));
 }
 
 export function getFeaturedApartments(limit: number = 2): Apartment[] {

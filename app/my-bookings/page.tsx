@@ -7,7 +7,7 @@ import Link from "next/link";
 import { useInfiniteQuery, useQuery } from "@tanstack/react-query";
 import { useAuth } from "@/components/AuthProvider";
 import { getSupabaseClient } from "@/lib/supabase/client";
-import { apartments } from "@/lib/data/apartments";
+import { getApartmentById } from "@/lib/data/apartments";
 import { Calendar, MapPin, Clock, ChevronRight, Loader2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { ApartmentImagePlaceholder } from "@/components/ApartmentImagePlaceholder";
@@ -35,10 +35,6 @@ function formatDate(dateStr: string): string {
     month: "short",
     day: "numeric",
   });
-}
-
-function getApartmentById(id: string) {
-  return apartments.find((apt) => apt.id === id);
 }
 
 function getBookingStatus(checkIn: string, checkOut: string, status: string) {

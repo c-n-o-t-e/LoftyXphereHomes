@@ -1,15 +1,15 @@
 import {
-  apartments,
+  getApartments,
   getApartmentById,
   getFeaturedApartments,
   getActiveApartments,
   getComingSoonApartments,
 } from '@/lib/data/apartments'
-import { ONE_BED_RACK_RATE_NGN, TWO_BED_RACK_RATE_NGN } from '@/lib/constants'
+import { getOneBedRackRateNgn, TWO_BED_RACK_RATE_NGN } from '@/lib/constants'
 
 describe('apartments data', () => {
   it('exports nine apartments', () => {
-    expect(apartments).toHaveLength(9)
+    expect(getApartments()).toHaveLength(9)
   })
 
   it('has four active and five coming soon suites', () => {
@@ -18,7 +18,7 @@ describe('apartments data', () => {
   })
 
   it('each apartment has required fields', () => {
-    apartments.forEach((apartment) => {
+    getApartments().forEach((apartment) => {
       expect(apartment).toHaveProperty('id')
       expect(apartment).toHaveProperty('name')
       expect(apartment).toHaveProperty('shortDescription')
@@ -40,7 +40,7 @@ describe('apartments data', () => {
     getActiveApartments()
       .filter((apt) => apt.beds === 1)
       .forEach((apt) => {
-        expect(apt.pricePerNight).toBe(ONE_BED_RACK_RATE_NGN)
+        expect(apt.pricePerNight).toBe(getOneBedRackRateNgn())
       })
   })
 
@@ -50,6 +50,21 @@ describe('apartments data', () => {
       .forEach((apt) => {
         expect(apt.pricePerNight).toBe(TWO_BED_RACK_RATE_NGN)
       })
+  })
+
+  it('reflects ONE_BED_TEST_PRICE_NGN changes at read time', () => {
+    const original = process.env.ONE_BED_TEST_PRICE_NGN
+    process.env.ONE_BED_TEST_PRICE_NGN = '4321'
+    try {
+      expect(getApartmentById('horizon-suite')?.pricePerNight).toBe(4321)
+      expect(getOneBedRackRateNgn()).toBe(4321)
+    } finally {
+      if (original === undefined) {
+        delete process.env.ONE_BED_TEST_PRICE_NGN
+      } else {
+        process.env.ONE_BED_TEST_PRICE_NGN = original
+      }
+    }
   })
 
   it('one-bedroom and two-bedroom suites have distinct in-suite amenity lists', () => {
@@ -62,7 +77,7 @@ describe('apartments data', () => {
   })
 
   it('apartment location has city and area', () => {
-    apartments.forEach((apartment) => {
+    getApartments().forEach((apartment) => {
       expect(apartment.location).toHaveProperty('city')
       expect(apartment.location).toHaveProperty('area')
       expect(typeof apartment.location.city).toBe('string')
@@ -71,26 +86,26 @@ describe('apartments data', () => {
   })
 
   it('apartment images is an array', () => {
-    apartments.forEach((apartment) => {
+    getApartments().forEach((apartment) => {
       expect(Array.isArray(apartment.images)).toBe(true)
     })
   })
 
   it('apartment has valid rating between 0 and 5', () => {
-    apartments.forEach((apartment) => {
+    getApartments().forEach((apartment) => {
       expect(apartment.rating).toBeGreaterThanOrEqual(0)
       expect(apartment.rating).toBeLessThanOrEqual(5)
     })
   })
 
   it('apartment has positive price', () => {
-    apartments.forEach((apartment) => {
+    getApartments().forEach((apartment) => {
       expect(apartment.pricePerNight).toBeGreaterThan(0)
     })
   })
 
   it('apartment has positive capacity, beds, and baths', () => {
-    apartments.forEach((apartment) => {
+    getApartments().forEach((apartment) => {
       expect(apartment.capacity).toBeGreaterThan(0)
       expect(apartment.beds).toBeGreaterThan(0)
       expect(apartment.baths).toBeGreaterThan(0)
@@ -100,7 +115,7 @@ describe('apartments data', () => {
 
 describe('getApartmentById', () => {
   it('returns apartment when id exists', () => {
-    const apartment = apartments[0]
+    const apartment = getApartments()[0]
     const result = getApartmentById(apartment.id)
     expect(result).toEqual(apartment)
   })
@@ -138,4 +153,3 @@ describe('getFeaturedApartments', () => {
     })
   })
 })
-

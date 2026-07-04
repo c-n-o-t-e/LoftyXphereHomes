@@ -8,20 +8,24 @@ function parseOptionalPositiveInt(value: string | undefined): number | undefined
 }
 
 /**
- * Temporary override for live payment testing (e.g. ONE_BED_TEST_PRICE_NGN=1000).
- * Set server-side for checkout; set NEXT_PUBLIC_ONE_BED_TEST_PRICE_NGN too so listing
- * cards match without a server-only mismatch.
+ * Default 1-bedroom rack rate when no test override env var is set.
+ * Use getOneBedRackRateNgn() anywhere pricing must reflect current env.
  */
-function resolveOneBedRackRateNgn(): number {
+export const ONE_BED_RACK_RATE_DEFAULT_NGN = 100_000;
+
+/**
+ * Resolves the 1-bedroom rack rate from env on each call (server runtime override).
+ * ONE_BED_TEST_PRICE_NGN applies without rebuild; NEXT_PUBLIC_ONE_BED_TEST_PRICE_NGN
+ * is read at call time on the server but is fixed in client bundles until rebuild.
+ */
+export function getOneBedRackRateNgn(): number {
   return (
     parseOptionalPositiveInt(process.env.ONE_BED_TEST_PRICE_NGN) ??
     parseOptionalPositiveInt(process.env.NEXT_PUBLIC_ONE_BED_TEST_PRICE_NGN) ??
-    100_000
+    ONE_BED_RACK_RATE_DEFAULT_NGN
   );
 }
 
-/** Rack rates (full single-night price before length-of-stay reductions). */
-export const ONE_BED_RACK_RATE_NGN = resolveOneBedRackRateNgn();
 export const TWO_BED_RACK_RATE_NGN = 200_000;
 
 /**

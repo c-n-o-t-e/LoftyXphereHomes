@@ -47,12 +47,26 @@ function isPaymentProviderId(value: string): value is PaymentProviderId {
   return value === "paystack" || value === "flutterwave";
 }
 
+function isPaystackCheckoutEnabled(): boolean {
+  return process.env.NEXT_PUBLIC_ENABLE_PAYSTACK === "true";
+}
+
+/** Frontend checkout list — Paystack hidden until NEXT_PUBLIC_ENABLE_PAYSTACK=true. */
+function filterCheckoutProviders(providers: PaymentProviderId[]): PaymentProviderId[] {
+  if (isPaystackCheckoutEnabled()) return providers;
+  return providers.filter((provider) => provider !== "paystack");
+}
+
 function parseAvailableProviders(raw: unknown): PaymentProviderId[] {
-  if (!Array.isArray(raw)) return ["paystack"];
-  const providers = raw.filter(
-    (id): id is PaymentProviderId => typeof id === "string" && isPaymentProviderId(id),
-  );
-  return providers.length > 0 ? providers : ["paystack"];
+  const parsed = Array.isArray(raw)
+    ? raw.filter(
+        (id): id is PaymentProviderId =>
+          typeof id === "string" && isPaymentProviderId(id),
+      )
+    : [];
+  const filtered = filterCheckoutProviders(parsed);
+  if (filtered.length > 0) return filtered;
+  return filterCheckoutProviders(["flutterwave", "paystack"]);
 }
 
 export interface YourReservationCardProps {
@@ -93,8 +107,8 @@ export function YourReservationCard({
   const [phone, setPhone] = useState("");
   const [payError, setPayError] = useState<string | null>(null);
   const [isRedirecting, setIsRedirecting] = useState(false);
-  const [paymentProvider, setPaymentProvider] = useState<PaymentProviderId>("paystack");
-  const [availableProviders, setAvailableProviders] = useState<PaymentProviderId[]>(["paystack"]);
+  const [paymentProvider, setPaymentProvider] = useState<PaymentProviderId>("flutterwave");
+  const [availableProviders, setAvailableProviders] = useState<PaymentProviderId[]>(["flutterwave"]);
 
   // Calendar popup state
   const [openCalendar, setOpenCalendar] = useState<"checkIn" | "checkOut" | null>(null);
@@ -108,12 +122,12 @@ export function YourReservationCard({
         const providers = parseAvailableProviders(data.providers);
         setAvailableProviders(providers);
         setPaymentProvider((current) =>
-          providers.includes(current) ? current : (providers[0] ?? "paystack"),
+          providers.includes(current) ? current : (providers[0] ?? "flutterwave"),
         );
       })
       .catch(() => {
         if (!cancelled) {
-          setAvailableProviders(["paystack"]);
+          setAvailableProviders(filterCheckoutProviders(["flutterwave"]));
         }
       });
     return () => {

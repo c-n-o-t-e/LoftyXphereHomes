@@ -1,6 +1,10 @@
 // Layout is a server component that exports metadata
 // We test the metadata export separately
-import RootLayout, { metadata } from '@/app/layout'
+import RootLayout from '@/app/layout'
+import { buildRootMetadata } from '@/lib/seo/metadata'
+import { SITE_NAME, SITE_TITLE } from '@/lib/constants'
+
+const metadata = buildRootMetadata()
 
 // Mock next/font
 jest.mock('next/font/google', () => ({
@@ -23,6 +27,10 @@ jest.mock('@/components/Navbar', () => {
   }
 })
 
+jest.mock('@/components/seo/StructuredData', () => ({
+  StructuredData: () => null,
+}))
+
 jest.mock('@/components/Footer', () => {
   return function MockFooter() {
     return <footer>Footer</footer>
@@ -39,7 +47,8 @@ describe('Root Layout', () => {
 
   it('has correct metadata title template', () => {
     expect(metadata.title).toHaveProperty('template')
-    expect(metadata.title?.template).toContain('LoftyXphereHomes')
+    expect(metadata.title?.template).toContain(SITE_NAME)
+    expect(metadata.title?.default).toBe(SITE_TITLE)
   })
 
   it('includes Meta domain verification meta tag', () => {

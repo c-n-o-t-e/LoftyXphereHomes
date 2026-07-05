@@ -5,6 +5,8 @@ import {
   STANDARD_HOUSE_RULES,
   SITE_NAME,
   SITE_DESCRIPTION,
+  SITE_TITLE,
+  SITE_OG_DESCRIPTION,
   SITE_URL,
   DISCOUNT_PER_NIGHT_2_NIGHTS,
   DISCOUNT_PER_NIGHT_3_6,
@@ -55,13 +57,24 @@ describe('constants', () => {
   it('exports SITE_NAME', () => {
     expect(SITE_NAME).toBeDefined()
     expect(typeof SITE_NAME).toBe('string')
-    expect(SITE_NAME).toBe('LoftyXphereHomes')
+    expect(SITE_NAME).toBe('Lofty Xphere Homes')
+  })
+
+  it('exports SITE_TITLE for SEO', () => {
+    expect(SITE_TITLE).toContain('Luxury Serviced Apartments')
+    expect(SITE_TITLE).toContain('Lofty Xphere Homes')
   })
 
   it('exports SITE_DESCRIPTION', () => {
     expect(SITE_DESCRIPTION).toBeDefined()
     expect(typeof SITE_DESCRIPTION).toBe('string')
     expect(SITE_DESCRIPTION.length).toBeGreaterThan(0)
+    expect(SITE_DESCRIPTION).toContain('luxury serviced apartments')
+  })
+
+  it('exports shorter SITE_OG_DESCRIPTION for social cards', () => {
+    expect(SITE_OG_DESCRIPTION.length).toBeLessThan(SITE_DESCRIPTION.length)
+    expect(SITE_OG_DESCRIPTION).toContain('exceptional hospitality')
   })
 
   it('exports SITE_URL', () => {

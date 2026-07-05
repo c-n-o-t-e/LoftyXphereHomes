@@ -42,6 +42,12 @@ export async function generateMetadata({ params }: PageProps): Promise<Metadata>
       description: apartment.shortDescription,
       images: ogImages.length > 0 ? ogImages : undefined,
     },
+    twitter: {
+      card: "summary_large_image",
+      title: apartment.name,
+      description: apartment.shortDescription,
+      images: ogImages.length > 0 ? ogImages : undefined,
+    },
   };
 }
 

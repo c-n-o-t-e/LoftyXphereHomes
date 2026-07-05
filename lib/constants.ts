@@ -63,8 +63,13 @@ export const STANDARD_HOUSE_RULES = [
   "Respect neighbors (noise control after 10PM)",
 ];
 
-export const SITE_NAME = "LoftyXphereHomes";
-export const SITE_DESCRIPTION = "Premium shortlet apartment rentals in Nigeria. Experience luxury, comfort, and exceptional service.";
+export const SITE_NAME = "Lofty Xphere Homes";
+export const SITE_TITLE =
+  "Lofty Xphere Homes | Luxury Serviced Apartments & Shortlet Rentals";
+export const SITE_DESCRIPTION =
+  "Book luxury serviced apartments and premium shortlet rentals in Nigeria. Enjoy stylish interiors, modern amenities, flexible stays, and exceptional hospitality for business and leisure travel.";
+export const SITE_OG_DESCRIPTION =
+  "Book luxury serviced apartments and premium shortlet rentals in Nigeria. Enjoy stylish interiors, modern amenities, flexible stays, and exceptional hospitality.";
 export const SITE_URL = process.env.NEXT_PUBLIC_SITE_URL || "https://loftyxpherehomes.com";
 
 /** Public website shown on guest-facing invoices (never localhost). */

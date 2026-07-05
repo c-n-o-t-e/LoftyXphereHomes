@@ -21,6 +21,13 @@ export const ABOUT_PAGE_IMAGES = {
     whyChooseUsImageIndex: 8,
 } as const;
 
+/** Homepage / site-wide link preview (WhatsApp, Facebook, etc.). Outdoor gallery photo #10. */
+export const SITE_SOCIAL_SHARE_IMAGE = {
+    slug: "outdoor-lounge",
+    /** Admin gallery label "#10" (0-based index 9). */
+    imageIndex: 9,
+} as const;
+
 export type AboutPageImages = {
     story: ApartmentImageSet | null;
     whyChooseUs: ApartmentImageSet | null;
@@ -198,5 +205,23 @@ export async function getPropertyGalleryImages(): Promise<
             amenityId: amenity.id,
             amenitySlug: amenity.slug,
         })),
+    );
+}
+
+/** Photo used when sharing the main website link on social apps. */
+export async function getSiteSocialShareImage(): Promise<ApartmentImageSet | null> {
+    const amenities = await getPublishedPropertyAmenities();
+    const outdoor = amenities.find(
+        (amenity) => amenity.slug === SITE_SOCIAL_SHARE_IMAGE.slug,
+    );
+
+    return (
+        resolveAmenityImageByIndex(
+            amenities,
+            SITE_SOCIAL_SHARE_IMAGE.slug,
+            SITE_SOCIAL_SHARE_IMAGE.imageIndex,
+        ) ??
+        outdoor?.images.at(-1) ??
+        null
     );
 }

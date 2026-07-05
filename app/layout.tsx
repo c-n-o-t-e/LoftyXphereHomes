@@ -1,6 +1,5 @@
-import type { Metadata } from "next";
-import { Inter, Playfair_Display } from "next/font/google";
 import Link from "next/link";
+import { Inter, Playfair_Display } from "next/font/google";
 import { cookies } from "next/headers";
 import "./globals.css";
 import { AuthProvider } from "@/components/AuthProvider";
@@ -22,7 +21,9 @@ import {
   INTERNAL_TRAFFIC_COOKIE,
   isInternalTrafficOptedOut,
 } from "@/lib/analytics/internal";
-import { SITE_NAME, SITE_DESCRIPTION, SITE_URL } from "@/lib/constants";
+import { StructuredData } from "@/components/seo/StructuredData";
+import { getDefaultSocialShareImage } from "@/lib/seo/getDefaultSocialShareImage";
+import { buildRootMetadata } from "@/lib/seo/metadata";
 
 const inter = Inter({
   subsets: ["latin"],
@@ -36,51 +37,10 @@ const playfair = Playfair_Display({
   display: "swap",
 });
 
-export const metadata: Metadata = {
-  title: {
-    default: `${SITE_NAME} - Premium Shortlet Apartments in Nigeria`,
-    template: `%s | ${SITE_NAME}`,
-  },
-  description: SITE_DESCRIPTION,
-  keywords: [
-    "shortlet",
-    "apartment rental",
-    "Nigeria",
-    "Wuye",
-    "Abuja",
-    "premium accommodation",
-    "short stay",
-  ],
-  authors: [{ name: SITE_NAME }],
-  creator: SITE_NAME,
-  openGraph: {
-    type: "website",
-    locale: "en_NG",
-    url: SITE_URL,
-    siteName: SITE_NAME,
-    title: `${SITE_NAME} - Premium Shortlet Apartments`,
-    description: SITE_DESCRIPTION,
-  },
-  twitter: {
-    card: "summary_large_image",
-    title: `${SITE_NAME} - Premium Shortlet Apartments`,
-    description: SITE_DESCRIPTION,
-  },
-  robots: {
-    index: true,
-    follow: true,
-    googleBot: {
-      index: true,
-      follow: true,
-      "max-video-preview": -1,
-      "max-image-preview": "large",
-      "max-snippet": -1,
-    },
-  },
-  other: {
-    "facebook-domain-verification": "yy2ha6g9oowjl43f3cmtgdnz6lsin7",
-  },
-};
+export async function generateMetadata() {
+  const socialShareImage = await getDefaultSocialShareImage();
+  return buildRootMetadata({ socialShareImage });
+}
 
 export default async function RootLayout({
   children,
@@ -102,6 +62,7 @@ export default async function RootLayout({
       <body
         className={`${inter.variable} ${playfair.variable} font-sans antialiased overflow-x-hidden`}
       >
+        <StructuredData />
         <Link
           href="#main-content"
           className="sr-only focus:not-sr-only focus:absolute focus:top-4 focus:left-4 focus:z-[100] focus:rounded-md focus:bg-white focus:px-4 focus:py-2 focus:text-sm focus:font-medium focus:text-black focus:shadow-lg"

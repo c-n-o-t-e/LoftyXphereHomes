@@ -4,6 +4,7 @@ import { Mail, Phone, MapPin } from "lucide-react";
 import { SiFacebook, SiInstagram, SiX } from "react-icons/si";
 import { TrackedPhoneLink } from "@/components/analytics/TrackedPhoneLink";
 import { CookieSettingsLink } from "@/components/analytics/CookieSettingsLink";
+import { SITE_DESCRIPTION } from "@/lib/constants";
 
 export default function Footer() {
   const currentYear = new Date().getFullYear();
@@ -27,7 +28,7 @@ export default function Footer() {
               <span className="text-white font-semibold text-base sm:text-lg md:text-xl lg:text-2xl break-words">LoftyXphereHomes</span>
             </Link>
             <p className="text-sm sm:text-base leading-relaxed text-white/80 mb-4">
-              Premium shortlet apartment rentals in Nigeria. Experience luxury, comfort, and exceptional service.
+              {SITE_DESCRIPTION}
             </p>
             <div className="flex space-x-4">
               <a

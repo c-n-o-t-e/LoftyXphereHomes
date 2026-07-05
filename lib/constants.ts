@@ -21,21 +21,24 @@ export const DISCOUNT_PER_NIGHT_1_MONTH_PLUS = 20_000;
 
 /** Per-night discount (NGN) for a stay of `nights` length. */
 export function getStayDiscountPerNight(nights: number): number {
-  if (nights <= 1) return 0;
-  if (nights === 2) return DISCOUNT_PER_NIGHT_2_NIGHTS;
-  if (nights <= 6) return DISCOUNT_PER_NIGHT_3_6;
-  if (nights <= 21) return DISCOUNT_PER_NIGHT_1_WEEK_TO_3_WEEKS;
-  return DISCOUNT_PER_NIGHT_1_MONTH_PLUS;
+    if (nights <= 1) return 0;
+    if (nights === 2) return DISCOUNT_PER_NIGHT_2_NIGHTS;
+    if (nights <= 6) return DISCOUNT_PER_NIGHT_3_6;
+    if (nights <= 21) return DISCOUNT_PER_NIGHT_1_WEEK_TO_3_WEEKS;
+    return DISCOUNT_PER_NIGHT_1_MONTH_PLUS;
 }
 
 /** Effective nightly rate after length-of-stay discount. */
-export function getEffectiveNightlyRate(rackRateNgn: number, nights: number): number {
-  return Math.max(0, rackRateNgn - getStayDiscountPerNight(nights));
+export function getEffectiveNightlyRate(
+    rackRateNgn: number,
+    nights: number,
+): number {
+    return Math.max(0, rackRateNgn - getStayDiscountPerNight(nights));
 }
 
 /** Total stay discount in NGN (discount per night × nights). */
 export function getStayDiscountAmount(nights: number): number {
-  return getStayDiscountPerNight(nights) * nights;
+    return getStayDiscountPerNight(nights) * nights;
 }
 
 /** Fixed online payment processing fee in NGN (Paystack and Flutterwave). */
@@ -45,32 +48,33 @@ export const PAYMENT_PROCESSING_FEE = 1250;
 export const PAYSTACK_FEE = PAYMENT_PROCESSING_FEE;
 
 export const STANDARD_AMENITIES = [
-  "24/7 Power",
-  "High-speed Wi-Fi",
-  "Air Conditioning",
-  "Fully equipped kitchen",
-  "Secure parking",
-  "Workspace desk",
-  "Netflix/YouTube enabled TV",
-  "Security personnel",
-  "Fresh towels & toiletries",
+    "24/7 Power",
+    "High-speed Wi-Fi",
+    "Air Conditioning",
+    "Fully equipped kitchen",
+    "Secure parking",
+    "Workspace desk",
+    "Netflix/YouTube enabled TV",
+    "Security personnel",
+    "Fresh towels & toiletries",
 ];
 
 export const STANDARD_HOUSE_RULES = [
-  "No smoking indoors",
-  "No parties without approval",
-  "Valid ID required",
-  "Respect neighbors (noise control after 10PM)",
+    "No smoking indoors",
+    "No parties without approval",
+    "Valid ID required",
+    "Respect neighbors (noise control after 10PM)",
 ];
 
 export const SITE_NAME = "Lofty Xphere Homes";
 export const SITE_TITLE =
-  "Lofty Xphere Homes | Luxury Serviced Apartments & Shortlet Rentals";
+    "Lofty Xphere Homes | Luxury Serviced Apartments & Shortlet Rentals";
 export const SITE_DESCRIPTION =
-  "Book luxury serviced apartments and premium shortlet rentals in Nigeria. Enjoy stylish interiors, modern amenities, flexible stays, and exceptional hospitality for business and leisure travel.";
+    "Book luxury serviced apartments and premium shortlet rentals in Abuja,Nigeria. Enjoy stylish interiors, modern amenities, flexible stays, and exceptional hospitality for business and leisure travel.";
 export const SITE_OG_DESCRIPTION =
-  "Book luxury serviced apartments and premium shortlet rentals in Nigeria. Enjoy stylish interiors, modern amenities, flexible stays, and exceptional hospitality.";
-export const SITE_URL = process.env.NEXT_PUBLIC_SITE_URL || "https://loftyxpherehomes.com";
+    "Book luxury serviced apartments and premium shortlet rentals in Abuja, Nigeria. Enjoy stylish interiors, modern amenities, flexible stays, and exceptional hospitality.";
+export const SITE_URL =
+    process.env.NEXT_PUBLIC_SITE_URL || "https://loftyxpherehomes.com";
 
 /** Public website shown on guest-facing invoices (never localhost). */
 export const INVOICE_WEBSITE_DISPLAY = "loftyxpherehomes.com";
@@ -78,23 +82,27 @@ export const INVOICE_CURRENCY_CODE = "NGN";
 
 /** Pre-filled message when visitors tap the site-wide WhatsApp button. */
 export const WHATSAPP_DEFAULT_MESSAGE =
-  "Hello, I'm interested in booking your apartment.";
+    "Hello, I'm interested in booking your apartment.";
 
 /**
  * Strips to digits and, for common Nigerian local mobile format (0 + 10 digits),
  * converts to international (234 + national number) so wa.me works reliably.
  */
 export function normalizeWhatsAppPhoneDigits(phone: string): string | null {
-  const digits = phone.replace(/\D/g, "");
-  if (!digits) return null;
-  if (digits.startsWith("234")) {
+    const digits = phone.replace(/\D/g, "");
+    if (!digits) return null;
+    if (digits.startsWith("234")) {
+        return digits;
+    }
+    // Nigerian local mobile: 070/080/081/090/091… (11 digits including leading 0)
+    if (
+        digits.length === 11 &&
+        digits.startsWith("0") &&
+        /^0[1-9]/.test(digits)
+    ) {
+        return `234${digits.slice(1)}`;
+    }
     return digits;
-  }
-  // Nigerian local mobile: 070/080/081/090/091… (11 digits including leading 0)
-  if (digits.length === 11 && digits.startsWith("0") && /^0[1-9]/.test(digits)) {
-    return `234${digits.slice(1)}`;
-  }
-  return digits;
 }
 
 /**
@@ -103,11 +111,11 @@ export function normalizeWhatsAppPhoneDigits(phone: string): string | null {
  * @returns null if there are no digits (invalid / missing number).
  */
 export function getWhatsAppChatUrl(
-  phone: string,
-  message: string = WHATSAPP_DEFAULT_MESSAGE
+    phone: string,
+    message: string = WHATSAPP_DEFAULT_MESSAGE,
 ): string | null {
-  const digits = normalizeWhatsAppPhoneDigits(phone);
-  if (!digits) return null;
-  const text = encodeURIComponent(message);
-  return `https://wa.me/${digits}?text=${text}`;
+    const digits = normalizeWhatsAppPhoneDigits(phone);
+    if (!digits) return null;
+    const text = encodeURIComponent(message);
+    return `https://wa.me/${digits}?text=${text}`;
 }

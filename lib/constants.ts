@@ -70,7 +70,7 @@ export const SITE_NAME = "Lofty Xphere Homes";
 export const SITE_TITLE =
     "Lofty Xphere Homes | Luxury Serviced Apartments & Shortlet Rentals";
 export const SITE_DESCRIPTION =
-    "Book luxury serviced apartments and premium shortlet rentals in Abuja,Nigeria. Enjoy stylish interiors, modern amenities, flexible stays, and exceptional hospitality for business and leisure travel.";
+    "Book luxury serviced apartments and premium shortlet rentals in Abuja, Nigeria. Enjoy stylish interiors, modern amenities, flexible stays, and exceptional hospitality for business and leisure travel.";
 export const SITE_OG_DESCRIPTION =
     "Book luxury serviced apartments and premium shortlet rentals in Abuja, Nigeria. Enjoy stylish interiors, modern amenities, flexible stays, and exceptional hospitality.";
 export const SITE_URL =

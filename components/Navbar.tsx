@@ -8,6 +8,7 @@ import { Menu, X, User, LogOut } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { motion, AnimatePresence } from "framer-motion";
 import { useAuth } from "@/components/AuthProvider";
+import { LOGO_ALT } from "@/lib/content/seoCopy";
 import HeroSearchBar from "./HeroSearchBar";
 
 export default function Navbar() {
@@ -253,7 +254,7 @@ export default function Navbar() {
           <Link href="/" className="flex items-center group -my-2 sm:-my-3 md:-my-4 lg:-my-5">
             <Image
               src="/lofty-logo-black.png"
-              alt="LoftyXphereHomes Logo"
+              alt={LOGO_ALT}
               width={600}
               height={200}
               className="h-20 sm:h-24 md:h-32 lg:h-36 xl:h-40 w-auto object-contain transition-transform duration-300 group-hover:scale-105"

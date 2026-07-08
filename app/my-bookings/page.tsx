@@ -274,7 +274,7 @@ export default function MyBookingsPage() {
               No bookings yet
             </h2>
             <p className="text-gray-600 mb-6">
-              Start planning your next stay at LoftyXphereHomes
+              Start planning your next stay at Lofty Xphere Homes
             </p>
             <Button asChild>
               <Link href="/apartments">Browse Apartments</Link>

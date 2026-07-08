@@ -5,11 +5,12 @@ import { getApartmentVideoSummariesMap } from "@/lib/data/getApartmentVideos";
 import { getPublishedPropertyAmenitiesWithImages } from "@/lib/data/propertyAmenities";
 import { parseLandingDatesFromParams } from "@/lib/utils/landingDates";
 import { BookLandingClient } from "./BookLandingClient";
+import { SITE_NAME } from "@/lib/constants";
+import { LOCATION_SEO } from "@/lib/content/seoCopy";
 
 export const metadata: Metadata = {
   title: "Book Your Stay",
-  description:
-    "Book a premium shortlet suite at LoftyXphereHomes in Wuye, Abuja. See real-time availability and secure your stay online.",
+  description: `Book a luxury serviced apartment at ${SITE_NAME} in ${LOCATION_SEO}. Check real-time availability and secure your stay online.`,
   robots: {
     index: false,
     follow: false,

@@ -4,7 +4,8 @@ import { Mail, Phone, MapPin } from "lucide-react";
 import { SiFacebook, SiInstagram, SiX } from "react-icons/si";
 import { TrackedPhoneLink } from "@/components/analytics/TrackedPhoneLink";
 import { CookieSettingsLink } from "@/components/analytics/CookieSettingsLink";
-import { SITE_DESCRIPTION } from "@/lib/constants";
+import { SITE_DESCRIPTION, SITE_NAME } from "@/lib/constants";
+import { LOGO_ALT, LOCATION_SEO, SITE_SOCIAL_LINKS } from "@/lib/content/seoCopy";
 
 export default function Footer() {
   const currentYear = new Date().getFullYear();
@@ -18,43 +19,43 @@ export default function Footer() {
             <Link href="/" className="flex items-center gap-2 sm:gap-3 group mb-4">
               <Image
                 src="/lofty-logo-white.png"
-                alt="LoftyXphereHomes Logo"
+                alt={LOGO_ALT}
                 width={400}
                 height={133}
                 className="h-8 sm:h-10 md:h-12 lg:h-14 w-auto object-contain transition-transform duration-300 group-hover:scale-105"
                 quality={100}
                 sizes="(max-width: 640px) 32px, (max-width: 768px) 40px, (max-width: 1024px) 48px, (max-width: 1280px) 56px, 56px"
               />
-              <span className="text-white font-semibold text-base sm:text-lg md:text-xl lg:text-2xl break-words">LoftyXphereHomes</span>
+              <span className="text-white font-semibold text-base sm:text-lg md:text-xl lg:text-2xl break-words">{SITE_NAME}</span>
             </Link>
             <p className="text-sm sm:text-base leading-relaxed text-white/80 mb-4">
               {SITE_DESCRIPTION}
             </p>
             <div className="flex space-x-4">
               <a
-                href="https://facebook.com"
+                href={SITE_SOCIAL_LINKS.facebook}
                 target="_blank"
                 rel="noopener noreferrer"
                 className="hover:text-[#FA5C5C] transition-colors"
-                aria-label="Facebook"
+                aria-label="Lofty Xphere Homes on Facebook"
               >
                 <SiFacebook className="h-5 w-5" />
               </a>
               <a
-                href="https://instagram.com"
+                href={SITE_SOCIAL_LINKS.instagram}
                 target="_blank"
                 rel="noopener noreferrer"
                 className="hover:text-[#FA5C5C] transition-colors"
-                aria-label="Instagram"
+                aria-label="Lofty Xphere Homes on Instagram"
               >
                 <SiInstagram className="h-5 w-5" />
               </a>
               <a
-                href="https://twitter.com"
+                href={SITE_SOCIAL_LINKS.x}
                 target="_blank"
                 rel="noopener noreferrer"
                 className="hover:text-[#FA5C5C] transition-colors"
-                aria-label="Twitter"
+                aria-label="Lofty Xphere Homes on X"
               >
                 <SiX className="h-5 w-5" />
               </a>
@@ -131,14 +132,14 @@ export default function Footer() {
               </li>
               <li className="flex items-start space-x-3">
                 <MapPin className="h-5 w-5 mt-0.5 shrink-0 text-white/80" />
-                <span className="text-sm sm:text-base text-white/80 break-words">430 Magnus Abe Street, Wuye, Abuja</span>
+                <span className="text-sm sm:text-base text-white/80 break-words">430 Magnus Abe Street, {LOCATION_SEO}</span>
               </li>
             </ul>
           </div>
         </div>
 
         <div className="border-t border-white/20 mt-12 pt-8 text-center text-sm text-white/80">
-          <p>&copy; {currentYear} LoftyXphereHomes. All rights reserved.</p>
+          <p>&copy; {currentYear} {SITE_NAME}. All rights reserved.</p>
         </div>
       </div>
     </footer>

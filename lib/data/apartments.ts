@@ -78,7 +78,7 @@ export const apartments: Apartment[] = [
         id: "meridian-suite",
         name: "Meridian Suite",
         shortDescription:
-            "Premium 2-bedroom suite with modern finishes and a calm, residential feel in Wuye.",
+            "Luxury 2-bedroom serviced apartment in Wuye, Abuja — modern finishes, generous living space, and hotel-style comfort for business and leisure stays.",
         location: LOCATION,
         pricePerNight: TWO_BED_PRICE,
         images: [],
@@ -96,7 +96,7 @@ export const apartments: Apartment[] = [
         id: "lumen-suite",
         name: "Lumen Suite",
         shortDescription:
-            "Bright 2-bedroom apartment with airy living spaces and everything you need for a comfortable stay.",
+            "Bright 2-bedroom luxury serviced apartment in Wuye, Abuja — airy interiors, fully equipped kitchen, and everything you need for an extended stay.",
         location: LOCATION,
         pricePerNight: TWO_BED_PRICE,
         images: [],
@@ -114,7 +114,7 @@ export const apartments: Apartment[] = [
         id: "horizon-suite",
         name: "Horizon Suite",
         shortDescription:
-            "Elegant 1-bedroom suite in Wuye — perfect for couples, solo travelers, and business stays.",
+            "Elegant 1-bedroom luxury serviced apartment in Wuye, Abuja — ideal for couples, solo travellers, and executive business stays.",
         location: LOCATION,
         pricePerNight: ONE_BED_PRICE,
         images: [],
@@ -132,7 +132,7 @@ export const apartments: Apartment[] = [
         id: "skyline-suite",
         name: "Skyline Suite",
         shortDescription:
-            "Spacious 2-bedroom apartment with skyline views, ideal for families and small groups.",
+            "Spacious 2-bedroom luxury serviced apartment in Wuye, Abuja — skyline views and room for families or small groups.",
         location: LOCATION,
         pricePerNight: TWO_BED_PRICE,
         images: [],
@@ -150,7 +150,7 @@ export const apartments: Apartment[] = [
         id: "apex-suite",
         name: "Apex Suite",
         shortDescription:
-            "An elevated 2-bedroom suite — finishing touches underway. Join the waitlist for launch updates.",
+            "An elevated 2-bedroom luxury serviced apartment in Wuye, Abuja — finishing touches underway. Join the waitlist for launch updates.",
         location: LOCATION,
         pricePerNight: TWO_BED_PRICE,
         images: [],
@@ -167,7 +167,7 @@ export const apartments: Apartment[] = [
         id: "cascade-suite",
         name: "Cascade Suite",
         shortDescription:
-            "A flowing 2-bedroom layout designed for comfort — currently being prepared for guests.",
+            "A flowing 2-bedroom luxury serviced apartment in Wuye, Abuja — currently being prepared for guests.",
         location: LOCATION,
         pricePerNight: TWO_BED_PRICE,
         images: [],
@@ -184,7 +184,7 @@ export const apartments: Apartment[] = [
         id: "solstice-suite",
         name: "Solstice Suite",
         shortDescription:
-            "Intimate 1-bedroom suite coming soon — perfect for short business trips and weekend escapes.",
+            "Intimate 1-bedroom luxury serviced apartment in Wuye, Abuja — coming soon for short business trips and weekend escapes.",
         location: LOCATION,
         pricePerNight: ONE_BED_PRICE,
         images: [],
@@ -201,7 +201,7 @@ export const apartments: Apartment[] = [
         id: "atrium-suite",
         name: "Atrium Suite",
         shortDescription:
-            "Light-filled 2-bedroom apartment with an open feel — launching soon at Lofty Xphere Homes.",
+            "Light-filled 2-bedroom luxury serviced apartment in Wuye, Abuja — launching soon at Lofty Xphere Homes.",
         location: LOCATION,
         pricePerNight: TWO_BED_PRICE,
         images: [],
@@ -218,7 +218,7 @@ export const apartments: Apartment[] = [
         id: "ember-suite",
         name: "Ember Suite",
         shortDescription:
-            "Warm, welcoming 2-bedroom suite — currently under fit-out. Register interest to be notified first.",
+            "Warm, welcoming 2-bedroom luxury serviced apartment in Wuye, Abuja — under fit-out. Register interest to be notified first.",
         location: LOCATION,
         pricePerNight: TWO_BED_PRICE,
         images: [],

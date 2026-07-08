@@ -52,7 +52,7 @@ describe('Apartments Page', () => {
         initialVideoSummaries={initialVideoSummaries}
       />,
     )
-    expect(screen.getByText(/Premium shortlet suites in Wuye, Abuja/i)).toBeInTheDocument()
+    expect(screen.getByText(/Luxury serviced apartments and premium shortlet suites/i)).toBeInTheDocument()
   })
 
   it('renders apartment cards', () => {

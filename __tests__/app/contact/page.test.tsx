@@ -34,7 +34,7 @@ describe('Contact Page', () => {
   it('renders Google Map', () => {
     render(<ContactPage />)
     expect(screen.getByText('Find Us')).toBeInTheDocument()
-    expect(screen.getByTitle(/LoftyXphereHomes Location/i)).toBeInTheDocument()
+    expect(screen.getByTitle(/Lofty Xphere Homes/i)).toBeInTheDocument()
   })
 })
 

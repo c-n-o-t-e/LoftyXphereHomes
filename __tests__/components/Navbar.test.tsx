@@ -35,7 +35,7 @@ describe('Navbar', () => {
 
   it('renders the navbar with brand name', () => {
     renderNavbar()
-    expect(screen.getByAltText('LoftyXphereHomes Logo')).toBeInTheDocument()
+    expect(screen.getByAltText(/Lofty Xphere Homes logo/i)).toBeInTheDocument()
   })
 
   it('renders all navigation links', () => {

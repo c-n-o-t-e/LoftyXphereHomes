@@ -4,11 +4,12 @@ import {
     resolveExperiencePageHeroImage,
 } from "@/lib/data/propertyAmenities";
 import { ExperiencePageContent } from "@/components/ExperiencePageContent";
+import { SITE_NAME } from "@/lib/constants";
+import { LOCATION_SEO } from "@/lib/content/seoCopy";
 
 export const metadata = {
     title: "Experience",
-    description:
-        "Explore shared amenities at Lofty Xphere Homes — pool, gym, bar, and outdoor lounges in Wuye, Abuja.",
+    description: `Explore shared amenities at ${SITE_NAME} — pool, gym, bar, and outdoor lounges included with every luxury serviced apartment in ${LOCATION_SEO}.`,
 };
 
 export default async function ExperiencePage() {

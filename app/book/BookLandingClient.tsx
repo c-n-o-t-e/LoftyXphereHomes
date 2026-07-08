@@ -199,7 +199,7 @@ function BookLandingContent({
           {/* Hero */}
           <section className="text-center mb-8 sm:mb-10 pt-6 sm:pt-8">
             <h1 className="text-3xl sm:text-4xl md:text-5xl font-bold text-black mb-4 px-2">
-              Book a premium shortlet in Wuye, Abuja
+              Book a luxury serviced apartment in Wuye, Abuja
             </h1>
             <p className="text-base sm:text-lg text-black/70 max-w-2xl mx-auto mb-2 px-4">
               Instant online booking · Secure payment (Flutterwave) · Pool, gym & breakfast included

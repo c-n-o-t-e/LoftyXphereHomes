@@ -19,9 +19,11 @@ import {
 } from "@/lib/ops/bookingJobs";
 import { BookingSuccessTracker } from "@/components/analytics/BookingSuccessTracker";
 
+import { SITE_NAME } from "@/lib/constants";
+
 export const metadata: Metadata = {
   title: "Booking Successful",
-  description: "Your payment was successful. Thank you for booking with LoftyXphereHomes.",
+  description: `Your payment was successful. Thank you for booking a luxury serviced apartment with ${SITE_NAME}.`,
 };
 
 function normalizeProviderSlug(value: string | undefined): string | undefined {

@@ -4,11 +4,12 @@ import Link from "next/link";
 import Image from "next/image";
 import { Phone } from "lucide-react";
 import { FaWhatsapp } from "react-icons/fa";
-import { getWhatsAppChatUrl } from "@/lib/constants";
+import { getWhatsAppChatUrl, SITE_NAME } from "@/lib/constants";
+import { LOGO_ALT } from "@/lib/content/seoCopy";
 import { trackWhatsAppClick, trackPhoneCallClick } from "@/lib/analytics/conversions";
 
 const LANDING_WHATSAPP_MESSAGE =
-  "Hello, I saw your ad and would like help booking a suite.";
+  "Hello, I'd like to book a luxury serviced apartment in Wuye, Abuja.";
 
 export function LandingHeader() {
   const raw =
@@ -25,11 +26,11 @@ export function LandingHeader() {
           <Link
             href="/"
             className="flex items-center shrink-0 group -my-2 sm:-my-3 md:-my-4 lg:-my-5"
-            aria-label="LoftyXphereHomes — visit main site"
+            aria-label={`${SITE_NAME} — visit main site`}
           >
             <Image
               src="/lofty-logo-black.png"
-              alt="LoftyXphereHomes Logo"
+              alt={LOGO_ALT}
               width={600}
               height={200}
               className="h-20 sm:h-24 md:h-32 lg:h-36 xl:h-40 w-auto object-contain transition-transform duration-300 group-hover:scale-105"

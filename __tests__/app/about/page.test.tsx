@@ -6,7 +6,7 @@ const emptyImages = { story: null, whyChooseUs: null }
 describe('About Page', () => {
   it('renders the page heading', () => {
     render(<AboutPageContent images={emptyImages} />)
-    expect(screen.getByText('About LoftyXphereHomes')).toBeInTheDocument()
+    expect(screen.getByText(/About Lofty Xphere Homes/i)).toBeInTheDocument()
   })
 
   it('renders the story section', () => {
@@ -29,7 +29,7 @@ describe('About Page', () => {
 
   it('renders why choose us section', () => {
     render(<AboutPageContent images={emptyImages} />)
-    expect(screen.getByText('Why Choose LoftyXphereHomes?')).toBeInTheDocument()
+    expect(screen.getByText(/Why Choose Lofty Xphere Homes/i)).toBeInTheDocument()
   })
 })
 

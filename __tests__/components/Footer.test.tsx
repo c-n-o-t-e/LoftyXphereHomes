@@ -10,12 +10,12 @@ jest.mock('next/link', () => {
 describe('Footer', () => {
   it('renders the footer with brand name', () => {
     render(<Footer />)
-    expect(screen.getByText('LoftyXphereHomes')).toBeInTheDocument()
+    expect(screen.getByText('Lofty Xphere Homes')).toBeInTheDocument()
   })
 
   it('renders footer description', () => {
     render(<Footer />)
-    expect(screen.getByText(/Premium shortlet apartment rentals/i)).toBeInTheDocument()
+    expect(screen.getByText(/luxury serviced apartments/i)).toBeInTheDocument()
   })
 
   it('renders all quick links', () => {
@@ -42,9 +42,9 @@ describe('Footer', () => {
 
   it('renders social media links', () => {
     render(<Footer />)
-    const facebookLink = screen.getByLabelText('Facebook')
-    const instagramLink = screen.getByLabelText('Instagram')
-    const twitterLink = screen.getByLabelText('Twitter')
+    const facebookLink = screen.getByLabelText(/Lofty Xphere Homes on Facebook/i)
+    const instagramLink = screen.getByLabelText(/Lofty Xphere Homes on Instagram/i)
+    const twitterLink = screen.getByLabelText(/Lofty Xphere Homes on X/i)
     
     expect(facebookLink).toBeInTheDocument()
     expect(instagramLink).toBeInTheDocument()

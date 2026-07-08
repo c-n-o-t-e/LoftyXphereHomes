@@ -5,18 +5,21 @@ import {
   SITE_TITLE,
   SITE_URL,
 } from "@/lib/constants";
+import { SITE_SOCIAL_LINKS } from "@/lib/content/seoCopy";
 
 export { SITE_NAME as SITE_BRAND_NAME, SITE_TITLE, SITE_DESCRIPTION, SITE_OG_DESCRIPTION, SITE_URL };
 
 export const SITE_KEYWORDS = [
-  "serviced apartments",
+  "serviced apartments Abuja",
   "luxury serviced apartments",
-  "shortlet apartments",
-  "premium apartments",
-  "executive apartments",
-  "business accommodation",
-  "vacation rentals",
-  "luxury stays",
+  "shortlet apartments Abuja",
+  "premium apartments Wuye",
+  "executive apartments Abuja",
+  "business accommodation Abuja",
+  "furnished apartments Abuja",
+  "vacation rentals Nigeria",
+  "luxury stays Abuja",
+  "short stay apartments Nigeria",
   "Nigeria",
   "Abuja",
   "Wuye",
@@ -42,7 +45,9 @@ export const SITE_CONTACT = {
 
 /** Verified public social profiles (omit placeholder links). */
 export const SITE_SOCIAL_PROFILES = [
-  "https://www.instagram.com/loftyxpherehomes",
+  SITE_SOCIAL_LINKS.instagram,
+  SITE_SOCIAL_LINKS.facebook,
+  SITE_SOCIAL_LINKS.x,
 ] as const;
 
 export function absoluteUrl(path: string): string {

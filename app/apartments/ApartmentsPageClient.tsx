@@ -12,6 +12,8 @@ import type { ApartmentImageSet } from "@/lib/images/types";
 import type { ApartmentVideoSummary } from "@/lib/videos/types";
 import { Info, Loader2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
+import { SITE_NAME } from "@/lib/constants";
+import { LOCATION_SEO } from "@/lib/content/seoCopy";
 
 type ApartmentsPageClientProps = {
     initialImageSets: Record<string, ApartmentImageSet[]>;
@@ -106,7 +108,7 @@ function ApartmentsContent({
               ? filters.checkIn && filters.checkOut
                 ? `Found ${filteredApartments.length} available suite${filteredApartments.length !== 1 ? "s" : ""} for your dates`
                 : `Found ${filteredApartments.length} suite${filteredApartments.length !== 1 ? "s" : ""} matching your search`
-              : "Premium shortlet suites in Wuye, Abuja — book your stay at Lofty Xphere Homes."}
+              : `Luxury serviced apartments and premium shortlet suites in ${LOCATION_SEO} — book your stay at ${SITE_NAME}.`}
           </p>
         </div>
 

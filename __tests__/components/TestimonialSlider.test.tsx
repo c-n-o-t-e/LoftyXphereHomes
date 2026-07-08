@@ -18,7 +18,7 @@ describe('TestimonialSlider', () => {
 
   it('renders the section description', () => {
     render(<TestimonialSlider />)
-    expect(screen.getByText(/Don't just take our word for it/i)).toBeInTheDocument()
+    expect(screen.getByText(/luxury serviced apartments in Wuye, Abuja, Nigeria/i)).toBeInTheDocument()
   })
 
   it('renders testimonial cards', () => {

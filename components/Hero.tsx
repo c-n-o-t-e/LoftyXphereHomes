@@ -3,6 +3,8 @@
 import { motion } from "framer-motion";
 import HeroSearchBar from "./HeroSearchBar";
 import type { HeroVideoConfig } from "@/lib/videos/types";
+import { SITE_NAME } from "@/lib/constants";
+import { LOCATION_SEO } from "@/lib/content/seoCopy";
 
 type HeroProps = {
   heroVideo?: HeroVideoConfig | null;
@@ -101,7 +103,7 @@ export default function Hero({ heroVideo = null }: HeroProps) {
             className="w-full"
           >
             <p className="text-[10px] sm:text-xs md:text-sm uppercase tracking-[0.2em] sm:tracking-[0.3em] text-white/60 mb-2 sm:mb-4 font-light">
-              LoftyXphereHomes
+              {SITE_NAME}
             </p>
             <h1 className="text-3xl sm:text-4xl md:text-5xl lg:text-6xl xl:text-7xl font-bold text-white mb-2 sm:mb-4 leading-[1.1] drop-shadow-2xl">
               Live Lofty.
@@ -111,7 +113,7 @@ export default function Hero({ heroVideo = null }: HeroProps) {
               </span>
             </h1>
             <p className="text-sm sm:text-base md:text-lg text-white/70 font-light mb-6 sm:mb-8 max-w-md mx-auto px-4">
-              Where luxury meets comfort in the heart of Abuja
+              Luxury serviced apartments in {LOCATION_SEO}
             </p>
 
             <motion.div

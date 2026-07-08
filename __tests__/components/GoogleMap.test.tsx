@@ -4,7 +4,7 @@ import GoogleMap from '@/components/GoogleMap'
 describe('GoogleMap', () => {
   it('renders the map iframe', () => {
     render(<GoogleMap />)
-    const iframe = screen.getByTitle(/LoftyXphereHomes Location/i)
+    const iframe = screen.getByTitle(/Lofty Xphere Homes/i)
     expect(iframe).toBeInTheDocument()
     // Check that iframe has src attribute with the address
     const src = iframe.getAttribute('src')

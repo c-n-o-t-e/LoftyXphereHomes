@@ -82,7 +82,7 @@ export const INVOICE_CURRENCY_CODE = "NGN";
 
 /** Pre-filled message when visitors tap the site-wide WhatsApp button. */
 export const WHATSAPP_DEFAULT_MESSAGE =
-    "Hello, I'm interested in booking your apartment.";
+    "Hello, I'd like to book a luxury serviced apartment in Wuye, Abuja.";
 
 /**
  * Strips to digits and, for common Nigerian local mobile format (0 + 10 digits),

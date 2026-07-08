@@ -29,13 +29,13 @@ describe("parseLandingDatesFromParams", () => {
 
   it("uses URL dates when valid", () => {
     const result = parseLandingDatesFromParams(
-      "2026-07-04",
-      "2026-07-06",
+      "2026-07-10",
+      "2026-07-12",
       ref,
     );
     expect(result).toEqual({
-      checkIn: "2026-07-04",
-      checkOut: "2026-07-06",
+      checkIn: "2026-07-10",
+      checkOut: "2026-07-12",
       usedDefaults: false,
     });
   });

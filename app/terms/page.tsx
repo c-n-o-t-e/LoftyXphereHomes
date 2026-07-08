@@ -1,8 +1,10 @@
 import { Metadata } from "next";
+import { SITE_NAME } from "@/lib/constants";
+import { LOCATION_SEO } from "@/lib/content/seoCopy";
 
 export const metadata: Metadata = {
   title: "Terms & Conditions",
-  description: "Terms and conditions for using LoftyXphereHomes services.",
+  description: `Terms and conditions for booking luxury serviced apartments with ${SITE_NAME} in ${LOCATION_SEO}.`,
 };
 
 export default function TermsPage() {
@@ -20,7 +22,7 @@ export default function TermsPage() {
           <section>
             <h2 className="text-2xl font-bold text-black mb-4">1. Acceptance of Terms</h2>
             <p>
-              By accessing and using LoftyXphereHomes services, you accept and agree to be bound
+              By accessing and using Lofty Xphere Homes services, you accept and agree to be bound
               by the terms and provision of this agreement.
             </p>
           </section>
@@ -58,7 +60,7 @@ export default function TermsPage() {
           <section>
             <h2 className="text-2xl font-bold text-black mb-4">5. Liability</h2>
             <p className="text-black/80">
-              LoftyXphereHomes is not liable for any loss, damage, or injury to guests or their
+              Lofty Xphere Homes is not liable for any loss, damage, or injury to guests or their
               property during their stay. Guests are advised to secure appropriate travel insurance.
             </p>
           </section>

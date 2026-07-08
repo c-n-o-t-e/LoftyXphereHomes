@@ -3,6 +3,7 @@
 import { motion } from "framer-motion";
 import { Star, Quote } from "lucide-react";
 import { testimonials } from "@/lib/data/testimonials";
+import { LOCATION_SEO } from "@/lib/content/seoCopy";
 import {
   Carousel,
   CarouselContent,
@@ -26,7 +27,7 @@ export default function TestimonialSlider() {
             What Our Guests Say
           </h2>
           <p className="text-lg md:text-xl text-black/70 max-w-2xl mx-auto leading-relaxed">
-            Don&apos;t just take our word for it - hear from our satisfied guests
+            Real reviews from guests who stayed in our luxury serviced apartments in {LOCATION_SEO}
           </p>
         </motion.div>
 

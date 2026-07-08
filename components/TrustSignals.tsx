@@ -2,6 +2,7 @@
 
 import { Shield, Sparkles, Wifi, Headphones, Star } from "lucide-react";
 import { motion } from "framer-motion";
+import { WHY_CHOOSE_HEADING } from "@/lib/content/seoCopy";
 
 const trustItems = [
   {
@@ -43,10 +44,10 @@ export default function TrustSignals() {
           className="text-center mb-10 sm:mb-12 md:mb-16"
         >
           <h2 className="text-2xl sm:text-3xl md:text-4xl lg:text-5xl font-bold text-black mb-4 sm:mb-6 px-2">
-            Why Choose LoftyXphereHomes?
+            {WHY_CHOOSE_HEADING}
           </h2>
           <p className="text-base sm:text-lg md:text-xl text-black/70 max-w-2xl mx-auto leading-relaxed px-4">
-            We&apos;re committed to providing you with an exceptional shortlet experience
+            Exceptional hospitality across our luxury serviced apartments and premium shortlet suites in Wuye, Abuja
           </p>
         </motion.div>
 

@@ -11,6 +11,8 @@ import { getPublicHeroVideo } from "@/lib/admin/heroVideo";
 import { Button } from "@/components/ui/button";
 import Link from "next/link";
 import { ArrowRight } from "lucide-react";
+import { SITE_NAME } from "@/lib/constants";
+import { LOCATION_SEO } from "@/lib/content/seoCopy";
 
 export default async function Home() {
   const heroVideo = await getPublicHeroVideo();
@@ -60,10 +62,10 @@ export default async function Home() {
       <section className="py-12 sm:py-16 md:py-24 bg-white text-black">
         <div className="container mx-auto px-4 sm:px-6 lg:px-8 text-center">
           <h2 className="text-2xl sm:text-3xl md:text-4xl lg:text-5xl font-bold mb-4 sm:mb-6 text-black px-2">
-            Ready to Experience Premium Shortlet Living?
+            Ready to Experience Luxury Serviced Apartment Living?
           </h2>
           <p className="text-base sm:text-lg md:text-xl text-black/70 mb-8 sm:mb-10 max-w-2xl mx-auto leading-relaxed px-4">
-            Book your stay today and discover why guests choose LoftyXphereHomes
+            Book your stay in {LOCATION_SEO} and discover why guests choose {SITE_NAME}.
           </p>
           <Button
             asChild

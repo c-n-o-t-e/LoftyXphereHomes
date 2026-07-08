@@ -15,7 +15,7 @@ describe('Blog Page', () => {
 
   it('renders the page description', () => {
     render(<BlogPage />)
-    expect(screen.getByText(/Tips, guides, and insights/i)).toBeInTheDocument()
+    expect(screen.getByText(/Insights on luxury serviced apartment/i)).toBeInTheDocument()
   })
 
   it('renders blog cards', () => {

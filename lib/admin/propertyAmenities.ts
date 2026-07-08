@@ -34,7 +34,7 @@ export const DEFAULT_PROPERTY_AMENITIES = [
         name: "Outdoor & common areas",
         shortDescription: "Open-air lounges and landscaped common spaces.",
         description:
-            "Stroll through outdoor lounges and intersection spaces designed for calm and connection.",
+            "Stroll through landscaped outdoor lounges and shared common areas designed for calm, connection, and relaxation after a day in Abuja.",
         displayOrder: 3,
     },
 ] as const;

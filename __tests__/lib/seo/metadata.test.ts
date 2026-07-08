@@ -60,7 +60,7 @@ describe('SEO metadata', () => {
   it('includes hospitality-focused keywords without stuffing', () => {
     const metadata = buildRootMetadata()
     expect(metadata.keywords).toEqual(expect.arrayContaining([...SITE_KEYWORDS]))
-    expect(metadata.keywords?.length).toBeLessThanOrEqual(12)
+    expect(metadata.keywords?.length).toBeLessThanOrEqual(15)
   })
 
   it('sets favicon icons for browsers', () => {
@@ -87,6 +87,10 @@ describe('Structured data', () => {
     const graph = buildStructuredDataGraph()
     const organization = graph['@graph'].find((node) => node['@type'] === 'Organization')
 
-    expect(organization?.sameAs).toEqual(['https://www.instagram.com/loftyxpherehomes'])
+    expect(organization?.sameAs).toEqual([
+      'https://www.instagram.com/loftyxpherehomes',
+      'https://www.facebook.com/loftyxpherehomes',
+      'https://x.com/loftyxpherehomes',
+    ])
   })
 })

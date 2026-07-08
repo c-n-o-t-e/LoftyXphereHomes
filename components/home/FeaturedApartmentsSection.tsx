@@ -5,6 +5,8 @@ import { getFeaturedApartments } from "@/lib/data/apartments";
 import { getAllApartmentImageSetsMap } from "@/lib/data/getApartmentImages";
 import { getApartmentVideoSummariesMap } from "@/lib/data/getApartmentVideos";
 import { Button } from "@/components/ui/button";
+import { SITE_NAME } from "@/lib/constants";
+import { LOCATION_SEO } from "@/lib/content/seoCopy";
 
 export async function FeaturedApartmentsSection() {
     const featuredApartments = getFeaturedApartments(2);
@@ -18,10 +20,10 @@ export async function FeaturedApartmentsSection() {
             <div className="container mx-auto px-4 sm:px-6 lg:px-8">
                 <div className="text-center mb-10 sm:mb-12 md:mb-16">
                     <h2 className="text-2xl sm:text-3xl md:text-4xl lg:text-5xl font-bold text-black mb-4 sm:mb-6 px-2">
-                        Featured Apartments
+                        Featured Luxury Suites
                     </h2>
                     <p className="text-base sm:text-lg md:text-xl text-black/70 max-w-2xl mx-auto leading-relaxed px-4">
-                        Premium suites in Wuye, Abuja — book your stay at Lofty Xphere Homes
+                        Meridian Suite and Lumen Suite — luxury serviced apartments in {LOCATION_SEO}
                     </p>
                 </div>
 

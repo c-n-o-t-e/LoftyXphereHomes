@@ -4,7 +4,7 @@ import TrustSignals from '@/components/TrustSignals'
 describe('TrustSignals', () => {
   it('renders the section heading', () => {
     render(<TrustSignals />)
-    expect(screen.getByText('Why Choose LoftyXphereHomes?')).toBeInTheDocument()
+    expect(screen.getByText(/Why Choose Lofty Xphere Homes/i)).toBeInTheDocument()
   })
 
   it('renders all trust signal items', () => {

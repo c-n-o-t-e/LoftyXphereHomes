@@ -1,8 +1,10 @@
 import { Metadata } from "next";
+import { SITE_NAME } from "@/lib/constants";
+import { LOCATION_SEO } from "@/lib/content/seoCopy";
 
 export const metadata: Metadata = {
   title: "Privacy Policy",
-  description: "Privacy policy for LoftyXphereHomes - how we collect, use, and protect your personal information.",
+  description: `Privacy policy for ${SITE_NAME} — how we collect, use, and protect your personal information when you book our luxury serviced apartments in ${LOCATION_SEO}.`,
 };
 
 export default function PrivacyPage() {

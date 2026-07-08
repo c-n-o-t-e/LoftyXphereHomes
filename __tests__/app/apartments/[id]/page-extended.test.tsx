@@ -45,7 +45,7 @@ describe('Apartment Detail Page - Extended Coverage', () => {
     renderWithQueryClient(await ApartmentDetailPage({ params }))
     await waitForReservationCard()
     expect(screen.getByText(/Skyline Suite/i)).toBeInTheDocument()
-    expect(screen.getByText(/Wuye, Abuja/i)).toBeInTheDocument()
+    expect(screen.getAllByText(/Wuye, Abuja/i).length).toBeGreaterThan(0)
   })
 
   it('renders apartment amenities', async () => {

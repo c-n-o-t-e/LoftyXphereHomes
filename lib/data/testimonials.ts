@@ -6,7 +6,8 @@ export const testimonials: Testimonial[] = [
     name: "Sarah Johnson",
     location: "United States",
     rating: 5,
-    comment: "Absolutely stunning apartment! The attention to detail and cleanliness was exceptional. The location in Wuse 2 was perfect for our business trip. Will definitely book again!",
+    comment:
+      "The Meridian Suite was absolutely stunning — immaculate, spacious, and perfectly set up for our business trip to Abuja. The Wuye location was convenient and the team was exceptional throughout.",
     date: "March 2024",
   },
   {
@@ -14,7 +15,8 @@ export const testimonials: Testimonial[] = [
     name: "Michael Chen",
     location: "Singapore",
     rating: 5,
-    comment: "Best shortlet experience in Wuye, Abuja! The apartment had everything we needed, and the Wi-Fi was incredibly fast - perfect for remote work. The host was responsive and helpful throughout our stay.",
+    comment:
+      "Best luxury serviced apartment experience in Wuye, Abuja! The Lumen Suite had everything we needed, Starlink Wi-Fi was incredibly fast for remote work, and guest support was responsive around the clock.",
     date: "February 2024",
   },
   {
@@ -22,7 +24,8 @@ export const testimonials: Testimonial[] = [
     name: "Amina Hassan",
     location: "Nigeria",
     rating: 5,
-    comment: "We stayed at the Lofty Wuye Premium for a week and it felt like home. The space was immaculate, the amenities were top-notch, and the security made us feel safe. Highly recommend!",
+    comment:
+      "We stayed at Lofty Xphere Homes for a week and it felt like home. The Horizon Suite was immaculate, the pool and gym were a bonus, and 24/7 security gave us complete peace of mind. Highly recommend.",
     date: "January 2024",
   },
   {
@@ -30,7 +33,8 @@ export const testimonials: Testimonial[] = [
     name: "David Williams",
     location: "United Kingdom",
     rating: 4,
-    comment: "Great value for money! The apartment was clean, well-maintained, and in a great location. The check-in process was smooth, and the host was very accommodating. Would stay again.",
+    comment:
+      "Great value for a premium serviced apartment in Abuja. The Skyline Suite was clean, well-maintained, and in an excellent Wuye location. Smooth check-in and a very accommodating team.",
     date: "December 2023",
   },
   {
@@ -38,7 +42,8 @@ export const testimonials: Testimonial[] = [
     name: "Priya Patel",
     location: "India",
     rating: 5,
-    comment: "Exceptional service from start to finish. The apartment exceeded our expectations - modern, spacious, and beautifully decorated. The kitchen was fully equipped, which was perfect for our family.",
+    comment:
+      "Exceptional hospitality from start to finish. Our two-bedroom suite exceeded expectations — modern, spacious, and beautifully furnished. The fully equipped kitchen was perfect for our family stay.",
     date: "November 2023",
   },
   {
@@ -46,8 +51,8 @@ export const testimonials: Testimonial[] = [
     name: "James Okafor",
     location: "Nigeria",
     rating: 5,
-    comment: "Perfect for business travelers! The workspace setup was ideal, and the 24/7 power supply meant no interruptions. The location in Wuye, Abuja was convenient for meetings.",
+    comment:
+      "Perfect for business travel. The workspace setup was ideal, 24/7 power meant zero interruptions, and the Wuye, Abuja location made getting to meetings straightforward. Will book again.",
     date: "October 2023",
   },
 ];
-

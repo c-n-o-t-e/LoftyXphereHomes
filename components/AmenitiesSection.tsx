@@ -2,6 +2,7 @@
 
 import { motion } from "framer-motion";
 import { STANDARD_AMENITIES } from "@/lib/constants";
+import { LOCATION_SHORT } from "@/lib/content/seoCopy";
 import {
   Zap,
   Wifi,
@@ -39,10 +40,10 @@ export default function AmenitiesSection() {
           className="text-center mb-10 sm:mb-12 md:mb-16"
         >
           <h2 className="text-2xl sm:text-3xl md:text-4xl lg:text-5xl font-bold text-black mb-4 sm:mb-6 px-2">
-            In every suite
+            Amenities in every suite
           </h2>
           <p className="text-base sm:text-lg md:text-xl text-black/70 max-w-2xl mx-auto leading-relaxed px-4">
-            Inside your apartment — comfort and convenience built in
+            Every luxury serviced apartment in {LOCATION_SHORT} includes these essentials
           </p>
         </motion.div>
 

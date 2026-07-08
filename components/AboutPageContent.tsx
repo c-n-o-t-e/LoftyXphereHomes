@@ -6,6 +6,8 @@ import { Shield, Sparkles, Heart, Award, Check, Users, MapPin, Clock, Star } fro
 import { motion } from "framer-motion";
 import type { AboutPageImages } from "@/lib/data/propertyAmenities";
 import { ResponsiveApartmentImage } from "@/components/ResponsiveApartmentImage";
+import { SITE_NAME } from "@/lib/constants";
+import { LOCATION_SEO, WHY_CHOOSE_HEADING } from "@/lib/content/seoCopy";
 
 const values = [
   {
@@ -31,10 +33,10 @@ const values = [
 ];
 
 const stats = [
-  { icon: Users, value: "5,000+", label: "Happy Guests" },
-  { icon: MapPin, value: "50+", label: "Premium Properties" },
-  { icon: Star, value: "4.8", label: "Average Rating" },
-  { icon: Clock, value: "24/7", label: "Support Available" },
+  { icon: Users, value: "4", label: "Bookable Luxury Suites" },
+  { icon: MapPin, value: "Wuye", label: "Abuja, Nigeria" },
+  { icon: Star, value: "4.8+", label: "Average Guest Rating" },
+  { icon: Clock, value: "24/7", label: "Guest Support" },
 ];
 
 type AboutPageContentProps = {
@@ -64,11 +66,11 @@ export function AboutPageContent({ images }: AboutPageContentProps) {
             className="max-w-4xl mx-auto text-center"
           >
             <h1 className="text-3xl sm:text-4xl md:text-5xl lg:text-6xl xl:text-7xl font-bold mb-4 sm:mb-6 px-2">
-              About LoftyXphereHomes
+              About {SITE_NAME}
             </h1>
             <p className="text-base sm:text-lg md:text-xl lg:text-2xl text-white/90 max-w-3xl mx-auto leading-relaxed px-4">
-              Redefining luxury shortlet experiences in Nigeria with premium properties,
-              exceptional service, and unforgettable stays.
+              A premium hospitality brand offering luxury serviced apartments and shortlet
+              rentals in {LOCATION_SEO}.
             </p>
           </motion.div>
         </div>
@@ -131,21 +133,21 @@ export function AboutPageContent({ images }: AboutPageContentProps) {
               <h2 className="text-3xl sm:text-4xl md:text-5xl font-bold text-black mb-4 sm:mb-6">Our Story</h2>
               <div className="space-y-4 sm:space-y-6 text-base sm:text-lg text-black/80 leading-relaxed">
                 <p>
-                  LoftyXphereHomes was founded with a simple yet powerful mission: to redefine the
-                  shortlet experience in Nigeria. We recognized that travelers, remote workers, and
-                  families deserve more than just a place to stay—they deserve a home away from home
-                  that exceeds expectations.
+                  {SITE_NAME} was founded with a clear mission: to bring hotel-grade hospitality
+                  to luxury serviced apartments in Nigeria. We recognised that business travellers,
+                  remote workers, and leisure guests deserve more than a place to sleep — they deserve
+                  a refined home away from home.
                 </p>
                 <p>
-                  Our journey began with a vision to bridge the gap between luxury hospitality and
-                  affordable accommodation. Located in the heart of Wuye, Abuja, we carefully curate
-                  each property to ensure it meets our rigorous standards for quality, comfort, and style.
+                  From our base in {LOCATION_SEO}, we curate each suite — Meridian, Lumen, Horizon,
+                  Skyline, and more — to meet exacting standards for comfort, design, and service.
+                  Every stay includes access to shared amenities including the pool, gym, bar, and
+                  outdoor common areas.
                 </p>
                 <p>
-                  What sets us apart is our unwavering commitment to exceptional service. From the
-                  moment you book until you check out, our dedicated team is here to make your stay
-                  memorable. We believe in going above and beyond to ensure every guest feels
-                  valued, cared for, and truly at home.
+                  What sets us apart is attentive, round-the-clock guest support. From booking to
+                  checkout, our team is here to make your stay seamless, secure, and genuinely
+                  memorable.
                 </p>
               </div>
             </motion.div>
@@ -200,21 +202,21 @@ export function AboutPageContent({ images }: AboutPageContentProps) {
               transition={{ duration: 0.8 }}
             >
               <h2 className="text-4xl md:text-5xl font-bold text-black mb-6">
-                Why Choose LoftyXphereHomes?
+                {WHY_CHOOSE_HEADING}
               </h2>
               <p className="text-lg text-black/70 mb-8 leading-relaxed">
-                We&apos;ve built our reputation on delivering exceptional experiences that
-                consistently exceed expectations. Here&apos;s what makes us different:
+                We have built our reputation on luxury serviced apartments that combine privacy,
+                style, and genuine hospitality in {LOCATION_SEO}. Here is what guests notice first:
               </p>
               <ul className="space-y-4">
                 {[
                   {
-                    title: "Premium Properties",
-                    description: "Every apartment is carefully selected for quality, location, and amenities.",
+                    title: "Named Luxury Suites",
+                    description: "Meridian, Lumen, Horizon, and Skyline — each a fully serviced apartment with its own character.",
                   },
                   {
-                    title: "Prime Locations",
-                    description: "Strategically located in Wuye, Abuja, in the heart of the city.",
+                    title: "Prime Wuye Location",
+                    description: "Centrally located in Wuye, Abuja, with easy access to business districts and dining.",
                   },
                   {
                     title: "24/7 Support",
@@ -292,9 +294,8 @@ export function AboutPageContent({ images }: AboutPageContentProps) {
               </div>
               <h3 className="text-3xl font-bold mb-4">Our Mission</h3>
               <p className="text-white/80 text-lg leading-relaxed">
-                To provide exceptional shortlet experiences that combine luxury, comfort, and
-                affordability. We strive to make every guest feel at home while delivering
-                world-class hospitality standards that exceed expectations.
+                To deliver exceptional stays that blend luxury serviced apartment living with
+                warm, attentive hospitality — making every guest feel at home in Abuja.
               </p>
             </motion.div>
             <motion.div
@@ -309,10 +310,9 @@ export function AboutPageContent({ images }: AboutPageContentProps) {
               </div>
               <h3 className="text-3xl font-bold mb-4">Our Vision</h3>
               <p className="text-white/80 text-lg leading-relaxed">
-                To become Nigeria&apos;s most trusted and preferred shortlet brand, recognized for
-                our commitment to excellence, innovation, and guest satisfaction. We envision a
-                future where every traveler in Nigeria has access to premium, affordable
-                accommodation.
+                To become Nigeria&apos;s most trusted luxury serviced apartment brand — known for
+                outstanding guest experiences, thoughtfully designed suites, and reliable service
+                across Abuja and beyond.
               </p>
             </motion.div>
           </div>
@@ -330,10 +330,10 @@ export function AboutPageContent({ images }: AboutPageContentProps) {
             className="max-w-3xl mx-auto"
           >
             <h2 className="text-4xl md:text-5xl font-bold text-black mb-6">
-              Ready to Experience LoftyXphereHomes?
+              Ready to Experience {SITE_NAME}?
             </h2>
             <p className="text-lg md:text-xl text-black/70 mb-8 leading-relaxed">
-              Discover our premium apartments and book your perfect stay today.
+              Browse our luxury serviced apartments in {LOCATION_SEO} and book your stay today.
             </p>
             <div className="flex flex-col sm:flex-row gap-4 justify-center">
               <Link

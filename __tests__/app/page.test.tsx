@@ -53,7 +53,7 @@ jest.mock('@/components/home/FeaturedApartmentsSection', () => ({
   FeaturedApartmentsSection: function MockFeaturedApartmentsSection() {
     return (
       <section>
-        <h2>Featured Apartments</h2>
+        <h2>Featured Luxury Suites</h2>
         <a href="/apartments">View All Apartments</a>
       </section>
     )
@@ -94,17 +94,17 @@ describe('Home Page', () => {
 
   it('renders featured apartments section', async () => {
     render(await Home())
-    expect(screen.getByText('Featured Apartments')).toBeInTheDocument()
+    expect(await screen.findByText('Featured Luxury Suites')).toBeInTheDocument()
   })
 
   it('renders trust signals section', async () => {
     render(await Home())
-    expect(screen.getByText('Why Choose LoftyXphereHomes?')).toBeInTheDocument()
+    expect(screen.getByText(/Why Choose Lofty Xphere Homes/i)).toBeInTheDocument()
   })
 
   it('renders amenities section', async () => {
     render(await Home())
-    expect(screen.getByText('In every suite')).toBeInTheDocument()
+    expect(screen.getByText(/Amenities in every suite/i)).toBeInTheDocument()
   })
 
   it('renders blog section', async () => {
@@ -120,7 +120,7 @@ describe('Home Page', () => {
 
   it('renders CTA section', async () => {
     render(await Home())
-    expect(screen.getByText(/Ready to Experience Premium Shortlet Living/i)).toBeInTheDocument()
+    expect(screen.getByText(/Ready to Experience Luxury Serviced Apartment Living/i)).toBeInTheDocument()
   })
 
   it('renders view all apartments button', async () => {

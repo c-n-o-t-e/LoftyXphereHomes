@@ -6,6 +6,7 @@ import BlogCard from "./BlogCard";
 import { Button } from "@/components/ui/button";
 import Link from "next/link";
 import { ArrowRight } from "lucide-react";
+import { LOCATION_SEO } from "@/lib/content/seoCopy";
 
 export default function BlogSection() {
   const featuredPosts = getFeaturedBlogPosts(3);
@@ -24,7 +25,7 @@ export default function BlogSection() {
             Latest from Our Blog
           </h2>
           <p className="text-lg md:text-xl text-black/70 max-w-2xl mx-auto leading-relaxed">
-            Discover tips, guides, and insights to make your shortlet experience even better
+            Tips and guides for luxury serviced apartment and shortlet stays in {LOCATION_SEO}
           </p>
         </motion.div>
 

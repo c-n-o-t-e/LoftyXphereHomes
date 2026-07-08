@@ -16,7 +16,9 @@ describe('Blog Post Page', () => {
   it('renders blog post title when post exists', async () => {
     const params = Promise.resolve({ id: 'top-5-amenities-guests-love' })
     render(await BlogPostPage({ params }))
-    expect(screen.getByText(/Top 5 Amenities That Make Our Guests Feel at Home/i)).toBeInTheDocument()
+    expect(
+      screen.getByText(/Top 5 Amenities in Our Luxury Serviced Apartments in Wuye, Abuja/i),
+    ).toBeInTheDocument()
   })
 
   it('renders blog post category', async () => {
@@ -47,15 +49,16 @@ describe('Blog Post Page', () => {
   it('renders blog post image', async () => {
     const params = Promise.resolve({ id: 'top-5-amenities-guests-love' })
     render(await BlogPostPage({ params }))
-    const image = screen.getByAltText(/Top 5 Amenities That Make Our Guests Feel at Home/i)
+    const image = screen.getByAltText(
+      /Top 5 Amenities in Our Luxury Serviced Apartments in Wuye, Abuja/i,
+    )
     expect(image).toBeInTheDocument()
   })
 
   it('renders blog post content', async () => {
     const params = Promise.resolve({ id: 'top-5-amenities-guests-love' })
     render(await BlogPostPage({ params }))
-    // Use getAllByText since content may appear multiple times
-    const wifiElements = screen.getAllByText(/High-Speed Wi-Fi/i)
+    const wifiElements = screen.getAllByText(/Starlink Wi-Fi/i)
     expect(wifiElements.length).toBeGreaterThan(0)
   })
 
@@ -64,7 +67,7 @@ describe('Blog Post Page', () => {
     render(await BlogPostPage({ params }))
     expect(screen.getByText('#amenities')).toBeInTheDocument()
     expect(screen.getByText('#guest experience')).toBeInTheDocument()
-    expect(screen.getByText('#comfort')).toBeInTheDocument()
+    expect(screen.getByText('#Wuye Abuja')).toBeInTheDocument()
   })
 
   it('calls notFound when post does not exist', async () => {
@@ -77,4 +80,3 @@ describe('Blog Post Page', () => {
     expect(notFound).toHaveBeenCalled()
   })
 })
-

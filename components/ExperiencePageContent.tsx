@@ -5,6 +5,8 @@ import type { PropertyAmenityPublic } from "@/lib/data/propertyAmenities";
 import { PropertyAmenityGallery } from "@/components/PropertyAmenityGallery";
 import { ResponsiveApartmentImage } from "@/components/ResponsiveApartmentImage";
 import { Button } from "@/components/ui/button";
+import { SITE_NAME } from "@/lib/constants";
+import { LOCATION_SEO } from "@/lib/content/seoCopy";
 
 const AMENITY_ICONS: Record<string, typeof Waves> = {
     pool: Waves,
@@ -27,11 +29,11 @@ export function ExperiencePageContent({
             <div className="container mx-auto px-4 sm:px-6 lg:px-8">
                 <section className="text-center mb-12 sm:mb-16 pt-8 sm:pt-12">
                     <h1 className="text-3xl sm:text-4xl md:text-5xl lg:text-6xl font-bold text-black mb-4 sm:mb-6 px-2">
-                        The Lofty experience
+                        The {SITE_NAME} experience
                     </h1>
                     <p className="text-base sm:text-lg md:text-xl text-black/70 max-w-2xl mx-auto leading-relaxed px-4">
-                        More than a room — unwind at the pool, stay active in the gym, sip at
-                        the bar, and relax in our outdoor common areas.
+                        More than a room — pool, gym, bar, and outdoor common areas included with
+                        every luxury serviced apartment in {LOCATION_SEO}.
                     </p>
                 </section>
 
@@ -97,7 +99,7 @@ export function ExperiencePageContent({
                         Ready to book your stay?
                     </h2>
                     <p className="text-black/70 mb-8 max-w-xl mx-auto">
-                        Every suite includes access to our shared property amenities.
+                        Every suite includes access to our shared property amenities in {LOCATION_SEO}.
                     </p>
                     <Button
                         asChild

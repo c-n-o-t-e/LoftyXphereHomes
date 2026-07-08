@@ -1,6 +1,7 @@
 "use client";
 
 import { MapPin } from "lucide-react";
+import { SITE_NAME } from "@/lib/constants";
 
 const MAP_ADDRESS = "430 Magnus Abe Street, Wuye, Abuja, Nigeria";
 
@@ -19,7 +20,7 @@ export default function GoogleMap() {
           allowFullScreen
           loading="lazy"
           referrerPolicy="no-referrer-when-downgrade"
-          title="LoftyXphereHomes Location - 430 Magnus Abe Street, Wuye, Abuja"
+          title={`${SITE_NAME} — 430 Magnus Abe Street, Wuye, Abuja, Nigeria`}
           className="w-full h-full"
         />
       </div>

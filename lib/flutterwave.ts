@@ -102,7 +102,7 @@ export async function initializePayment(args: {
       },
       meta: args.meta,
       customizations: {
-        title: "LoftyXphereHomes",
+        title: "Lofty Xphere Homes",
         description: "Apartment booking payment",
       },
     }),

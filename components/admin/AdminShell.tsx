@@ -111,7 +111,7 @@ export function AdminShell({ children }: AdminShellProps) {
                         <Link href="/admin" className="flex items-center gap-3">
                             <Image
                                 src="/lofty-logo-white.png"
-                                alt="LoftyXphereHomes"
+                                alt="Lofty Xphere Homes"
                                 width={36}
                                 height={36}
                                 className="h-9 w-9 rounded-lg object-contain"

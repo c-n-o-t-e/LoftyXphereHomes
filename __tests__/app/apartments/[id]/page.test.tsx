@@ -50,7 +50,7 @@ describe('Apartment Detail Page', () => {
     const params = Promise.resolve({ id: 'skyline-suite' })
     renderWithQueryClient(await ApartmentDetailPage({ params }))
     await waitForReservationCard()
-    expect(screen.getByText(/Wuye, Abuja/i)).toBeInTheDocument()
+    expect(screen.getAllByText(/Wuye, Abuja/i).length).toBeGreaterThan(0)
   })
 
   it('renders booking button', async () => {

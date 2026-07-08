@@ -1,10 +1,11 @@
 import { Metadata } from "next";
 import { blogPosts } from "@/lib/data/blog";
 import BlogCard from "@/components/BlogCard";
+import { LOCATION_SEO } from "@/lib/content/seoCopy";
 
 export const metadata: Metadata = {
   title: "Blog",
-  description: "Discover tips, guides, and insights about shortlet accommodations in Wuye, Abuja, and making the most of your stay.",
+  description: `Tips and guides on luxury serviced apartments, shortlet stays, and making the most of your time in ${LOCATION_SEO}.`,
 };
 
 export default function BlogPage() {
@@ -16,7 +17,7 @@ export default function BlogPage() {
             Our Blog
           </h1>
           <p className="text-lg md:text-xl text-black/70 max-w-2xl mx-auto leading-relaxed">
-            Tips, guides, and insights to enhance your shortlet experience
+            Insights on luxury serviced apartment living and shortlet stays in {LOCATION_SEO}
           </p>
         </div>
 
@@ -29,4 +30,3 @@ export default function BlogPage() {
     </div>
   );
 }
-

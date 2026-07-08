@@ -2,10 +2,12 @@ import { Metadata } from "next";
 import { ContactForm } from "@/components/ContactForm";
 import GoogleMap from "@/components/GoogleMap";
 import { Mail, Phone, MapPin } from "lucide-react";
+import { SITE_NAME } from "@/lib/constants";
+import { LOCATION_SEO } from "@/lib/content/seoCopy";
 
 export const metadata: Metadata = {
   title: "Contact Us",
-  description: "Get in touch with LoftyXphereHomes. We're here to help with bookings, inquiries, and support.",
+  description: `Contact ${SITE_NAME} for luxury serviced apartment bookings, enquiries, and guest support in ${LOCATION_SEO}.`,
 };
 
 export default function ContactPage() {
@@ -17,7 +19,7 @@ export default function ContactPage() {
             Get In Touch
           </h1>
           <p className="text-lg md:text-xl text-black/70 max-w-2xl mx-auto leading-relaxed">
-            Have questions? We&apos;d love to hear from you. Send us a message and we&apos;ll respond as soon as possible.
+            Questions about our luxury serviced apartments in {LOCATION_SEO}? Send us a message and our team will respond promptly.
           </p>
         </div>
 

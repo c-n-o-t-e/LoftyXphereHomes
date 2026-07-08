@@ -78,7 +78,7 @@ export default function PropertyExperienceSection({
                         Beyond your suite
                     </h2>
                     <p className="text-base sm:text-lg md:text-xl text-black/70 max-w-2xl mx-auto leading-relaxed px-4">
-                        Shared outdoor spaces and facilities — included with every stay.
+                        Shared outdoor spaces and facilities — included with every luxury serviced apartment stay.
                     </p>
                 </motion.div>
 

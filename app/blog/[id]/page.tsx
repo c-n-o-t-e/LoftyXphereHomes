@@ -5,6 +5,7 @@ import { notFound } from "next/navigation";
 import { getBlogPostById } from "@/lib/data/blog";
 import { sanitizeBlogHtml } from "@/lib/sanitize/html";
 import { ArrowLeft, Calendar, Clock, User } from "lucide-react";
+import { SITE_NAME } from "@/lib/constants";
 
 interface PageProps {
   params: Promise<{ id: string }>;
@@ -24,6 +25,14 @@ export async function generateMetadata({ params }: PageProps): Promise<Metadata>
     title: post.title,
     description: post.excerpt,
     openGraph: {
+      title: post.title,
+      description: post.excerpt,
+      images: [post.image],
+      siteName: SITE_NAME,
+      type: "article",
+    },
+    twitter: {
+      card: "summary_large_image",
       title: post.title,
       description: post.excerpt,
       images: [post.image],

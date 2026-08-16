@@ -1,5 +1,8 @@
 import { z } from "zod";
-import { migrateLegacyPostDocument } from "@/lib/post-generator/defaults";
+import {
+    migrateLegacyPostDocument,
+    normalizePostDocument as fillPostDocument,
+} from "@/lib/post-generator/defaults";
 import type { PostDocument, PostPresetKey } from "@/lib/post-generator/types";
 
 const amenitySchema = z.object({
@@ -18,7 +21,7 @@ const contactSchema = z.object({
 });
 
 export const postDocumentSchema = z.object({
-    version: z.literal(1),
+    version: z.union([z.literal(1), z.literal(2)]),
     apartmentId: z.string().nullable(),
     apartmentName: z.string().max(120),
     apartmentSlug: z.string().max(120).nullable(),
@@ -71,9 +74,27 @@ export const updatePostTemplateBodySchema = z.object({
     document: postDocumentSchema.optional(),
 });
 
+/**
+ * Persist path: fill missing fields only. Does not rewrite layout to the
+ * approved glass defaults, even when a v1 draft matches the old cream-card
+ * fingerprint (pill CTA + dense glass + 4-col gold amenities, etc.).
+ */
+export function normalizeSavedPostDocument(raw: unknown): PostDocument {
+    if (!raw || typeof raw !== "object") return fillPostDocument({});
+    const parsed = postDocumentSchema.safeParse(raw);
+    if (!parsed.success) {
+        return fillPostDocument(raw as Partial<PostDocument>);
+    }
+    return fillPostDocument(parsed.data as Partial<PostDocument>);
+}
+
+/**
+ * Load path: fill defaults, then migrate true v1 cream-card drafts once.
+ * After migration the document is stamped version 2 so reload will not
+ * re-apply heuristics.
+ */
 export function parsePostDocument(raw: unknown): PostDocument {
-    const defaults = migrateLegacyPostDocument({});
-    if (!raw || typeof raw !== "object") return defaults;
+    if (!raw || typeof raw !== "object") return migrateLegacyPostDocument({});
 
     const parsed = postDocumentSchema.safeParse(raw);
     if (!parsed.success) {

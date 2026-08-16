@@ -5,6 +5,7 @@ import {
     rgbToHsv,
 } from "@/lib/post-generator/smart-theme/colorUtils";
 import type { ImageAnalysis, RegionScore } from "@/lib/post-generator/smart-theme/types";
+import { resolveCanvasImageRequest } from "@/lib/post-generator/canvasImageRequest";
 
 const ANALYZE_W = 96;
 const ANALYZE_H = 120;
@@ -233,21 +234,39 @@ function emptyAnalysis(width: number, height: number): ImageAnalysis {
     };
 }
 
+export type AnalyzeImageOptions = {
+    /** Required for remote suite photos (Supabase) — same proxy as PNG export. */
+    authHeaders?: HeadersInit;
+};
+
 /** Browser: load image URL → downsample → analyze. */
-export async function analyzeImageUrl(imageUrl: string): Promise<ImageAnalysis> {
+export async function analyzeImageUrl(
+    imageUrl: string,
+    options: AnalyzeImageOptions = {},
+): Promise<ImageAnalysis> {
     if (typeof document === "undefined") {
         throw new Error("analyzeImageUrl requires a browser environment");
     }
 
-    const img = await loadImage(imageUrl);
+    const source = await loadDrawableForAnalysis(imageUrl, options.authHeaders);
     const canvas = document.createElement("canvas");
     canvas.width = ANALYZE_W;
     canvas.height = ANALYZE_H;
     const ctx = canvas.getContext("2d", { willReadFrequently: true });
     if (!ctx) throw new Error("Canvas unavailable for image analysis");
 
-    ctx.drawImage(img, 0, 0, ANALYZE_W, ANALYZE_H);
-    const imageData = ctx.getImageData(0, 0, ANALYZE_W, ANALYZE_H);
+    ctx.drawImage(source.drawable, 0, 0, ANALYZE_W, ANALYZE_H);
+    source.cleanup();
+
+    let imageData: ImageData;
+    try {
+        imageData = ctx.getImageData(0, 0, ANALYZE_W, ANALYZE_H);
+    } catch {
+        throw new Error(
+            "Could not read this photo for Smart Theme. Re-select the suite or re-upload the image.",
+        );
+    }
+
     return analyzePixelBuffer({
         width: ANALYZE_W,
         height: ANALYZE_H,
@@ -255,14 +274,78 @@ export async function analyzeImageUrl(imageUrl: string): Promise<ImageAnalysis> 
     });
 }
 
-function loadImage(url: string): Promise<HTMLImageElement> {
+type AnalysisDrawable = {
+    drawable: CanvasImageSource;
+    cleanup: () => void;
+};
+
+async function loadDrawableForAnalysis(
+    imageUrl: string,
+    authHeaders?: HeadersInit,
+): Promise<AnalysisDrawable> {
+    const request = resolveCanvasImageRequest(imageUrl);
+    if (request.kind === "proxy") {
+        const blob = await fetchProxiedImageBlob(request.src, authHeaders);
+        return drawableFromBlob(blob);
+    }
+    const img = await loadHtmlImage(request.src, request.useCors);
+    return { drawable: img, cleanup: () => undefined };
+}
+
+async function fetchProxiedImageBlob(
+    proxySrc: string,
+    authHeaders?: HeadersInit,
+): Promise<Blob> {
+    if (!authHeaders) {
+        throw new Error("Not signed in — cannot analyze suite photos");
+    }
+    const res = await fetch(proxySrc, { headers: authHeaders, cache: "no-cache" });
+    if (!res.ok) {
+        throw new Error("Could not load apartment photo for theme analysis");
+    }
+    const blob = await res.blob();
+    if (blob.type.includes("json") || blob.size < 32) {
+        throw new Error("Could not load apartment photo for theme analysis");
+    }
+    return blob;
+}
+
+async function drawableFromBlob(blob: Blob): Promise<AnalysisDrawable> {
+    if (typeof createImageBitmap === "function") {
+        try {
+            const bitmap = await createImageBitmap(blob);
+            return {
+                drawable: bitmap,
+                cleanup: () => {
+                    if (typeof ImageBitmap !== "undefined" && bitmap instanceof ImageBitmap) {
+                        bitmap.close();
+                    }
+                },
+            };
+        } catch {
+            // fall through to object URL
+        }
+    }
+    const objectUrl = URL.createObjectURL(blob);
+    try {
+        const img = await loadHtmlImage(objectUrl, false);
+        return {
+            drawable: img,
+            cleanup: () => URL.revokeObjectURL(objectUrl),
+        };
+    } catch (err) {
+        URL.revokeObjectURL(objectUrl);
+        throw err;
+    }
+}
+
+function loadHtmlImage(url: string, useCors: boolean): Promise<HTMLImageElement> {
     return new Promise((resolve, reject) => {
         const img = new Image();
-        if (!url.startsWith("data:") && !url.startsWith("blob:")) {
-            img.crossOrigin = "anonymous";
-        }
+        if (useCors) img.crossOrigin = "anonymous";
         img.onload = () => resolve(img);
-        img.onerror = () => reject(new Error("Failed to load image for theme analysis"));
+        img.onerror = () =>
+            reject(new Error("Failed to load image for theme analysis"));
         img.src = url;
     });
 }

@@ -2,6 +2,10 @@
 export const POST_CANVAS_WIDTH = 1080;
 export const POST_CANVAS_HEIGHT = 1350;
 
+/** Current persisted schema. v1 drafts may still receive a one-time layout migration on load. */
+export const POST_DOCUMENT_VERSION = 2 as const;
+export type PostDocumentVersion = 1 | typeof POST_DOCUMENT_VERSION;
+
 export type PostTemplateStatus = "DRAFT" | "PUBLISHED" | "ARCHIVED";
 
 export type PostPresetKey =
@@ -247,7 +251,7 @@ export type PostLayout = {
 };
 
 export type PostDocument = {
-    version: 1;
+    version: PostDocumentVersion;
     apartmentId: string | null;
     apartmentName: string;
     apartmentSlug: string | null;

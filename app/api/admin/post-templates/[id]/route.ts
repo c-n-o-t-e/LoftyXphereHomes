@@ -7,7 +7,6 @@ import {
 } from "@/lib/admin/postTemplates";
 import { updatePostTemplateBodySchema } from "@/lib/post-generator/validation";
 import { parseJsonBody } from "@/lib/validation/http";
-import { parsePostDocument } from "@/lib/post-generator/validation";
 import type { PostPresetKey, PostTemplateStatus } from "@/lib/post-generator/types";
 
 type RouteContext = { params: Promise<{ id: string }> };
@@ -61,9 +60,7 @@ export async function PUT(request: NextRequest, context: RouteContext) {
             title: parsed.data.title,
             presetKey: parsed.data.presetKey as PostPresetKey | null | undefined,
             status: parsed.data.status as PostTemplateStatus | undefined,
-            document: parsed.data.document
-                ? parsePostDocument(parsed.data.document)
-                : undefined,
+            document: parsed.data.document,
         });
 
         return NextResponse.json({ ok: true, template });

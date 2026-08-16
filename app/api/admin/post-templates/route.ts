@@ -9,7 +9,6 @@ import {
 } from "@/lib/post-generator/validation";
 import { parseJsonBody } from "@/lib/validation/http";
 import type { PostPresetKey } from "@/lib/post-generator/types";
-import { parsePostDocument } from "@/lib/post-generator/validation";
 
 type RouteError = {
     httpResponse?: Response;
@@ -48,9 +47,7 @@ export async function POST(request: NextRequest) {
             title: parsed.data.title,
             presetKey: parsed.data.presetKey as PostPresetKey | undefined,
             apartmentId: parsed.data.apartmentId,
-            document: parsed.data.document
-                ? parsePostDocument(parsed.data.document)
-                : undefined,
+            document: parsed.data.document,
             createdByEmail: admin.email,
         });
 

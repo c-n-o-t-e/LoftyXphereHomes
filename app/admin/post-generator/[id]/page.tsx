@@ -15,7 +15,8 @@ export default async function PostGeneratorEditorPage({ params }: PageProps) {
                     title="Edit Instagram post"
                     description="Live 4:5 preview on top. Every control below updates the canvas instantly."
                 />
-                <PostGeneratorClient templateId={id} />
+                {/* Remount per route id so editor state cannot leak across templates. */}
+                <PostGeneratorClient key={id} templateId={id} />
             </AdminPageContainer>
         </AdminOnlyGate>
     );

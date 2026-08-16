@@ -13,6 +13,7 @@ import {
     type PostDocument,
     type PostExportFormat,
     type PostExportScale,
+    type PostImageControls,
 } from "@/lib/post-generator/types";
 import {
     bodyFontFamily,
@@ -201,6 +202,28 @@ async function loadDrawable(
     return loadHtmlImage(dataUrl, false);
 }
 
+/**
+ * Visible hero rectangle after CSS-style crop insets (percent of the photo band).
+ * Matches ImageCanvas: outer frame stays full-bleed, inner photo is inset.
+ */
+export function heroPhotoCropRect(
+    photoW: number,
+    photoH: number,
+    image: Pick<PostImageControls, "cropTop" | "cropRight" | "cropBottom" | "cropLeft">,
+): { x: number; y: number; width: number; height: number } {
+    const clampPct = (n: number) => Math.min(40, Math.max(0, Number.isFinite(n) ? n : 0));
+    const top = (photoH * clampPct(image.cropTop)) / 100;
+    const bottom = (photoH * clampPct(image.cropBottom)) / 100;
+    const left = (photoW * clampPct(image.cropLeft)) / 100;
+    const right = (photoW * clampPct(image.cropRight)) / 100;
+    return {
+        x: left,
+        y: top,
+        width: Math.max(1, photoW - left - right),
+        height: Math.max(1, photoH - top - bottom),
+    };
+}
+
 function drawableSize(source: CanvasImageSource): { w: number; h: number } {
     if (typeof ImageBitmap !== "undefined" && source instanceof ImageBitmap) {
         return { w: source.width, h: source.height };
@@ -366,18 +389,21 @@ async function renderPostToCanvas(
         const octx = off.getContext("2d");
         if (!octx) throw new Error("Could not prepare photo layer");
 
+        const crop = heroPhotoCropRect(innerW, photoH, image);
         const scaleFactor = Math.max(0.01, image.scale * image.zoom);
-        const cover = Math.max(innerW / iw, photoH / ih) * scaleFactor;
+        const cover = Math.max(crop.width / iw, crop.height / ih) * scaleFactor;
         const dw = iw * cover;
         const dh = ih * cover;
         const ox =
-            (innerW - dw) / 2 +
+            crop.x +
+            (crop.width - dw) / 2 +
             image.panX +
-            ((image.positionX - 50) / 50) * (dw - innerW) * 0.25;
+            ((image.positionX - 50) / 50) * (dw - crop.width) * 0.25;
         const oy =
-            (photoH - dh) / 2 +
+            crop.y +
+            (crop.height - dh) / 2 +
             image.panY +
-            ((image.positionY - 50) / 50) * (dh - photoH) * 0.25;
+            ((image.positionY - 50) / 50) * (dh - crop.height) * 0.25;
 
         const needsFilter =
             image.brightness !== 100 ||
@@ -394,12 +420,17 @@ async function renderPostToCanvas(
                 .filter(Boolean)
                 .join(" ");
         }
+        octx.save();
+        octx.beginPath();
+        octx.rect(crop.x, crop.y, crop.width, crop.height);
+        octx.clip();
         try {
             octx.drawImage(img, ox, oy, dw, dh);
         } catch {
             octx.filter = "none";
             octx.drawImage(img, ox, oy, dw, dh);
         }
+        octx.restore();
         octx.filter = "none";
 
         // Soft bottom fade: destination-in must cover the FULL photo height.

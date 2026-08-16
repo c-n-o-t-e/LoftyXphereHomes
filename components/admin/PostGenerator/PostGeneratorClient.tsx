@@ -31,7 +31,10 @@ import { SmartThemePanel } from "@/components/admin/PostGenerator/SmartThemePane
 import { exportPostDocument, resolvePostExportFileName } from "@/lib/post-generator/exportClient";
 import {
     applySmartThemeToDocument,
+    createAnalysisRunTracker,
+    resolveHeroImageAnalysisAction,
     runSmartThemeEngine,
+    shouldCommitSmartThemeAnalysis,
     type SmartThemeResult,
 } from "@/lib/post-generator/smart-theme";
 import { Button } from "@/components/ui/button";
@@ -59,14 +62,16 @@ export function PostGeneratorClient({ templateId }: { templateId: string }) {
     const [smartAnalyzing, setSmartAnalyzing] = useState(false);
     const [smartError, setSmartError] = useState<string | null>(null);
     const [activeSmartThemeId, setActiveSmartThemeId] = useState<string | null>(null);
+    const [loadedTemplateId, setLoadedTemplateId] = useState<string | null>(null);
 
     const canvasRef = useRef<HTMLDivElement>(null);
     const saveTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
     const previewWrapRef = useRef<HTMLDivElement>(null);
     const skipHistoryRef = useRef(false);
     const postDocRef = useRef<PostDocument | null>(null);
-    const lastAutoThemeUrlRef = useRef<string | null>(null);
     const prevImageUrlRef = useRef<string | null | undefined>(undefined);
+    const analysisRunsRef = useRef(createAnalysisRunTracker());
+    const loadRequestRef = useRef(0);
 
     // Keep a live ref so Save/Download never use a stale closure snapshot
     useEffect(() => {
@@ -84,7 +89,10 @@ export function PostGeneratorClient({ templateId }: { templateId: string }) {
     }, []);
 
     const load = useCallback(async () => {
+        const requestId = ++loadRequestRef.current;
         setIsLoading(true);
+        setLoadedTemplateId(null);
+        analysisRunsRef.current.invalidate();
         try {
             const headers = await authHeaders();
             const [tplRes, aptRes] = await Promise.all([
@@ -101,20 +109,23 @@ export function PostGeneratorClient({ templateId }: { templateId: string }) {
             };
             if (!tplRes.ok) throw new Error(tplData.error ?? "Failed to load");
             if (!aptRes.ok) throw new Error(aptData.error ?? "Failed to load apartments");
+            if (requestId !== loadRequestRef.current) return;
 
             const tpl = tplData.template!;
             const normalized = parsePostDocument(tpl.document);
             setRecord({ ...tpl, document: normalized });
             setTitle(tpl.title);
             setDocument(normalized);
+            setLoadedTemplateId(templateId);
             setPresetKey(tpl.presetKey);
             setHistory([normalized]);
             setFuture([]);
             setApartments(aptData.apartments ?? []);
         } catch (err) {
+            if (requestId !== loadRequestRef.current) return;
             toast.error(err instanceof Error ? err.message : "Failed to load");
         } finally {
-            setIsLoading(false);
+            if (requestId === loadRequestRef.current) setIsLoading(false);
         }
     }, [authHeaders, templateId]);
 
@@ -187,6 +198,12 @@ export function PostGeneratorClient({ templateId }: { templateId: string }) {
         }, 1400);
     }, [save]);
 
+    useEffect(() => {
+        return () => {
+            if (saveTimerRef.current) clearTimeout(saveTimerRef.current);
+        };
+    }, []);
+
     const pushHistory = useCallback((next: PostDocument) => {
         setHistory((prev) => [...prev.slice(-(HISTORY_LIMIT - 1)), next]);
         setFuture([]);
@@ -219,20 +236,27 @@ export function PostGeneratorClient({ templateId }: { templateId: string }) {
                 preferThemeId?: string;
             },
         ) => {
+            const runId = analysisRunsRef.current.begin();
+            const isLiveRun = () =>
+                shouldCommitSmartThemeAnalysis({
+                    runId,
+                    tracker: analysisRunsRef.current,
+                    analyzedUrl: imageUrl,
+                    currentImageUrl: postDocRef.current?.image.url,
+                });
+
             setSmartAnalyzing(true);
             setSmartError(null);
             try {
+                const headers = await authHeaders();
+                if (!isLiveRun()) return;
                 const result = await runSmartThemeEngine(imageUrl, {
                     force: opts?.force,
+                    authHeaders: headers,
                 });
+                if (!isLiveRun()) return;
                 setSmartTheme(result);
-                const shouldAuto =
-                    opts?.autoApply === true ||
-                    (opts?.autoApply !== false &&
-                        lastAutoThemeUrlRef.current !== imageUrl &&
-                        opts?.force !== true);
-                if (shouldAuto) {
-                    lastAutoThemeUrlRef.current = imageUrl;
+                if (opts?.autoApply === true) {
                     const live = postDocRef.current;
                     if (live) {
                         let themeIndex = result.recommendedIndex;
@@ -257,6 +281,7 @@ export function PostGeneratorClient({ templateId }: { templateId: string }) {
                     }
                 }
             } catch (err) {
+                if (!isLiveRun()) return;
                 console.error(err);
                 setSmartError(
                     err instanceof Error
@@ -264,42 +289,42 @@ export function PostGeneratorClient({ templateId }: { templateId: string }) {
                         : "Could not analyze photo — try a different image",
                 );
             } finally {
-                setSmartAnalyzing(false);
+                if (analysisRunsRef.current.isCurrent(runId)) {
+                    setSmartAnalyzing(false);
+                }
             }
         },
-        [],
+        [authHeaders],
     );
 
-    // Analyze on image change. First load: analyze only (keep saved styling).
+    const hasHydratedDocument = document != null;
+    const heroImageUrl = document?.image.url ?? null;
+
+    // First hydrated load for this template: analyze only (keep saved styling).
     // Later uploads / suite picks: analyze + auto-apply recommended theme.
     useEffect(() => {
-        const url = document?.image.url ?? null;
+        const action = resolveHeroImageAnalysisAction({
+            hasHydratedDocument,
+            imageUrl: heroImageUrl,
+            previousUrl: prevImageUrlRef.current,
+            routeTemplateId: templateId,
+            loadedTemplateId,
+        });
+        prevImageUrlRef.current = action.previousUrl;
 
-        if (prevImageUrlRef.current === undefined) {
-            prevImageUrlRef.current = url;
-            if (url) {
-                void runAnalysis(url, { autoApply: false });
-            } else {
-                setSmartTheme(null);
-                setSmartError(null);
-                setActiveSmartThemeId(null);
-            }
-            return;
-        }
+        if (action.type === "none") return;
 
-        if (url === prevImageUrlRef.current) return;
-        prevImageUrlRef.current = url;
-
-        if (!url) {
+        if (action.type === "clear") {
+            analysisRunsRef.current.invalidate();
+            setSmartAnalyzing(false);
             setSmartTheme(null);
             setSmartError(null);
             setActiveSmartThemeId(null);
-            lastAutoThemeUrlRef.current = null;
             return;
         }
 
-        void runAnalysis(url, { autoApply: true });
-    }, [document?.image.url, runAnalysis]);
+        void runAnalysis(action.imageUrl, { autoApply: action.autoApply });
+    }, [hasHydratedDocument, heroImageUrl, loadedTemplateId, runAnalysis, templateId]);
 
     const onApplySmartTheme = useCallback(
         (index: number) => {

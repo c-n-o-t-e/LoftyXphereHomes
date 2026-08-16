@@ -4,8 +4,34 @@ import {
     mergePostDocument,
     REFERENCE_THEME,
 } from "@/lib/post-generator/defaults";
-import { parsePostDocument } from "@/lib/post-generator/validation";
+import {
+    normalizeSavedPostDocument,
+    parsePostDocument,
+} from "@/lib/post-generator/validation";
+import { POST_DOCUMENT_VERSION, type PostDocument } from "@/lib/post-generator/types";
 import { POST_TOKENS } from "@/lib/post-generator/tokens";
+
+/** Three legacy fingerprint signals that are also valid editor choices. */
+function intentionalLegacyLookingDocument(
+    version: PostDocument["version"],
+): PostDocument {
+    const current = createDefaultPostDocument();
+    return {
+        ...current,
+        version,
+        button: { ...current.button, borderRadius: 999 },
+        overlay: {
+            ...current.overlay,
+            opacity: 0.9,
+            cardInsetX: 30,
+        },
+        amenitiesStyle: {
+            ...current.amenitiesStyle,
+            columns: 4,
+            goldLabels: true,
+        },
+    };
+}
 
 describe("post-generator defaults", () => {
     it("matches the approved warm ivory / champagne reference", () => {
@@ -180,5 +206,50 @@ describe("post-generator defaults", () => {
         expect(parsed.amenities.length).toBeGreaterThan(0);
         expect(parsed.overlay.photoFadePercent).toBeDefined();
         expect(parsed.overlay.cardOffsetY).toBeDefined();
+    });
+
+    it("still migrates unsaved v1 cream fingerprints on load", () => {
+        const loaded = parsePostDocument(intentionalLegacyLookingDocument(1));
+        expect(loaded.version).toBe(POST_DOCUMENT_VERSION);
+        expect(loaded.amenitiesStyle.columns).toBe(8);
+        expect(loaded.amenitiesStyle.goldLabels).toBe(false);
+        expect(loaded.overlay.cardInsetX).toBe(POST_TOKENS.glass.cardInsetX);
+        expect(loaded.overlay.opacity).toBe(POST_TOKENS.glass.opacity);
+        expect(loaded.button.borderRadius).toBe(POST_TOKENS.type.ctaRadius);
+    });
+
+    it("keeps intentional editor settings across save then reload", () => {
+        const edited = intentionalLegacyLookingDocument(1);
+        const saved = normalizeSavedPostDocument(edited);
+        expect(saved.version).toBe(POST_DOCUMENT_VERSION);
+        expect(saved.button.borderRadius).toBe(999);
+        expect(saved.overlay.opacity).toBe(0.9);
+        expect(saved.overlay.cardInsetX).toBe(30);
+        expect(saved.amenitiesStyle.columns).toBe(4);
+        expect(saved.amenitiesStyle.goldLabels).toBe(true);
+
+        const reloaded = parsePostDocument(saved);
+        expect(reloaded.button.borderRadius).toBe(999);
+        expect(reloaded.overlay.opacity).toBe(0.9);
+        expect(reloaded.overlay.cardInsetX).toBe(30);
+        expect(reloaded.amenitiesStyle.columns).toBe(4);
+        expect(reloaded.amenitiesStyle.goldLabels).toBe(true);
+    });
+
+    it("does not migrate a current-version document that matches the old fingerprint", () => {
+        const current = parsePostDocument(intentionalLegacyLookingDocument(2));
+        expect(current.button.borderRadius).toBe(999);
+        expect(current.overlay.opacity).toBe(0.9);
+        expect(current.amenitiesStyle.columns).toBe(4);
+        expect(current.amenitiesStyle.goldLabels).toBe(true);
+    });
+
+    it("stamps new documents at the current version", () => {
+        expect(createDefaultPostDocument().version).toBe(POST_DOCUMENT_VERSION);
+        expect(applyPreset("boutique-hotel").version).toBe(POST_DOCUMENT_VERSION);
+        expect(
+            normalizeSavedPostDocument(applyPreset("boutique-hotel")).overlay
+                .opacity,
+        ).toBe(0.96);
     });
 });

@@ -5,7 +5,7 @@ import {
     createDefaultPostDocument,
     mergePostDocument,
 } from "@/lib/post-generator/defaults";
-import { parsePostDocument } from "@/lib/post-generator/validation";
+import { parsePostDocument, normalizeSavedPostDocument } from "@/lib/post-generator/validation";
 import type {
     PostDocument,
     PostPresetKey,
@@ -95,12 +95,15 @@ export async function createPostTemplateForAdmin(args: {
     title: string;
     presetKey?: PostPresetKey;
     apartmentId?: string;
-    document?: PostDocument;
+    document?: unknown;
     createdByEmail?: string | null;
 }) {
     let document =
-        args.document ??
-        (args.presetKey ? applyPreset(args.presetKey) : createDefaultPostDocument());
+        args.document != null
+            ? normalizeSavedPostDocument(args.document)
+            : args.presetKey
+              ? applyPreset(args.presetKey)
+              : createDefaultPostDocument();
 
     if (args.apartmentId) {
         const fromApt = await buildPostDocumentFromApartment(args.apartmentId);
@@ -126,7 +129,7 @@ export async function updatePostTemplateForAdmin(
         title?: string;
         presetKey?: PostPresetKey | null;
         status?: PostTemplateStatus;
-        document?: PostDocument;
+        document?: unknown;
     },
 ) {
     const existing = await prisma.postTemplate.findUnique({ where: { id } });
@@ -141,7 +144,7 @@ export async function updatePostTemplateForAdmin(
             ...(patch.presetKey !== undefined ? { presetKey: patch.presetKey } : {}),
             ...(patch.status !== undefined ? { status: patch.status } : {}),
             ...(patch.document !== undefined
-                ? { document: parsePostDocument(patch.document) }
+                ? { document: normalizeSavedPostDocument(patch.document) }
                 : {}),
         },
     });

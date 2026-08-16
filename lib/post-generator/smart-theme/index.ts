@@ -38,6 +38,11 @@ export {
     imageCacheKey,
 } from "@/lib/post-generator/smart-theme/cache";
 export { nextImaginativeExpression } from "@/lib/post-generator/smart-theme/themeGenerator";
+export {
+    createAnalysisRunTracker,
+    resolveHeroImageAnalysisAction,
+    shouldCommitSmartThemeAnalysis,
+} from "@/lib/post-generator/smart-theme/analysisRun";
 
 export type RunSmartThemeOptions = {
     /** Force re-analysis even if cached */
@@ -47,6 +52,8 @@ export type RunSmartThemeOptions = {
      * On force without this, expression toggles Soft ↔ Bold.
      */
     imaginativeExpression?: ImaginativeExpression;
+    /** Admin session headers so remote suite photos can use the image proxy. */
+    authHeaders?: HeadersInit;
 };
 
 /**
@@ -81,7 +88,7 @@ export async function runSmartThemeEngine(
     const analysis =
         options.force && cached?.analysis
             ? cached.analysis
-            : await analyzeImageUrl(imageUrl);
+            : await analyzeImageUrl(imageUrl, { authHeaders: options.authHeaders });
 
     const themes = generateThemes(analysis, { imaginativeExpression });
     let recommendedIndex = pickRecommendedIndex(analysis, themes);

@@ -1,12 +1,13 @@
 import { SITE_LOGO_PATH, SITE_CONTACT } from "@/lib/seo/constants";
 import { INVOICE_WEBSITE_DISPLAY, SITE_NAME } from "@/lib/constants";
-import type {
-    PostAmenitiesStyle,
-    PostAmenityItem,
-    PostContactStyle,
-    PostDocument,
-    PostPresetKey,
-    PostTheme,
+import {
+    POST_DOCUMENT_VERSION,
+    type PostAmenitiesStyle,
+    type PostAmenityItem,
+    type PostContactStyle,
+    type PostDocument,
+    type PostPresetKey,
+    type PostTheme,
 } from "@/lib/post-generator/types";
 import { POST_TOKENS } from "@/lib/post-generator/tokens";
 
@@ -101,7 +102,7 @@ export function createDefaultPostDocument(
     overrides: Partial<PostDocument> = {},
 ): PostDocument {
     const base: PostDocument = {
-        version: 1,
+        version: POST_DOCUMENT_VERSION,
         apartmentId: null,
         apartmentName: "",
         apartmentSlug: null,
@@ -308,6 +309,7 @@ function mergeDocumentWithDefaults(
         contactStyle,
         amenities: overrides.amenities ?? base.amenities,
         contact: overrides.contact ?? base.contact,
+        version: POST_DOCUMENT_VERSION,
     };
 }
 
@@ -628,14 +630,38 @@ function applyLegacyApprovedLayout(
         button,
         headline,
         contactStyle,
+        version: POST_DOCUMENT_VERSION,
     };
 }
 
-/** One-time upgrade for unedited early cream-card drafts. Not used on editor merges. */
+function incomingDocumentVersion(raw: Partial<PostDocument>): number {
+    return typeof raw.version === "number" ? raw.version : 1;
+}
+
+/**
+ * Fill missing fields and stamp the current document version.
+ * Never runs layout heuristics — used on template save/create so editor
+ * choices (pill CTA, 4-col gold amenities, dense glass, etc.) persist.
+ */
+export function normalizePostDocument(
+    raw: Partial<PostDocument> = {},
+): PostDocument {
+    return createDefaultPostDocument(raw);
+}
+
+/**
+ * One-time upgrade for unedited v1 cream-card drafts on load.
+ * Skipped once version is current, and never used on save.
+ */
 export function migrateLegacyPostDocument(
     raw: Partial<PostDocument>,
 ): PostDocument {
     const doc = createDefaultPostDocument(raw);
-    if (!isLegacyApprovedLayoutDraft(raw)) return doc;
+    if (
+        incomingDocumentVersion(raw) >= POST_DOCUMENT_VERSION ||
+        !isLegacyApprovedLayoutDraft(raw)
+    ) {
+        return doc;
+    }
     return applyLegacyApprovedLayout(doc, raw);
 }

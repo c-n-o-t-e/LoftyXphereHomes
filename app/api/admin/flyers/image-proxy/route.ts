@@ -13,6 +13,23 @@ const ALLOWED_HOST_SUFFIXES = [
     "supabase.in",
 ];
 
+function allowedExtraHosts(): string[] {
+    const hosts: string[] = [];
+    for (const raw of [
+        process.env.NEXT_PUBLIC_SUPABASE_URL,
+        process.env.NEXT_PUBLIC_SITE_URL,
+        process.env.NEXT_PUBLIC_APP_URL,
+    ]) {
+        if (!raw) continue;
+        try {
+            hosts.push(new URL(raw).hostname.toLowerCase());
+        } catch {
+            // ignore invalid env URLs
+        }
+    }
+    return hosts;
+}
+
 function isAllowedImageUrl(rawUrl: string): boolean {
     try {
         const url = new URL(rawUrl);
@@ -21,6 +38,9 @@ function isAllowedImageUrl(rawUrl: string): boolean {
         }
         const host = url.hostname.toLowerCase();
         if (host === "localhost" || host === "127.0.0.1") {
+            return true;
+        }
+        if (allowedExtraHosts().includes(host)) {
             return true;
         }
         return ALLOWED_HOST_SUFFIXES.some(

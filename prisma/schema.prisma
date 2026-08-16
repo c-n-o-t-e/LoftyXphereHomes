@@ -276,6 +276,29 @@ model Flyer {
   @@index([status, updatedAt])
 }
 
+// --- Luxury Instagram Post Generator (manual Canva-style editor) ---
+
+enum PostTemplateStatus {
+  DRAFT
+  PUBLISHED
+  ARCHIVED
+}
+
+model PostTemplate {
+  id             String             @id @default(cuid())
+  title          String
+  presetKey      String?
+  status         PostTemplateStatus @default(DRAFT)
+  /// Full editable document: layout, headline, theme, overlay, amenities, etc.
+  document       Json
+  createdByEmail String?
+  createdAt      DateTime           @default(now())
+  updatedAt      DateTime           @updatedAt
+
+  @@index([status, updatedAt])
+  @@map("post_templates")
+}
+
 // --- Shared rate-limit counters (serverless-safe; all instances read/write Postgres) ---
 model RateLimitBucket {
   bucketKey   String   @id @map("bucket_key")

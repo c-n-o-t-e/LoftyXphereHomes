@@ -47,3 +47,6 @@ credentials.json
 next-env.d.ts
 
 /lib/generated/prisma
+
+scripts/elevate_memo
+scripts/letterhead

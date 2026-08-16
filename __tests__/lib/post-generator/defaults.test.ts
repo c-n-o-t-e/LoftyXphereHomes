@@ -1,6 +1,7 @@
 import {
     applyPreset,
     createDefaultPostDocument,
+    mergePostDocument,
     REFERENCE_THEME,
 } from "@/lib/post-generator/defaults";
 import { parsePostDocument } from "@/lib/post-generator/validation";
@@ -66,6 +67,10 @@ describe("post-generator defaults", () => {
                 fontSize: 52,
                 accentColor: "#C4A574",
             },
+            contactStyle: {
+                iconColor: POST_TOKENS.colors.gold,
+                textColor: POST_TOKENS.colors.gold,
+            },
         });
         expect(parsed.amenitiesStyle.columns).toBe(8);
         expect(parsed.amenitiesStyle.goldLabels).toBe(false);
@@ -80,6 +85,40 @@ describe("post-generator defaults", () => {
         expect(parsed.button.borderRadius).toBe(POST_TOKENS.type.ctaRadius);
         expect(parsed.headline.showAccentDivider).toBe(false);
         expect(parsed.headline.fontSize).toBe(POST_TOKENS.type.headlineSize);
+        expect(parsed.contactStyle.textColor).toBe(POST_TOKENS.colors.text);
+    });
+
+    it("does not rewrite valid editor choices on merge or parse", () => {
+        const current = createDefaultPostDocument();
+        const patch = {
+            amenitiesStyle: { ...current.amenitiesStyle, columns: 4 },
+            overlay: {
+                ...current.overlay,
+                opacity: 0.9,
+                photoHeightPercent: 65,
+                cardInsetX: 26,
+            },
+            headline: { ...current.headline, fontSize: 52 },
+        };
+        const merged = mergePostDocument(current, patch);
+        expect(merged.amenitiesStyle.columns).toBe(4);
+        expect(merged.overlay.opacity).toBe(0.9);
+        expect(merged.overlay.photoHeightPercent).toBe(65);
+        expect(merged.overlay.cardInsetX).toBe(26);
+        expect(merged.headline.fontSize).toBe(52);
+
+        const reparsed = parsePostDocument(merged);
+        expect(reparsed.amenitiesStyle.columns).toBe(4);
+        expect(reparsed.overlay.opacity).toBe(0.9);
+        expect(reparsed.overlay.photoHeightPercent).toBe(65);
+        expect(reparsed.overlay.cardInsetX).toBe(26);
+        expect(reparsed.headline.fontSize).toBe(52);
+    });
+
+    it("keeps boutique-hotel glass opacity instead of treating it as a legacy card", () => {
+        const boutique = applyPreset("boutique-hotel");
+        expect(boutique.overlay.opacity).toBe(0.96);
+        expect(boutique.headline.fontSize).toBe(56);
     });
 
     it("fills missing footer icon/text colours on older templates", () => {
@@ -96,9 +135,11 @@ describe("post-generator defaults", () => {
         });
         expect(parsed.contactStyle.iconColor).toBe(POST_TOKENS.colors.gold);
         expect(parsed.contactStyle.textColor).toBe(POST_TOKENS.colors.text);
+        expect(parsed.contactStyle.fontSize).toBe(15);
+        expect(parsed.contactStyle.iconSize).toBe(22);
     });
 
-    it("upgrades both-gold footers to gold icons + charcoal text", () => {
+    it("preserves an explicit gold-on-gold footer", () => {
         const parsed = parsePostDocument({
             version: 1,
             contactStyle: {
@@ -107,7 +148,7 @@ describe("post-generator defaults", () => {
             },
         });
         expect(parsed.contactStyle.iconColor).toBe(POST_TOKENS.colors.gold);
-        expect(parsed.contactStyle.textColor).toBe(POST_TOKENS.colors.text);
+        expect(parsed.contactStyle.textColor).toBe(POST_TOKENS.colors.gold);
     });
 
     it("splits a legacy single footer colour into icon + text", () => {

@@ -240,133 +240,27 @@ export function createDefaultPostDocument(
         },
     };
 
-    const amenities = overrides.amenities ?? base.amenities;
-    const visibleAmenityCount = amenities.filter((a) => a.visible).length;
+    return mergeDocumentWithDefaults(base, overrides);
+}
 
-    // Migrate older 4×2 drafts → reference single row of 8
-    let amenitiesStyle = {
-        ...base.amenitiesStyle,
-        ...(overrides.amenitiesStyle ?? {}),
-    };
-    if (visibleAmenityCount >= 7 && amenitiesStyle.columns === 4) {
-        amenitiesStyle = { ...DEFAULT_AMENITIES_STYLE };
-    }
+type LegacyContactStyle = Partial<PostContactStyle> & { color?: unknown };
 
-    // Migrate early floating-card inset / opaque cream → approved glass layout
+function mergeDocumentWithDefaults(
+    base: PostDocument,
+    overrides: Partial<PostDocument>,
+): PostDocument {
     const overlay = {
         ...base.overlay,
         ...(overrides.overlay ?? {}),
     };
-    if (
-        overrides.overlay?.cardInsetX === 30 ||
-        overrides.overlay?.cardInsetX === 18 ||
-        overrides.overlay?.cardInsetX === 26
-    ) {
-        overlay.cardInsetX = base.overlay.cardInsetX;
-    }
-    if (overrides.overlay?.opacity != null && overrides.overlay.opacity >= 0.85) {
-        overlay.opacity = base.overlay.opacity;
-        overlay.blur = base.overlay.blur;
-        overlay.backgroundColor = base.overlay.backgroundColor;
-        overlay.borderRadius = base.overlay.borderRadius;
-        overlay.borderThickness = base.overlay.borderThickness;
-        overlay.borderColor = base.overlay.borderColor;
-        overlay.shadow = base.overlay.shadow;
-    }
-    if (
-        overrides.overlay?.photoHeightPercent != null &&
-        (overrides.overlay.photoHeightPercent >= 65 ||
-            overrides.overlay.photoHeightPercent === 58)
-    ) {
-        overlay.photoHeightPercent = base.overlay.photoHeightPercent;
-        overlay.overlapPercent = base.overlay.overlapPercent;
-    }
-    if (overrides.overlay?.photoFadePercent == null) {
+    if (overlay.photoFadePercent == null) {
         overlay.photoFadePercent = base.overlay.photoFadePercent;
     }
-    if (overrides.overlay?.cardOffsetY == null) {
+    if (overlay.cardOffsetY == null) {
         overlay.cardOffsetY = base.overlay.cardOffsetY;
     }
 
-    const layout = {
-        ...base.layout,
-        ...(overrides.layout ?? {}),
-    };
-    if (
-        overrides.layout?.outerPadding === 22 ||
-        overrides.layout?.outerPadding === 14 ||
-        overrides.layout?.outerPadding === 24
-    ) {
-        layout.outerPadding = base.layout.outerPadding;
-        layout.borderRadius = base.layout.borderRadius;
-        layout.borderThickness = base.layout.borderThickness;
-        layout.borderColor = base.layout.borderColor;
-    }
-    if (
-        overrides.layout?.contentPaddingX === 30 ||
-        overrides.layout?.contentPaddingX === 46
-    ) {
-        layout.contentPaddingX = base.layout.contentPaddingX;
-        layout.contentPaddingTop = base.layout.contentPaddingTop;
-        layout.contentPaddingBottom = base.layout.contentPaddingBottom;
-    }
-
-    const theme = {
-        ...base.theme,
-        ...(overrides.theme ?? {}),
-    };
-    // Only migrate legacy cream drafts — don't clobber intentional preset palettes
-    if (
-        overrides.theme?.background === "#F7F3EC" &&
-        (overrides.theme?.gold === "#C4A574" || overrides.theme?.gold == null)
-    ) {
-        theme.background = base.theme.background;
-        theme.gold = base.theme.gold;
-        theme.accent = base.theme.accent;
-        theme.button = base.theme.button;
-        theme.icon = base.theme.icon;
-        theme.divider = base.theme.divider;
-    } else if (
-        overrides.theme == null ||
-        (overrides.theme.gold === "#C4A574" &&
-            overrides.theme.background == null &&
-            Object.keys(overrides.theme).length <= 2)
-    ) {
-        // no-op — leave merged theme as-is for partial patches
-    }
-
-    const button = {
-        ...base.button,
-        ...(overrides.button ?? {}),
-    };
-    if (overrides.button?.borderRadius === 999) {
-        button.borderRadius = base.button.borderRadius;
-    }
-    if (overrides.button?.backgroundColor === "#C4A574") {
-        button.backgroundColor = base.button.backgroundColor;
-    }
-
-    const headline = {
-        ...base.headline,
-        ...(overrides.headline ?? {}),
-    };
-    if (
-        overrides.headline?.showAccentDivider === true &&
-        (overrides.headline?.accentWord ?? "").includes("Expectations")
-    ) {
-        headline.showAccentDivider = false;
-    }
-    if (overrides.headline?.fontSize != null && overrides.headline.fontSize <= 52) {
-        headline.fontSize = base.headline.fontSize;
-        headline.lineHeight = base.headline.lineHeight;
-    }
-    if (overrides.headline?.accentColor === "#C4A574") {
-        headline.accentColor = base.headline.accentColor;
-    }
-
-    const legacyContactRaw = overrides.contactStyle as
-        | (Partial<PostContactStyle> & { color?: unknown })
-        | undefined;
+    const legacyContactRaw = overrides.contactStyle as LegacyContactStyle | undefined;
     const legacyContactColor =
         typeof legacyContactRaw?.color === "string" ? legacyContactRaw.color : undefined;
 
@@ -382,33 +276,6 @@ export function createDefaultPostDocument(
             legacyContactColor ??
             base.contactStyle.textColor,
     };
-    // Larger, lighter footer type — migrate older compact footers to reference scale
-    if (
-        overrides.contactStyle?.fontSize == null ||
-        overrides.contactStyle.fontSize <= 15 ||
-        overrides.contactStyle?.fontWeight === 600 ||
-        overrides.contactStyle?.iconSize == null ||
-        overrides.contactStyle.iconSize <= 22
-    ) {
-        contactStyle = {
-            ...DEFAULT_CONTACT_STYLE,
-            ...overrides.contactStyle,
-            iconColor:
-                overrides.contactStyle?.iconColor ??
-                legacyContactColor ??
-                DEFAULT_CONTACT_STYLE.iconColor,
-            textColor:
-                overrides.contactStyle?.textColor ??
-                legacyContactColor ??
-                DEFAULT_CONTACT_STYLE.textColor,
-            fontSize: DEFAULT_CONTACT_STYLE.fontSize,
-            fontWeight: DEFAULT_CONTACT_STYLE.fontWeight,
-            iconSize: DEFAULT_CONTACT_STYLE.iconSize,
-            strokeWidth: DEFAULT_CONTACT_STYLE.strokeWidth,
-            gap: DEFAULT_CONTACT_STYLE.gap,
-            paddingY: DEFAULT_CONTACT_STYLE.paddingY,
-        };
-    }
     if (!contactStyle.iconColor) {
         contactStyle = {
             ...contactStyle,
@@ -421,32 +288,25 @@ export function createDefaultPostDocument(
             textColor: DEFAULT_CONTACT_STYLE.textColor,
         };
     }
-    // Gold icons + charcoal labels (reference). Upgrade older both-gold footers.
-    if (
-        contactStyle.iconColor === POST_TOKENS.colors.gold &&
-        contactStyle.textColor === POST_TOKENS.colors.gold
-    ) {
-        contactStyle = {
-            ...contactStyle,
-            textColor: DEFAULT_CONTACT_STYLE.textColor,
-        };
-    }
 
     return {
         ...base,
         ...overrides,
-        layout,
+        layout: { ...base.layout, ...(overrides.layout ?? {}) },
         image: { ...base.image, ...(overrides.image ?? {}) },
         overlay,
-        headline,
+        headline: { ...base.headline, ...(overrides.headline ?? {}) },
         description: { ...base.description, ...(overrides.description ?? {}) },
-        button,
+        button: { ...base.button, ...(overrides.button ?? {}) },
         logo: { ...base.logo, ...(overrides.logo ?? {}) },
-        theme,
+        theme: { ...base.theme, ...(overrides.theme ?? {}) },
         fonts: { ...base.fonts, ...(overrides.fonts ?? {}) },
-        amenitiesStyle,
+        amenitiesStyle: {
+            ...base.amenitiesStyle,
+            ...(overrides.amenitiesStyle ?? {}),
+        },
         contactStyle,
-        amenities,
+        amenities: overrides.amenities ?? base.amenities,
         contact: overrides.contact ?? base.contact,
     };
 }
@@ -605,4 +465,177 @@ export function mergePostDocument(
         amenities: patch.amenities ?? base.amenities,
         contact: patch.contact ?? base.contact,
     });
+}
+
+/**
+ * Old cream-card drafts share several defaults at once (opaque panel, pill CTA,
+ * 4×2 amenity grid, #F7F3EC / #C4A574). A single matching value is a valid
+ * editor choice and must not be rewritten.
+ */
+function isLegacyApprovedLayoutDraft(raw: Partial<PostDocument>): boolean {
+    const overlay = raw.overlay;
+    const theme = raw.theme;
+    const button = raw.button;
+    const amenitiesStyle = raw.amenitiesStyle;
+    const layout = raw.layout;
+    const headline = raw.headline;
+
+    const signals = [
+        theme?.background === "#F7F3EC" &&
+            (theme?.gold === "#C4A574" || theme?.gold == null),
+        overlay?.opacity != null &&
+            overlay.opacity >= 0.85 &&
+            (overlay.cardInsetX === 30 || overlay.cardInsetX === 18),
+        button?.borderRadius === 999,
+        amenitiesStyle?.columns === 4 && amenitiesStyle.goldLabels === true,
+        layout?.outerPadding === 14 || layout?.outerPadding === 22,
+        headline?.showAccentDivider === true &&
+            (headline.accentWord ?? "").includes("Expectations"),
+    ];
+
+    return signals.filter(Boolean).length >= 3;
+}
+
+function applyLegacyApprovedLayout(
+    doc: PostDocument,
+    raw: Partial<PostDocument>,
+): PostDocument {
+    const defaults = createDefaultPostDocument();
+    const visibleAmenityCount = doc.amenities.filter((a) => a.visible).length;
+
+    let amenitiesStyle = doc.amenitiesStyle;
+    if (visibleAmenityCount >= 7 && amenitiesStyle.columns === 4) {
+        amenitiesStyle = { ...DEFAULT_AMENITIES_STYLE };
+    }
+
+    const overlay = { ...doc.overlay };
+    if (
+        raw.overlay?.cardInsetX === 30 ||
+        raw.overlay?.cardInsetX === 18 ||
+        raw.overlay?.cardInsetX === 26
+    ) {
+        overlay.cardInsetX = defaults.overlay.cardInsetX;
+    }
+    if (raw.overlay?.opacity != null && raw.overlay.opacity >= 0.85) {
+        overlay.opacity = defaults.overlay.opacity;
+        overlay.blur = defaults.overlay.blur;
+        overlay.backgroundColor = defaults.overlay.backgroundColor;
+        overlay.borderRadius = defaults.overlay.borderRadius;
+        overlay.borderThickness = defaults.overlay.borderThickness;
+        overlay.borderColor = defaults.overlay.borderColor;
+        overlay.shadow = defaults.overlay.shadow;
+    }
+    if (
+        raw.overlay?.photoHeightPercent != null &&
+        (raw.overlay.photoHeightPercent >= 65 ||
+            raw.overlay.photoHeightPercent === 58)
+    ) {
+        overlay.photoHeightPercent = defaults.overlay.photoHeightPercent;
+        overlay.overlapPercent = defaults.overlay.overlapPercent;
+    }
+
+    const layout = { ...doc.layout };
+    if (
+        raw.layout?.outerPadding === 22 ||
+        raw.layout?.outerPadding === 14 ||
+        raw.layout?.outerPadding === 24
+    ) {
+        layout.outerPadding = defaults.layout.outerPadding;
+        layout.borderRadius = defaults.layout.borderRadius;
+        layout.borderThickness = defaults.layout.borderThickness;
+        layout.borderColor = defaults.layout.borderColor;
+    }
+    if (
+        raw.layout?.contentPaddingX === 30 ||
+        raw.layout?.contentPaddingX === 46
+    ) {
+        layout.contentPaddingX = defaults.layout.contentPaddingX;
+        layout.contentPaddingTop = defaults.layout.contentPaddingTop;
+        layout.contentPaddingBottom = defaults.layout.contentPaddingBottom;
+    }
+
+    const theme = { ...doc.theme };
+    if (
+        raw.theme?.background === "#F7F3EC" &&
+        (raw.theme?.gold === "#C4A574" || raw.theme?.gold == null)
+    ) {
+        theme.background = defaults.theme.background;
+        theme.gold = defaults.theme.gold;
+        theme.accent = defaults.theme.accent;
+        theme.button = defaults.theme.button;
+        theme.icon = defaults.theme.icon;
+        theme.divider = defaults.theme.divider;
+    }
+
+    const button = { ...doc.button };
+    if (raw.button?.borderRadius === 999) {
+        button.borderRadius = defaults.button.borderRadius;
+    }
+    if (raw.button?.backgroundColor === "#C4A574") {
+        button.backgroundColor = defaults.button.backgroundColor;
+    }
+
+    const headline = { ...doc.headline };
+    if (
+        raw.headline?.showAccentDivider === true &&
+        (raw.headline?.accentWord ?? "").includes("Expectations")
+    ) {
+        headline.showAccentDivider = false;
+    }
+    if (raw.headline?.fontSize != null && raw.headline.fontSize <= 52) {
+        headline.fontSize = defaults.headline.fontSize;
+        headline.lineHeight = defaults.headline.lineHeight;
+    }
+    if (raw.headline?.accentColor === "#C4A574") {
+        headline.accentColor = defaults.headline.accentColor;
+    }
+
+    let contactStyle = { ...doc.contactStyle };
+    if (
+        raw.contactStyle?.fontSize == null ||
+        raw.contactStyle.fontSize <= 15 ||
+        raw.contactStyle?.fontWeight === 600 ||
+        raw.contactStyle?.iconSize == null ||
+        raw.contactStyle.iconSize <= 22
+    ) {
+        contactStyle = {
+            ...DEFAULT_CONTACT_STYLE,
+            ...contactStyle,
+            fontSize: DEFAULT_CONTACT_STYLE.fontSize,
+            fontWeight: DEFAULT_CONTACT_STYLE.fontWeight,
+            iconSize: DEFAULT_CONTACT_STYLE.iconSize,
+            strokeWidth: DEFAULT_CONTACT_STYLE.strokeWidth,
+            gap: DEFAULT_CONTACT_STYLE.gap,
+            paddingY: DEFAULT_CONTACT_STYLE.paddingY,
+        };
+    }
+    if (
+        contactStyle.iconColor === POST_TOKENS.colors.gold &&
+        contactStyle.textColor === POST_TOKENS.colors.gold
+    ) {
+        contactStyle = {
+            ...contactStyle,
+            textColor: DEFAULT_CONTACT_STYLE.textColor,
+        };
+    }
+
+    return {
+        ...doc,
+        amenitiesStyle,
+        overlay,
+        layout,
+        theme,
+        button,
+        headline,
+        contactStyle,
+    };
+}
+
+/** One-time upgrade for unedited early cream-card drafts. Not used on editor merges. */
+export function migrateLegacyPostDocument(
+    raw: Partial<PostDocument>,
+): PostDocument {
+    const doc = createDefaultPostDocument(raw);
+    if (!isLegacyApprovedLayoutDraft(raw)) return doc;
+    return applyLegacyApprovedLayout(doc, raw);
 }

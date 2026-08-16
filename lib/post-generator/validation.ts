@@ -1,5 +1,5 @@
 import { z } from "zod";
-import { createDefaultPostDocument } from "@/lib/post-generator/defaults";
+import { migrateLegacyPostDocument } from "@/lib/post-generator/defaults";
 import type { PostDocument, PostPresetKey } from "@/lib/post-generator/types";
 
 const amenitySchema = z.object({
@@ -72,16 +72,16 @@ export const updatePostTemplateBodySchema = z.object({
 });
 
 export function parsePostDocument(raw: unknown): PostDocument {
-    const defaults = createDefaultPostDocument();
+    const defaults = migrateLegacyPostDocument({});
     if (!raw || typeof raw !== "object") return defaults;
 
     const parsed = postDocumentSchema.safeParse(raw);
     if (!parsed.success) {
         // Best-effort merge for drafts written before schema tightening
-        return createDefaultPostDocument(raw as Partial<PostDocument>);
+        return migrateLegacyPostDocument(raw as Partial<PostDocument>);
     }
 
-    return createDefaultPostDocument(parsed.data as Partial<PostDocument>);
+    return migrateLegacyPostDocument(parsed.data as Partial<PostDocument>);
 }
 
 export function isPostPresetKey(value: string): value is PostPresetKey {

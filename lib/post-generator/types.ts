@@ -8,13 +8,8 @@ export type PostDocumentVersion = 1 | typeof POST_DOCUMENT_VERSION;
 
 export type PostTemplateStatus = "DRAFT" | "PUBLISHED" | "ARCHIVED";
 
-export type PostPresetKey =
-    | "luxury-editorial"
-    | "luxury-classic"
-    | "luxury-gold"
-    | "boutique-hotel"
-    | "minimal"
-    | "dark-luxury";
+export const DEFAULT_POST_PRESET = "luxury-editorial" as const;
+export type PostPresetKey = typeof DEFAULT_POST_PRESET;
 
 export type HeadingFont =
     | "Playfair Display"

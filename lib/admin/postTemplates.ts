@@ -5,7 +5,12 @@ import {
     createDefaultPostDocument,
     mergePostDocument,
 } from "@/lib/post-generator/defaults";
-import { parsePostDocument, normalizeSavedPostDocument } from "@/lib/post-generator/validation";
+import {
+    normalizePostPresetKey,
+    normalizeSavedPostDocument,
+    parsePostDocument,
+} from "@/lib/post-generator/validation";
+import { DEFAULT_POST_PRESET } from "@/lib/post-generator/types";
 import type {
     PostDocument,
     PostPresetKey,
@@ -29,7 +34,7 @@ export function serializePostTemplate(row: PostTemplateRow): PostTemplateRecord 
     return {
         id: row.id,
         title: row.title,
-        presetKey: (row.presetKey as PostPresetKey | null) ?? null,
+        presetKey: normalizePostPresetKey(row.presetKey),
         status: row.status,
         document: parsePostDocument(row.document),
         createdByEmail: row.createdByEmail,
@@ -113,7 +118,7 @@ export async function createPostTemplateForAdmin(args: {
     const row = await prisma.postTemplate.create({
         data: {
             title: args.title,
-            presetKey: args.presetKey ?? "luxury-editorial",
+            presetKey: args.presetKey ?? DEFAULT_POST_PRESET,
             status: "DRAFT",
             document,
             createdByEmail: args.createdByEmail ?? null,
@@ -141,7 +146,9 @@ export async function updatePostTemplateForAdmin(
         where: { id },
         data: {
             ...(patch.title !== undefined ? { title: patch.title } : {}),
-            ...(patch.presetKey !== undefined ? { presetKey: patch.presetKey } : {}),
+            ...(patch.presetKey !== undefined
+                ? { presetKey: normalizePostPresetKey(patch.presetKey) }
+                : {}),
             ...(patch.status !== undefined ? { status: patch.status } : {}),
             ...(patch.document !== undefined
                 ? { document: normalizeSavedPostDocument(patch.document) }

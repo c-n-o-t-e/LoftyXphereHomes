@@ -1,6 +1,7 @@
 import { SITE_LOGO_PATH, SITE_CONTACT } from "@/lib/seo/constants";
 import { INVOICE_WEBSITE_DISPLAY, SITE_NAME } from "@/lib/constants";
 import {
+    DEFAULT_POST_PRESET,
     POST_DOCUMENT_VERSION,
     type PostAmenitiesStyle,
     type PostAmenityItem,
@@ -14,13 +15,13 @@ import { POST_TOKENS } from "@/lib/post-generator/tokens";
 /** Reference look: one row of 8, dark uppercase stacked labels, gold icons. */
 export const DEFAULT_AMENITIES_STYLE: PostAmenitiesStyle = {
     columns: 8,
-    iconSize: 36,
+    iconSize: 34,
     strokeWidth: 2.1,
     fontSize: 9.5,
     fontWeight: 600,
     rowGap: 0,
     columnGap: POST_TOKENS.spacing.amenityColumnGap,
-    iconLabelGap: 8,
+    iconLabelGap: 7,
     goldLabels: false,
 };
 
@@ -31,7 +32,7 @@ export const DEFAULT_CONTACT_STYLE: PostContactStyle = {
     fontSize: 17,
     fontWeight: 500,
     gap: 12,
-    paddingY: 14,
+    paddingY: 12,
     iconColor: POST_TOKENS.colors.gold,
     textColor: POST_TOKENS.colors.text,
 };
@@ -68,26 +69,6 @@ export const PRESET_META: Record<
         label: "Luxury Editorial",
         description: "Approved reference — cream panel, gold accents, serif headline",
     },
-    "luxury-classic": {
-        label: "Luxury Classic",
-        description: "Slightly warmer cream with stronger gold borders",
-    },
-    "luxury-gold": {
-        label: "Luxury Gold",
-        description: "Richer gold accents and denser champagne frame",
-    },
-    "boutique-hotel": {
-        label: "Boutique Hotel",
-        description: "Softer ivory panel with refined spacing",
-    },
-    minimal: {
-        label: "Minimal",
-        description: "Cleaner panel, lighter dividers, quieter gold",
-    },
-    "dark-luxury": {
-        label: "Dark Luxury",
-        description: "Charcoal panel with champagne type — same layout",
-    },
 };
 
 function formatWhatsAppDisplay(phone: string): string {
@@ -110,7 +91,7 @@ export function createDefaultPostDocument(
         layout: {
             outerPadding: POST_TOKENS.frame.borderInset,
             borderThickness: POST_TOKENS.frame.borderThickness,
-            borderColor: POST_TOKENS.colors.gold,
+            borderColor: POST_TOKENS.colors.frameBorder,
             borderRadius: POST_TOKENS.frame.borderRadius,
             contentPaddingX: POST_TOKENS.spacing.contentPaddingX,
             contentPaddingTop: POST_TOKENS.spacing.contentPaddingTop,
@@ -313,131 +294,8 @@ function mergeDocumentWithDefaults(
     };
 }
 
-export function applyPreset(preset: PostPresetKey): PostDocument {
-    const doc = createDefaultPostDocument();
-
-    switch (preset) {
-        case "luxury-editorial":
-            return doc;
-        case "luxury-classic":
-            return createDefaultPostDocument({
-                theme: {
-                    ...REFERENCE_THEME,
-                    background: "#F5F0E8",
-                    gold: "#B8956A",
-                    accent: "#B8956A",
-                    button: "#B8956A",
-                    icon: "#B8956A",
-                },
-                layout: {
-                    ...doc.layout,
-                    borderThickness: 3,
-                    borderColor: "#B8956A",
-                },
-                headline: {
-                    ...doc.headline,
-                    accentColor: "#B8956A",
-                },
-                overlay: {
-                    ...doc.overlay,
-                    backgroundColor: "#F5F0E8",
-                },
-            });
-        case "luxury-gold":
-            return createDefaultPostDocument({
-                theme: {
-                    ...REFERENCE_THEME,
-                    gold: "#D4AF37",
-                    accent: "#D4AF37",
-                    button: "#C9A227",
-                    icon: "#D4AF37",
-                },
-                layout: {
-                    ...doc.layout,
-                    borderColor: "#D4AF37",
-                    borderThickness: 3.5,
-                },
-                headline: { ...doc.headline, accentColor: "#D4AF37" },
-                button: { ...doc.button, backgroundColor: "#C9A227" },
-                overlay: {
-                    ...doc.overlay,
-                    borderThickness: 1,
-                    borderColor: "#E8D5A3",
-                },
-            });
-        case "boutique-hotel":
-            return createDefaultPostDocument({
-                overlay: {
-                    ...doc.overlay,
-                    backgroundColor: "#FAF8F4",
-                    borderRadius: 36,
-                    glassEffect: true,
-                    opacity: 0.96,
-                    blur: 8,
-                },
-                fonts: { heading: "Cormorant Garamond", body: "Manrope" },
-                headline: { ...doc.headline, fontSize: 56, fontWeight: 600 },
-            });
-        case "minimal":
-            return createDefaultPostDocument({
-                layout: { ...doc.layout, borderThickness: 1.5 },
-                theme: {
-                    ...REFERENCE_THEME,
-                    divider: "#EFEAE2",
-                    gold: "#B8A078",
-                    accent: "#B8A078",
-                    button: "#B8A078",
-                    icon: "#B8A078",
-                },
-                headline: {
-                    ...doc.headline,
-                    accentColor: "#B8A078",
-                    showAccentDivider: false,
-                },
-                overlay: { ...doc.overlay, shadow: 4, overlapPercent: 6 },
-            });
-        case "dark-luxury":
-            return createDefaultPostDocument({
-                theme: {
-                    primary: "#F7F3EC",
-                    accent: POST_TOKENS.colors.gold,
-                    gold: POST_TOKENS.colors.gold,
-                    background: "#1A1A1A",
-                    text: "#F2EDE6",
-                    divider: "rgba(200,166,106,0.25)",
-                    button: POST_TOKENS.colors.gold,
-                    buttonText: "#1A1A1A",
-                    icon: POST_TOKENS.colors.gold,
-                },
-                overlay: {
-                    ...doc.overlay,
-                    backgroundColor: "#2A2A2A",
-                    glassEffect: true,
-                    blur: 16,
-                    opacity: 0.35,
-                },
-                headline: {
-                    ...doc.headline,
-                    color: "#F2EDE6",
-                    accentColor: POST_TOKENS.colors.gold,
-                },
-                description: {
-                    ...doc.description,
-                    color: "#C8C2B8",
-                },
-                logo: {
-                    ...doc.logo,
-                    variant: "light",
-                    url: "/lofty-logo-white.png",
-                },
-                layout: {
-                    ...doc.layout,
-                    borderColor: POST_TOKENS.colors.gold,
-                },
-            });
-        default:
-            return doc;
-    }
+export function applyPreset(_preset: PostPresetKey = DEFAULT_POST_PRESET): PostDocument {
+    return createDefaultPostDocument();
 }
 
 export function mergePostDocument(
@@ -639,6 +497,65 @@ function incomingDocumentVersion(raw: Partial<PostDocument>): number {
 }
 
 /**
+ * Previous glass-card default: 62% hero, 14% overlap, footer pinned to the
+ * canvas bottom. That combination created a large empty cream band.
+ * Remap only that exact fingerprint so intentional editor values stay put.
+ */
+function isPinnedFooterDefaultDraft(raw: Partial<PostDocument>): boolean {
+    const overlay = raw.overlay;
+    return overlay?.photoHeightPercent === 62 && overlay?.overlapPercent === 14;
+}
+
+function applyCompactPosterLayout(
+    doc: PostDocument,
+    raw: Partial<PostDocument>,
+): PostDocument {
+    if (!isPinnedFooterDefaultDraft(raw)) return doc;
+
+    const defaults = createDefaultPostDocument();
+    const overlay = { ...doc.overlay };
+    overlay.photoHeightPercent = defaults.overlay.photoHeightPercent;
+    overlay.overlapPercent = defaults.overlay.overlapPercent;
+
+    if (raw.overlay?.photoFadePercent === 13) {
+        overlay.photoFadePercent = defaults.overlay.photoFadePercent;
+    }
+    if (raw.overlay?.cardOffsetY === -40) {
+        overlay.cardOffsetY = defaults.overlay.cardOffsetY;
+    }
+    if (raw.overlay?.footerGap === 28 || raw.overlay?.footerGap == null) {
+        overlay.footerGap = defaults.overlay.footerGap;
+    }
+    if (raw.overlay?.opacity === 0.28) {
+        overlay.opacity = defaults.overlay.opacity;
+        overlay.blur = defaults.overlay.blur;
+        overlay.shadow = defaults.overlay.shadow;
+        overlay.borderRadius = defaults.overlay.borderRadius;
+        overlay.borderColor = defaults.overlay.borderColor;
+    }
+
+    const layout = { ...doc.layout };
+    if (raw.layout?.contentPaddingTop === 34 && raw.layout?.contentPaddingX === 40) {
+        layout.contentPaddingTop = defaults.layout.contentPaddingTop;
+        layout.contentPaddingBottom = defaults.layout.contentPaddingBottom;
+    }
+    if (raw.layout?.outerPadding === 28) {
+        layout.outerPadding = defaults.layout.outerPadding;
+        layout.borderThickness = defaults.layout.borderThickness;
+        layout.borderRadius = defaults.layout.borderRadius;
+        layout.borderColor = defaults.layout.borderColor;
+    }
+
+    const headline = { ...doc.headline };
+    if (raw.headline?.fontSize === 58) {
+        headline.fontSize = defaults.headline.fontSize;
+        headline.lineHeight = defaults.headline.lineHeight;
+    }
+
+    return { ...doc, overlay, layout, headline };
+}
+
+/**
  * Fill missing fields and stamp the current document version.
  * Never runs layout heuristics — used on template save/create so editor
  * choices (pill CTA, 4-col gold amenities, dense glass, etc.) persist.
@@ -657,11 +574,10 @@ export function migrateLegacyPostDocument(
     raw: Partial<PostDocument>,
 ): PostDocument {
     const doc = createDefaultPostDocument(raw);
-    if (
+    const upgraded =
         incomingDocumentVersion(raw) >= POST_DOCUMENT_VERSION ||
         !isLegacyApprovedLayoutDraft(raw)
-    ) {
-        return doc;
-    }
-    return applyLegacyApprovedLayout(doc, raw);
+            ? doc
+            : applyLegacyApprovedLayout(doc, raw);
+    return applyCompactPosterLayout(upgraded, raw);
 }

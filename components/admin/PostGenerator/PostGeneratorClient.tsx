@@ -9,10 +9,10 @@ import {
 import { parsePostDocument } from "@/lib/post-generator/validation";
 import type {
     PostDocument,
-    PostPresetKey,
     PostTemplateRecord,
 } from "@/lib/post-generator/types";
 import {
+    DEFAULT_POST_PRESET,
     POST_CANVAS_HEIGHT,
     POST_CANVAS_WIDTH,
 } from "@/lib/post-generator/types";
@@ -49,7 +49,9 @@ export function PostGeneratorClient({ templateId }: { templateId: string }) {
     const [record, setRecord] = useState<PostTemplateRecord | null>(null);
     const [title, setTitle] = useState("");
     const [document, setDocument] = useState<PostDocument | null>(null);
-    const [presetKey, setPresetKey] = useState<PostPresetKey | null>("luxury-editorial");
+    const [presetKey, setPresetKey] = useState<typeof DEFAULT_POST_PRESET | null>(
+        DEFAULT_POST_PRESET,
+    );
     const [apartments, setApartments] = useState<ApartmentOption[]>([]);
     const [isLoading, setIsLoading] = useState(true);
     const [isSaving, setIsSaving] = useState(false);
@@ -401,10 +403,9 @@ export function PostGeneratorClient({ templateId }: { templateId: string }) {
         [applyPatch, authHeaders],
     );
 
-    const onApplyPreset = useCallback(
-        (key: PostPresetKey) => {
-            const next = applyPreset(key);
-            // Preserve current image / apartment when switching look
+    const onApplyPreset = useCallback(() => {
+            const next = applyPreset(DEFAULT_POST_PRESET);
+            // Preserve current image / apartment when resetting look
             const merged = mergePostDocument(next, {
                 apartmentId: document?.apartmentId ?? null,
                 apartmentName: document?.apartmentName ?? "",
@@ -412,14 +413,12 @@ export function PostGeneratorClient({ templateId }: { templateId: string }) {
                 bookingUrl: document?.bookingUrl ?? null,
                 image: document?.image,
             });
-            setPresetKey(key);
+            setPresetKey(DEFAULT_POST_PRESET);
             setDocument(merged);
             pushHistory(merged);
             scheduleSave();
-            toast.success(`Applied ${key}`);
-        },
-        [document, pushHistory, scheduleSave],
-    );
+            toast.success("Reset to Luxury Editorial");
+        }, [document, pushHistory, scheduleSave]);
 
     const previewHeight = useMemo(
         () => POST_CANVAS_HEIGHT * previewScale,
@@ -558,10 +557,7 @@ export function PostGeneratorClient({ templateId }: { templateId: string }) {
 
             {/* EDITOR PANEL */}
             <div className="grid gap-4 lg:grid-cols-2 xl:grid-cols-3">
-                <TemplateLibrary
-                    activePreset={presetKey}
-                    onApplyPreset={onApplyPreset}
-                />
+                <TemplateLibrary onApplyPreset={onApplyPreset} />
                 <ImageEditor
                     document={document}
                     apartments={apartments}

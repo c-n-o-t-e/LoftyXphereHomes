@@ -3,7 +3,25 @@ import {
     migrateLegacyPostDocument,
     normalizePostDocument as fillPostDocument,
 } from "@/lib/post-generator/defaults";
-import type { PostDocument, PostPresetKey } from "@/lib/post-generator/types";
+import {
+    DEFAULT_POST_PRESET,
+    type PostDocument,
+    type PostPresetKey,
+} from "@/lib/post-generator/types";
+
+/** Accepted on create/update so older drafts still save, then coerced to the single layout. */
+const PRESET_KEY_INPUT = z.enum([
+    "luxury-editorial",
+    "luxury-classic",
+    "luxury-gold",
+    "boutique-hotel",
+    "minimal",
+    "dark-luxury",
+]);
+
+const presetKeySchema = PRESET_KEY_INPUT.transform(
+    (): PostPresetKey => DEFAULT_POST_PRESET,
+);
 
 const amenitySchema = z.object({
     id: z.string().min(1),
@@ -43,33 +61,14 @@ export const postDocumentSchema = z.object({
 
 export const createPostTemplateBodySchema = z.object({
     title: z.string().min(1).max(120),
-    presetKey: z
-        .enum([
-            "luxury-editorial",
-            "luxury-classic",
-            "luxury-gold",
-            "boutique-hotel",
-            "minimal",
-            "dark-luxury",
-        ])
-        .optional(),
+    presetKey: presetKeySchema.optional(),
     apartmentId: z.string().min(1).optional(),
     document: postDocumentSchema.optional(),
 });
 
 export const updatePostTemplateBodySchema = z.object({
     title: z.string().min(1).max(120).optional(),
-    presetKey: z
-        .enum([
-            "luxury-editorial",
-            "luxury-classic",
-            "luxury-gold",
-            "boutique-hotel",
-            "minimal",
-            "dark-luxury",
-        ])
-        .nullable()
-        .optional(),
+    presetKey: presetKeySchema.nullable().optional(),
     status: z.enum(["DRAFT", "PUBLISHED", "ARCHIVED"]).optional(),
     document: postDocumentSchema.optional(),
 });
@@ -106,12 +105,12 @@ export function parsePostDocument(raw: unknown): PostDocument {
 }
 
 export function isPostPresetKey(value: string): value is PostPresetKey {
-    return [
-        "luxury-editorial",
-        "luxury-classic",
-        "luxury-gold",
-        "boutique-hotel",
-        "minimal",
-        "dark-luxury",
-    ].includes(value);
+    return value === DEFAULT_POST_PRESET;
+}
+
+export function normalizePostPresetKey(
+    value: string | null | undefined,
+): PostPresetKey | null {
+    if (value == null || value === "") return null;
+    return DEFAULT_POST_PRESET;
 }

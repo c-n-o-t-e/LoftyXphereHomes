@@ -88,7 +88,10 @@ function blobToDataUrl(blob: Blob): Promise<string> {
     });
 }
 
-function loadHtmlImage(src: string, useCors: boolean): Promise<HTMLImageElement | null> {
+function loadHtmlImage(
+    src: string,
+    useCors: boolean,
+): Promise<HTMLImageElement | null> {
     return new Promise((resolve) => {
         const img = new Image();
         if (useCors) img.crossOrigin = "anonymous";
@@ -130,11 +133,15 @@ async function fetchImageBlob(
     }
 
     const sameOrigin =
-        typeof window !== "undefined" && absolute.startsWith(window.location.origin);
+        typeof window !== "undefined" &&
+        absolute.startsWith(window.location.origin);
 
     if (sameOrigin) {
         try {
-            const res = await fetch(absolute, { cache: "no-cache", credentials: "same-origin" });
+            const res = await fetch(absolute, {
+                cache: "no-cache",
+                credentials: "same-origin",
+            });
             if (res.ok) return await res.blob();
         } catch {
             // continue
@@ -158,7 +165,10 @@ async function fetchImageBlob(
         }
 
         try {
-            const res = await fetch(absolute, { mode: "cors", cache: "no-cache" });
+            const res = await fetch(absolute, {
+                mode: "cors",
+                cache: "no-cache",
+            });
             if (res.ok) return await res.blob();
         } catch {
             return null;
@@ -209,9 +219,13 @@ async function loadDrawable(
 export function heroPhotoCropRect(
     photoW: number,
     photoH: number,
-    image: Pick<PostImageControls, "cropTop" | "cropRight" | "cropBottom" | "cropLeft">,
+    image: Pick<
+        PostImageControls,
+        "cropTop" | "cropRight" | "cropBottom" | "cropLeft"
+    >,
 ): { x: number; y: number; width: number; height: number } {
-    const clampPct = (n: number) => Math.min(40, Math.max(0, Number.isFinite(n) ? n : 0));
+    const clampPct = (n: number) =>
+        Math.min(40, Math.max(0, Number.isFinite(n) ? n : 0));
     const top = (photoH * clampPct(image.cropTop)) / 100;
     const bottom = (photoH * clampPct(image.cropBottom)) / 100;
     const left = (photoW * clampPct(image.cropLeft)) / 100;
@@ -229,7 +243,10 @@ function drawableSize(source: CanvasImageSource): { w: number; h: number } {
         return { w: source.width, h: source.height };
     }
     if (source instanceof HTMLImageElement) {
-        return { w: source.naturalWidth || source.width, h: source.naturalHeight || source.height };
+        return {
+            w: source.naturalWidth || source.width,
+            h: source.naturalHeight || source.height,
+        };
     }
     if (source instanceof HTMLCanvasElement) {
         return { w: source.width, h: source.height };
@@ -277,7 +294,9 @@ function wrapText(
 }
 
 /** Rasterize amenity/contact SVGs so download icons match the live preview. */
-async function loadIconImage(svgMarkup: string): Promise<HTMLImageElement | null> {
+async function loadIconImage(
+    svgMarkup: string,
+): Promise<HTMLImageElement | null> {
     try {
         return await loadSvgAsImage(svgMarkup);
     } catch {
@@ -303,8 +322,17 @@ async function renderPostToCanvas(
     ctx.imageSmoothingEnabled = true;
     ctx.imageSmoothingQuality = "high";
 
-    const { layout, overlay, theme, fonts, headline, description, button, logo, image } =
-        doc;
+    const {
+        layout,
+        overlay,
+        theme,
+        fonts,
+        headline,
+        description,
+        button,
+        logo,
+        image,
+    } = doc;
     const amenities = doc.amenities.filter((a) => a.visible);
     const contacts = doc.contact.filter((c) => c.visible);
     const amenitiesStyle = {
@@ -363,7 +391,8 @@ async function renderPostToCanvas(
     const cardInset = Math.max(0, overlay.cardInsetX ?? 36);
     const cardOffsetY = overlay.cardOffsetY ?? -40;
     const photoFade = Math.min(40, Math.max(0, overlay.photoFadePercent ?? 13));
-    const footerBandH = 56 + contactStyle.iconSize + contactStyle.paddingY * 2 + 12;
+    const footerBandH =
+        56 + contactStyle.iconSize + contactStyle.paddingY * 2 + 12;
     const photoH = (innerH * overlay.photoHeightPercent) / 100;
     const cardTopLocal =
         (innerH * (overlay.photoHeightPercent - overlay.overlapPercent)) / 100 +
@@ -380,7 +409,9 @@ async function renderPostToCanvas(
         }
         const { w: iw, h: ih } = drawableSize(img);
         if (iw < 1 || ih < 1) {
-            throw new Error("Apartment photo loaded empty — please re-upload and try again.");
+            throw new Error(
+                "Apartment photo loaded empty — please re-upload and try again.",
+            );
         }
 
         const off = document.createElement("canvas");
@@ -454,7 +485,12 @@ async function renderPostToCanvas(
             img.close();
         }
     } else {
-        const g = ctx.createLinearGradient(innerX, innerY, innerX + innerW, innerY + photoH);
+        const g = ctx.createLinearGradient(
+            innerX,
+            innerY,
+            innerX + innerW,
+            innerY + photoH,
+        );
         g.addColorStop(0, "#d9d0c3");
         g.addColorStop(0.5, "#efe8dc");
         g.addColorStop(1, "#cfc4b4");
@@ -463,7 +499,11 @@ async function renderPostToCanvas(
         ctx.fillStyle = "#7a7268";
         ctx.font = "600 16px Manrope, sans-serif";
         ctx.textAlign = "center";
-        ctx.fillText("Upload a photo", innerX + innerW / 2, innerY + photoH / 2);
+        ctx.fillText(
+            "Upload a photo",
+            innerX + innerW / 2,
+            innerY + photoH / 2,
+        );
     }
 
     // Soft ivory wash only near the seam (don't blank the hero)
@@ -505,16 +545,22 @@ async function renderPostToCanvas(
     const cols = Math.max(2, amenitiesStyle.columns || 8);
     const iconSize = amenitiesStyle.iconSize;
     const amenityRowH =
-        iconSize + amenitiesStyle.iconLabelGap + amenitiesStyle.fontSize * 2.4 + 6;
-    const amenityRows = Math.max(1, Math.ceil(Math.max(amenities.length, 1) / cols));
+        iconSize +
+        amenitiesStyle.iconLabelGap +
+        amenitiesStyle.fontSize * 2.4 +
+        6;
+    const amenityRows = Math.max(
+        1,
+        Math.ceil(Math.max(amenities.length, 1) / cols),
+    );
     const amenityInnerH =
         amenities.length > 0
             ? amenityRows * amenityRowH +
-              Math.max(0, amenityRows - 1) * Math.max(0, amenitiesStyle.rowGap) +
+              Math.max(0, amenityRows - 1) *
+                  Math.max(0, amenitiesStyle.rowGap) +
               40
             : 0;
-    const amenitiesSectionH =
-        amenities.length > 0 ? 26 + amenityInnerH : 0;
+    const amenitiesSectionH = amenities.length > 0 ? 26 + amenityInnerH : 0;
 
     const panelH =
         layout.contentPaddingTop +
@@ -556,8 +602,7 @@ async function renderPostToCanvas(
     ctx.restore();
 
     if (overlay.borderThickness > 0) {
-        ctx.strokeStyle =
-            overlay.borderColor || POST_TOKENS.colors.glassBorder;
+        ctx.strokeStyle = overlay.borderColor || POST_TOKENS.colors.glassBorder;
         ctx.lineWidth = overlay.borderThickness;
         roundRect(ctx, panelX, panelY, panelW, panelH, pr);
         ctx.stroke();
@@ -566,9 +611,9 @@ async function renderPostToCanvas(
     // Logo
     const logoSrc =
         logo.variant === "light"
-            ? logo.lightUrl ?? logo.url
+            ? (logo.lightUrl ?? logo.url)
             : logo.variant === "dark"
-              ? logo.darkUrl ?? logo.url
+              ? (logo.darkUrl ?? logo.url)
               : logo.url;
     if (logoSrc) {
         const logoImg = await loadDrawable(logoSrc, authHeaders);
@@ -577,20 +622,26 @@ async function renderPostToCanvas(
             ctx.globalAlpha = logo.opacity;
             let lx = innerX + logo.padding;
             let ly = innerY + logo.padding;
-            if (logo.position === "top-right") lx = innerX + innerW - logo.padding - logo.size;
-            if (logo.position === "top-center") lx = innerX + (innerW - logo.size) / 2;
+            if (logo.position === "top-right")
+                lx = innerX + innerW - logo.padding - logo.size;
+            if (logo.position === "top-center")
+                lx = innerX + (innerW - logo.size) / 2;
             const { w: lw, h: lh0 } = drawableSize(logoImg);
             const aspect = lh0 / Math.max(lw, 1);
             const lh = logo.size * aspect;
             ctx.drawImage(logoImg, lx, ly, logo.size, lh);
             if (logo.showWordmark) {
-                ctx.fillStyle = logo.variant === "dark" ? theme.text : theme.icon;
+                ctx.fillStyle =
+                    logo.variant === "dark" ? theme.text : theme.icon;
                 ctx.font = `600 11px ${bodyFontFamily(fonts.body)}`;
                 ctx.textAlign = "left";
                 ctx.fillText(logo.wordmark.toUpperCase(), lx, ly + lh + 14);
             }
             ctx.restore();
-            if (typeof ImageBitmap !== "undefined" && logoImg instanceof ImageBitmap) {
+            if (
+                typeof ImageBitmap !== "undefined" &&
+                logoImg instanceof ImageBitmap
+            ) {
                 logoImg.close();
             }
         }
@@ -695,7 +746,13 @@ async function renderPostToCanvas(
 
             const iconImg = amenityIconImgs[i];
             if (iconImg) {
-                ctx.drawImage(iconImg, ax - iconSize / 2, ay, iconSize, iconSize);
+                ctx.drawImage(
+                    iconImg,
+                    ax - iconSize / 2,
+                    ay,
+                    iconSize,
+                    iconSize,
+                );
             }
             ctx.fillStyle = labelColor;
             ctx.font = `${amenitiesStyle.fontWeight} ${amenitiesStyle.fontSize}px ${bodyFontFamily(fonts.body)}`;
@@ -784,7 +841,11 @@ async function canvasToBlob(
     format: PostExportFormat,
 ): Promise<Blob> {
     const mime =
-        format === "jpeg" ? "image/jpeg" : format === "webp" ? "image/webp" : "image/png";
+        format === "jpeg"
+            ? "image/jpeg"
+            : format === "webp"
+              ? "image/webp"
+              : "image/png";
     const quality = format === "png" ? undefined : 0.95;
 
     try {
@@ -802,7 +863,10 @@ async function canvasToBlob(
                 if (blob) resolve(blob);
                 else if (format === "webp") {
                     canvas.toBlob(
-                        (png) => (png ? resolve(png) : reject(new Error("Encode failed"))),
+                        (png) =>
+                            png
+                                ? resolve(png)
+                                : reject(new Error("Encode failed")),
                         "image/png",
                     );
                 } else {
@@ -841,14 +905,20 @@ async function downloadViaAnchor(blob: Blob, filename: string): Promise<void> {
     }
 }
 
-async function shareViaSheet(blob: Blob, filename: string): Promise<"shared" | "cancelled" | "unsupported"> {
+async function shareViaSheet(
+    blob: Blob,
+    filename: string,
+): Promise<"shared" | "cancelled" | "unsupported"> {
     const file = new File([blob], filename, { type: blob.type || "image/png" });
     const nav = navigator as Navigator & {
         canShare?: (data: ShareData) => boolean;
     };
     if (typeof nav.share !== "function") return "unsupported";
     try {
-        if (typeof nav.canShare === "function" && !nav.canShare({ files: [file] })) {
+        if (
+            typeof nav.canShare === "function" &&
+            !nav.canShare({ files: [file] })
+        ) {
             return "unsupported";
         }
         await nav.share({
@@ -858,7 +928,8 @@ async function shareViaSheet(blob: Blob, filename: string): Promise<"shared" | "
         });
         return "shared";
     } catch (err) {
-        if (err instanceof Error && err.name === "AbortError") return "cancelled";
+        if (err instanceof Error && err.name === "AbortError")
+            return "cancelled";
         return "unsupported";
     }
 }
@@ -907,7 +978,9 @@ async function saveBlobToDevice(blob: Blob, filename: string): Promise<void> {
         return;
     }
 
-    throw new Error("Download blocked by the browser — please try Chrome or Safari");
+    throw new Error(
+        "Download blocked by the browser — please try Chrome or Safari",
+    );
 }
 
 /**
@@ -939,9 +1012,7 @@ export async function exportPostDocument(
     );
 
     const blob = await canvasToBlob(canvas, format);
-    const base =
-        options.fileName?.trim() ||
-        resolvePostExportFileName(doc);
+    const base = options.fileName?.trim() || resolvePostExportFileName(doc);
     const ext = format === "jpeg" ? "jpg" : format === "webp" ? "webp" : "png";
     await saveBlobToDevice(blob, `${base}@${options.scale}x.${ext}`);
 }
@@ -952,7 +1023,9 @@ export async function exportPostCanvas(
     options: ExportPostOptions & { document?: PostDocument },
 ): Promise<void> {
     if (!options.document) {
-        throw new Error("exportPostCanvas requires document — use exportPostDocument");
+        throw new Error(
+            "exportPostCanvas requires document — use exportPostDocument",
+        );
     }
     return exportPostDocument(options.document, options);
 }

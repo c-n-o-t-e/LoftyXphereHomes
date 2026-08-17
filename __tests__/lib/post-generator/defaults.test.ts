@@ -5,6 +5,8 @@ import {
     REFERENCE_THEME,
 } from "@/lib/post-generator/defaults";
 import {
+    createPostTemplateBodySchema,
+    normalizePostPresetKey,
     normalizeSavedPostDocument,
     parsePostDocument,
 } from "@/lib/post-generator/validation";
@@ -39,16 +41,18 @@ describe("post-generator defaults", () => {
         expect(doc.theme.background).toBe(POST_TOKENS.colors.ivory);
         expect(doc.theme.gold).toBe(POST_TOKENS.colors.gold);
         expect(REFERENCE_THEME.background).toBe(POST_TOKENS.colors.ivory);
-        expect(doc.overlay.photoHeightPercent).toBeGreaterThanOrEqual(58);
-        expect(doc.overlay.photoHeightPercent).toBeLessThanOrEqual(68);
-        expect(doc.layout.outerPadding).toBeGreaterThanOrEqual(24);
-        expect(doc.layout.outerPadding).toBeLessThanOrEqual(32);
-        expect(doc.overlay.photoFadePercent).toBeGreaterThanOrEqual(10);
-        expect(doc.overlay.opacity).toBeLessThanOrEqual(0.4);
-        expect(doc.overlay.blur).toBeGreaterThanOrEqual(18);
-        expect(doc.overlay.cardOffsetY).toBeLessThan(0);
+        expect(doc.overlay.photoHeightPercent).toBeGreaterThanOrEqual(53);
+        expect(doc.overlay.photoHeightPercent).toBeLessThanOrEqual(57);
+        expect(doc.layout.outerPadding).toBeGreaterThanOrEqual(28);
+        expect(doc.layout.outerPadding).toBeLessThanOrEqual(36);
+        expect(doc.overlay.photoFadePercent).toBeGreaterThanOrEqual(16);
+        expect(doc.overlay.opacity).toBeLessThanOrEqual(0.22);
+        expect(doc.overlay.blur).toBeGreaterThanOrEqual(12);
+        expect(doc.overlay.cardOffsetY).toBeGreaterThanOrEqual(-8);
+        expect(doc.overlay.cardOffsetY).toBeLessThanOrEqual(24);
+        expect(doc.overlay.footerGap).toBeLessThanOrEqual(22);
         expect(doc.layout.borderThickness).toBeLessThanOrEqual(2);
-        expect(doc.layout.borderRadius).toBeGreaterThanOrEqual(28);
+        expect(doc.layout.borderRadius).toBeGreaterThanOrEqual(24);
         expect(doc.amenities.filter((a) => a.visible)).toHaveLength(8);
         expect(doc.amenitiesStyle.columns).toBe(8);
         expect(doc.amenitiesStyle.goldLabels).toBe(false);
@@ -61,7 +65,8 @@ describe("post-generator defaults", () => {
         expect(doc.contactStyle.textColor).toBe(POST_TOKENS.colors.text);
         expect(doc.contact.some((c) => c.type === "whatsapp" && c.visible)).toBe(true);
         expect(doc.headline.accentWord).toContain("Expectations");
-        expect(doc.headline.fontSize).toBeGreaterThanOrEqual(56);
+        expect(doc.headline.fontSize).toBeGreaterThanOrEqual(50);
+        expect(doc.headline.fontSize).toBeLessThanOrEqual(56);
         expect(doc.button.text).toMatch(/BOOK YOUR STAY/i);
     });
 
@@ -141,10 +146,14 @@ describe("post-generator defaults", () => {
         expect(reparsed.headline.fontSize).toBe(52);
     });
 
-    it("keeps boutique-hotel glass opacity instead of treating it as a legacy card", () => {
-        const boutique = applyPreset("boutique-hotel");
-        expect(boutique.overlay.opacity).toBe(0.96);
-        expect(boutique.headline.fontSize).toBe(56);
+    it("preserves a dense glass overlay instead of treating it as a legacy card", () => {
+        const parsed = parsePostDocument({
+            version: POST_DOCUMENT_VERSION,
+            overlay: { opacity: 0.96 },
+            headline: { fontSize: 56 },
+        });
+        expect(parsed.overlay.opacity).toBe(0.96);
+        expect(parsed.headline.fontSize).toBe(56);
     });
 
     it("fills missing footer icon/text colours on older templates", () => {
@@ -188,12 +197,15 @@ describe("post-generator defaults", () => {
         expect(parsed.contactStyle.textColor).toBe("#1A1A1A");
     });
 
-    it("keeps layout language across presets", () => {
+    it("applies the single luxury-editorial layout", () => {
         const editorial = applyPreset("luxury-editorial");
-        const dark = applyPreset("dark-luxury");
-        expect(dark.overlay.photoHeightPercent).toBe(editorial.overlay.photoHeightPercent);
-        expect(dark.amenities).toHaveLength(editorial.amenities.length);
-        expect(dark.theme.background).not.toBe(editorial.theme.background);
+        const defaults = createDefaultPostDocument();
+        expect(editorial.overlay.photoHeightPercent).toBe(
+            defaults.overlay.photoHeightPercent,
+        );
+        expect(editorial.amenities).toHaveLength(defaults.amenities.length);
+        expect(editorial.theme.background).toBe(defaults.theme.background);
+        expect(editorial.fonts.heading).toBe("Playfair Display");
     });
 
     it("parses incomplete documents without wiping defaults", () => {
@@ -244,12 +256,65 @@ describe("post-generator defaults", () => {
         expect(current.amenitiesStyle.goldLabels).toBe(true);
     });
 
+    it("migrates the previous 62/14 pinned-footer default on load", () => {
+        const parsed = parsePostDocument({
+            version: POST_DOCUMENT_VERSION,
+            overlay: {
+                photoHeightPercent: 62,
+                overlapPercent: 14,
+                photoFadePercent: 13,
+                cardOffsetY: -40,
+                footerGap: 28,
+                opacity: 0.28,
+            },
+            layout: {
+                outerPadding: 28,
+                contentPaddingX: 40,
+                contentPaddingTop: 34,
+            },
+            headline: { fontSize: 58 },
+        });
+        expect(parsed.overlay.photoHeightPercent).toBe(POST_TOKENS.photo.heightPercent);
+        expect(parsed.overlay.overlapPercent).toBe(POST_TOKENS.photo.overlapPercent);
+        expect(parsed.overlay.photoFadePercent).toBe(POST_TOKENS.photo.fadePercent);
+        expect(parsed.overlay.cardOffsetY).toBe(POST_TOKENS.glass.cardOffsetY);
+        expect(parsed.overlay.footerGap).toBe(POST_TOKENS.spacing.footerGap);
+        expect(parsed.headline.fontSize).toBe(POST_TOKENS.type.headlineSize);
+        expect(parsed.layout.contentPaddingTop).toBe(
+            POST_TOKENS.spacing.contentPaddingTop,
+        );
+    });
+
+    it("does not rewrite 62/14 on save — load migration is the upgrade path", () => {
+        const current = createDefaultPostDocument();
+        const saved = normalizeSavedPostDocument({
+            ...current,
+            overlay: {
+                ...current.overlay,
+                photoHeightPercent: 62,
+                overlapPercent: 14,
+            },
+        });
+        expect(saved.overlay.photoHeightPercent).toBe(62);
+        expect(saved.overlay.overlapPercent).toBe(14);
+    });
+
     it("stamps new documents at the current version", () => {
         expect(createDefaultPostDocument().version).toBe(POST_DOCUMENT_VERSION);
-        expect(applyPreset("boutique-hotel").version).toBe(POST_DOCUMENT_VERSION);
+        expect(applyPreset("luxury-editorial").version).toBe(POST_DOCUMENT_VERSION);
         expect(
-            normalizeSavedPostDocument(applyPreset("boutique-hotel")).overlay
+            normalizeSavedPostDocument(applyPreset("luxury-editorial")).overlay
                 .opacity,
-        ).toBe(0.96);
+        ).toBe(createDefaultPostDocument().overlay.opacity);
+    });
+
+    it("coerces leftover preset keys to luxury-editorial", () => {
+        const created = createPostTemplateBodySchema.parse({
+            title: "Test",
+            presetKey: "dark-luxury",
+        });
+        expect(created.presetKey).toBe("luxury-editorial");
+        expect(normalizePostPresetKey("boutique-hotel")).toBe("luxury-editorial");
+        expect(normalizePostPresetKey(null)).toBeNull();
     });
 });

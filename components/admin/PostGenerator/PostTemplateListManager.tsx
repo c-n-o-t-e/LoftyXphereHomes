@@ -6,17 +6,13 @@ import { useRouter } from "next/navigation";
 import { Copy, Loader2, Plus, Trash2 } from "lucide-react";
 import { getSupabaseClient } from "@/lib/supabase/client";
 import { PRESET_META } from "@/lib/post-generator/defaults";
-import type { PostPresetKey, PostTemplateRecord } from "@/lib/post-generator/types";
+import {
+    DEFAULT_POST_PRESET,
+    type PostTemplateRecord,
+} from "@/lib/post-generator/types";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
-import {
-    Select,
-    SelectContent,
-    SelectItem,
-    SelectTrigger,
-    SelectValue,
-} from "@/components/ui/select";
 import { toast } from "sonner";
 
 export function PostTemplateListManager() {
@@ -25,7 +21,6 @@ export function PostTemplateListManager() {
     const [loading, setLoading] = useState(true);
     const [creating, setCreating] = useState(false);
     const [title, setTitle] = useState("Luxury Editorial Post");
-    const [presetKey, setPresetKey] = useState<PostPresetKey>("luxury-editorial");
 
     const authHeaders = useCallback(async () => {
         const supabase = getSupabaseClient();
@@ -66,7 +61,7 @@ export function PostTemplateListManager() {
             const res = await fetch("/api/admin/post-templates", {
                 method: "POST",
                 headers: { ...headers, "Content-Type": "application/json" },
-                body: JSON.stringify({ title, presetKey }),
+                body: JSON.stringify({ title, presetKey: DEFAULT_POST_PRESET }),
             });
             const data = (await res.json()) as {
                 template?: PostTemplateRecord;
@@ -136,21 +131,6 @@ export function PostTemplateListManager() {
                         placeholder="Template title"
                         className="sm:flex-1"
                     />
-                    <Select
-                        value={presetKey}
-                        onValueChange={(v) => setPresetKey(v as PostPresetKey)}
-                    >
-                        <SelectTrigger className="sm:w-56">
-                            <SelectValue />
-                        </SelectTrigger>
-                        <SelectContent>
-                            {(Object.keys(PRESET_META) as PostPresetKey[]).map((key) => (
-                                <SelectItem key={key} value={key}>
-                                    {PRESET_META[key].label}
-                                </SelectItem>
-                            ))}
-                        </SelectContent>
-                    </Select>
                     <Button
                         onClick={() => void create()}
                         disabled={creating || !title.trim()}
@@ -187,9 +167,7 @@ export function PostTemplateListManager() {
                                     {tpl.title}
                                 </Link>
                                 <p className="mt-1 text-xs text-slate-500">
-                                    {tpl.presetKey
-                                        ? PRESET_META[tpl.presetKey]?.label ?? tpl.presetKey
-                                        : "Custom"}{" "}
+                                    {PRESET_META[DEFAULT_POST_PRESET].label}{" "}
                                     · {tpl.status} ·{" "}
                                     {new Date(tpl.updatedAt).toLocaleString()}
                                 </p>

@@ -7,7 +7,7 @@ import {
 } from "@/lib/admin/postTemplates";
 import { updatePostTemplateBodySchema } from "@/lib/post-generator/validation";
 import { parseJsonBody } from "@/lib/validation/http";
-import type { PostPresetKey, PostTemplateStatus } from "@/lib/post-generator/types";
+import type { PostTemplateStatus } from "@/lib/post-generator/types";
 
 type RouteContext = { params: Promise<{ id: string }> };
 
@@ -58,7 +58,7 @@ export async function PUT(request: NextRequest, context: RouteContext) {
 
         const template = await updatePostTemplateForAdmin(id, {
             title: parsed.data.title,
-            presetKey: parsed.data.presetKey as PostPresetKey | null | undefined,
+            presetKey: parsed.data.presetKey,
             status: parsed.data.status as PostTemplateStatus | undefined,
             document: parsed.data.document,
         });

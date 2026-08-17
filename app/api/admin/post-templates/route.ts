@@ -8,7 +8,6 @@ import {
     createPostTemplateBodySchema,
 } from "@/lib/post-generator/validation";
 import { parseJsonBody } from "@/lib/validation/http";
-import type { PostPresetKey } from "@/lib/post-generator/types";
 
 type RouteError = {
     httpResponse?: Response;
@@ -45,7 +44,7 @@ export async function POST(request: NextRequest) {
 
         const template = await createPostTemplateForAdmin({
             title: parsed.data.title,
-            presetKey: parsed.data.presetKey as PostPresetKey | undefined,
+            presetKey: parsed.data.presetKey,
             apartmentId: parsed.data.apartmentId,
             document: parsed.data.document,
             createdByEmail: admin.email,

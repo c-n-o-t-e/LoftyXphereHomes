@@ -56,7 +56,9 @@ export function suggestAlternateCardOffsetY(analysis: ImageAnalysis): number {
     return Math.round(Math.max(-72, Math.min(-12, flipped)));
 }
 
-export function suggestAlternatePhotoFadePercent(analysis: ImageAnalysis): number {
+export function suggestAlternatePhotoFadePercent(
+    analysis: ImageAnalysis,
+): number {
     const primary = suggestPhotoFadePercent(analysis);
     return Math.round(Math.max(10, Math.min(28, primary + 6)));
 }
@@ -72,7 +74,10 @@ export function describeLayoutChoice(
     if (lowerAvg > 0.35 || analysis.subjectCentroid.y > 0.58) {
         return `Overlay shifted ${lift}px upward to avoid covering furniture / focal detail`;
     }
-    if (analysis.emptyRegions[0] && analysis.emptyRegions[0].complexity < 0.15) {
+    if (
+        analysis.emptyRegions[0] &&
+        analysis.emptyRegions[0].complexity < 0.15
+    ) {
         return `Overlay aligned over a low-detail region (${lift}px lift)`;
     }
     return `Overlay offset ${lift}px for balanced photo + editorial overlap`;

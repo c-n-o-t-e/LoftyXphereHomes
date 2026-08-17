@@ -53,6 +53,7 @@ describe("post-generator defaults", () => {
         expect(doc.overlay.footerGap).toBeLessThanOrEqual(22);
         expect(doc.layout.borderThickness).toBeLessThanOrEqual(2);
         expect(doc.layout.borderRadius).toBeGreaterThanOrEqual(24);
+        expect(doc.layout.borderColor).toBe(POST_TOKENS.colors.frameBorder);
         expect(doc.amenities.filter((a) => a.visible)).toHaveLength(8);
         expect(doc.amenitiesStyle.columns).toBe(8);
         expect(doc.amenitiesStyle.goldLabels).toBe(false);

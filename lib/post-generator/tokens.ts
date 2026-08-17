@@ -7,6 +7,8 @@ export const POST_TOKENS = {
     colors: {
         ivory: "#F8F4EC",
         gold: "#C8A66A",
+        /** Inset luxury frame — champagne gold, same as accent. */
+        frameBorder: "#C8A66A",
         text: "#2C2C2C",
         textMuted: "#3A3A3A",
         white: "#FFFFFF",

@@ -299,6 +299,49 @@ model PostTemplate {
   @@map("post_templates")
 }
 
+// --- Editorial Content Studio (informational / lifestyle Instagram posts) ---
+
+enum EditorialPostStatus {
+  DRAFT
+  PUBLISHED
+  ARCHIVED
+}
+
+model EditorialPost {
+  id             String              @id @default(cuid())
+  title          String
+  category       String
+  layoutId       String
+  status         EditorialPostStatus @default(DRAFT)
+  /// Full editable studio document: content, layout, theme, asset transform.
+  document       Json
+  createdByEmail String?
+  createdAt      DateTime            @default(now())
+  updatedAt      DateTime            @updatedAt
+
+  @@index([status, updatedAt])
+  @@index([category])
+  @@map("editorial_posts")
+}
+
+model EditorialAsset {
+  id             String   @id @default(cuid())
+  name           String
+  category       String
+  prompt         String   @db.Text
+  imageUrl       String   @db.Text
+  style          String   @default("lxh-editorial")
+  approved       Boolean  @default(false)
+  favorite       Boolean  @default(false)
+  createdByEmail String?
+  createdAt      DateTime @default(now())
+  updatedAt      DateTime @updatedAt
+
+  @@index([category, approved])
+  @@index([favorite])
+  @@map("editorial_assets")
+}
+
 // --- Shared rate-limit counters (serverless-safe; all instances read/write Postgres) ---
 model RateLimitBucket {
   bucketKey   String   @id @map("bucket_key")

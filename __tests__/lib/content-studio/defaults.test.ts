@@ -47,4 +47,23 @@ describe("content-studio defaults and layouts", () => {
         expect(parsed.layoutId).toBe("typography-first");
         expect(parsed.content.title).toBeTruthy();
     });
+
+    it("fills campaign chrome fields when older saved copy omitted them", () => {
+        const document = createDefaultEditorialDocument();
+        const parsed = parseEditorialDocument({
+            ...document,
+            content: {
+                kicker: document.content.kicker,
+                title: document.content.title,
+                subtitle: document.content.subtitle,
+                body: document.content.body,
+                cta: document.content.cta,
+                points: document.content.points,
+                keywords: document.content.keywords,
+            },
+        });
+        expect(parsed.content.seriesNumber).toBe("");
+        expect(parsed.content.ctaScript).toBe("");
+        expect(parsed.content.ctaButton).toBe("");
+    });
 });

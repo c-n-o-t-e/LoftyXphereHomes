@@ -229,6 +229,9 @@ export function createDefaultEditorialDocument(
         typography: { ...layout.typography },
         content: {
             ...starter,
+            ctaScript: "",
+            ctaButton: "",
+            seriesNumber: "",
             points: DEFAULT_POINTS.map((point) => ({ ...point })),
             keywords: [],
         },

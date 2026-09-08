@@ -148,6 +148,12 @@ export type StudioContent = {
     subtitle: string;
     body: string;
     cta: string;
+    /** Italic script under the invitation, e.g. "With Us!" */
+    ctaScript: string;
+    /** Button label on campaign layouts, e.g. "BOOK NOW" */
+    ctaButton: string;
+    /** Two-digit series mark shown in the badge, e.g. "01" */
+    seriesNumber: string;
     points: StudioContentPoint[];
     keywords: string[];
 };

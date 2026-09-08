@@ -4,6 +4,7 @@ import type {
     ContentCategory,
     EditorialDocument,
     LayoutId,
+    StudioAssetTransform,
     StudioContentPoint,
     ThemeId,
 } from "@/lib/content-studio/types";
@@ -64,6 +65,30 @@ export const DEFAULT_POINTS: StudioContentPoint[] = [
         icon: "sparkles",
     },
 ];
+
+function normalizeAsset(
+    asset: Partial<StudioAssetTransform> | undefined,
+): StudioAssetTransform {
+    const shadow = asset?.shadow ?? 32;
+    const defaults: StudioAssetTransform = {
+        url: null,
+        concept: "",
+        category: "hospitality",
+        x: 540,
+        y: 675,
+        width: 400,
+        height: 400,
+        rotation: 0,
+        scale: 1,
+        opacity: 1,
+        shadow,
+        shadowOpacity: 0.18,
+        shadowBlur: shadow,
+        shadowScale: 0.7,
+        shadowOffsetY: Math.round(shadow * 0.4),
+    };
+    return { ...defaults, ...asset };
+}
 
 const CATEGORY_STARTERS: Record<
     ContentCategory,
@@ -207,16 +232,16 @@ export function createDefaultEditorialDocument(
             points: DEFAULT_POINTS.map((point) => ({ ...point })),
             keywords: [],
         },
-        asset: {
+        asset: normalizeAsset({
             url: null,
             concept: "",
             category: "hospitality",
             ...layout.defaultAsset,
-        },
+        }),
         logo: {
             variant: autoLogoVariant(theme),
             opacity: 0.88,
-            size: 72,
+            size: 58,
             wordmark: "LOFTYXPHEREHOMES",
             showWordmark: false,
         },
@@ -247,7 +272,7 @@ export function mergeEditorialDocument(
             points: patch.content?.points ?? current.content.points,
             keywords: patch.content?.keywords ?? current.content.keywords,
         },
-        asset: { ...current.asset, ...patch.asset },
+        asset: normalizeAsset({ ...current.asset, ...patch.asset }),
         logo: { ...current.logo, ...patch.logo },
         footer: { ...current.footer, ...patch.footer },
     };

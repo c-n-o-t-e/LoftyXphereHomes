@@ -6,10 +6,10 @@ describe("content-studio image providers", () => {
         const prompt = buildAssetPrompt("A brass hotel room key");
         expect(prompt).toContain("transparent background");
         expect(prompt).toContain("no text");
-        expect(prompt).toContain("luxury hospitality aesthetic");
+        expect(prompt).toContain("luxury hospitality advertising quality");
         expect(prompt).toContain("no cartoon");
         expect(prompt).toContain("no neon");
-        expect(prompt).not.toMatch(/\banime\b/i);
+        expect(prompt).toContain("no anime");
     });
 
     it("stub provider returns a data URL so the studio works without keys", async () => {

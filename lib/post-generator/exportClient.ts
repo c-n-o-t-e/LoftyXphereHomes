@@ -8,6 +8,7 @@
 import {
     POST_CANVAS_HEIGHT,
     POST_CANVAS_WIDTH,
+    resolvePostLayoutVariant,
     type AmenityIconKey,
     type ContactIconKey,
     type PostDocument,
@@ -29,7 +30,7 @@ import {
     DEFAULT_CONTACT_STYLE,
 } from "@/lib/post-generator/defaults";
 import { splitAmenityLabelLines } from "@/lib/post-generator/amenityLabel";
-import { POST_TOKENS } from "@/lib/post-generator/tokens";
+import { ATELIER_TOKENS, POST_TOKENS } from "@/lib/post-generator/tokens";
 
 export type ExportPostOptions = {
     format: PostExportFormat;
@@ -304,6 +305,256 @@ async function loadIconImage(
     }
 }
 
+async function renderGalleryAtelierToCanvas(
+    doc: PostDocument,
+    canvas: HTMLCanvasElement,
+    ctx: CanvasRenderingContext2D,
+    authHeaders?: HeadersInit,
+    transparent?: boolean,
+): Promise<HTMLCanvasElement> {
+    const W = POST_CANVAS_WIDTH;
+    const H = POST_CANVAS_HEIGHT;
+    const { layout, theme, fonts, headline, description, button, logo, image } = doc;
+    const amenities = doc.amenities.filter((item) => item.visible);
+    const contacts = doc.contact.filter((item) => item.visible);
+    const amenitiesStyle = {
+        ...DEFAULT_AMENITIES_STYLE,
+        ...(doc.amenitiesStyle ?? {}),
+    };
+    const contactStyle = {
+        ...DEFAULT_CONTACT_STYLE,
+        ...(doc.contactStyle ?? {}),
+    };
+    const photoPct = layout.splitPhotoPercent ?? ATELIER_TOKENS.photoWidthPercent;
+    const photoW = Math.round((W * photoPct) / 100);
+    const panelX = photoW;
+    const panelW = W - photoW;
+    const padX = layout.contentPaddingX;
+    const padTop = layout.contentPaddingTop;
+    const borderInset = Math.max(16, layout.outerPadding || 32);
+
+    if (!transparent) {
+        ctx.fillStyle = theme.background;
+        ctx.fillRect(0, 0, W, H);
+    }
+
+    if (image.url) {
+        const img = await loadDrawable(image.url, authHeaders);
+        if (!img) {
+            throw new Error(
+                "Could not load the apartment photo for download. Re-select the suite or re-upload the image, then try again.",
+            );
+        }
+        const { w: iw, h: ih } = drawableSize(img);
+        const crop = heroPhotoCropRect(photoW, H, image);
+        const scaleFactor = Math.max(0.01, image.scale * image.zoom);
+        const cover = Math.max(crop.width / iw, crop.height / ih) * scaleFactor;
+        const dw = iw * cover;
+        const dh = ih * cover;
+        const ox =
+            crop.x +
+            (crop.width - dw) / 2 +
+            image.panX +
+            ((image.positionX - 50) / 50) * (dw - crop.width) * 0.25;
+        const oy =
+            crop.y +
+            (crop.height - dh) / 2 +
+            image.panY +
+            ((image.positionY - 50) / 50) * (dh - crop.height) * 0.25;
+
+        ctx.save();
+        ctx.beginPath();
+        ctx.rect(0, 0, photoW, H);
+        ctx.clip();
+        const needsFilter =
+            image.brightness !== 100 ||
+            image.contrast !== 100 ||
+            image.saturation !== 100 ||
+            image.blur > 0;
+        if (needsFilter) {
+            ctx.filter = [
+                `brightness(${image.brightness}%)`,
+                `contrast(${image.contrast}%)`,
+                `saturate(${image.saturation}%)`,
+                image.blur > 0 ? `blur(${image.blur}px)` : "",
+            ]
+                .filter(Boolean)
+                .join(" ");
+        }
+        ctx.drawImage(img, ox, oy, dw, dh);
+        ctx.restore();
+        if (typeof ImageBitmap !== "undefined" && img instanceof ImageBitmap) {
+            img.close();
+        }
+    } else {
+        ctx.fillStyle = "#d9d0c3";
+        ctx.fillRect(0, 0, photoW, H);
+    }
+
+    ctx.fillStyle = theme.background;
+    ctx.fillRect(panelX, 0, panelW, H);
+
+    ctx.fillStyle = theme.gold;
+    ctx.globalAlpha = 0.55;
+    ctx.fillRect(photoW, 0, ATELIER_TOKENS.hairline, H);
+    ctx.globalAlpha = 1;
+
+    const amenityIconImgs = await Promise.all(
+        amenities.map((item) =>
+            loadIconImage(
+                amenityIconSvg(
+                    item.icon as AmenityIconKey,
+                    amenitiesStyle.iconSize,
+                    theme.gold,
+                    amenitiesStyle.strokeWidth,
+                    item.customSvg,
+                ),
+            ),
+        ),
+    );
+    const contactIconImgs = await Promise.all(
+        contacts.map((item) =>
+            loadIconImage(
+                contactIconSvg(
+                    item.type as ContactIconKey,
+                    contactStyle.iconSize,
+                    theme.gold,
+                    contactStyle.strokeWidth,
+                ),
+            ),
+        ),
+    );
+
+    let y = padTop;
+    const contentX = panelX + padX;
+    const contentW = panelW - padX * 2;
+
+    ctx.fillStyle = theme.gold;
+    ctx.font = `600 11px ${bodyFontFamily(fonts.body)}`;
+    ctx.textAlign = "left";
+    ctx.textBaseline = "top";
+    ctx.fillText("STAY", contentX, y);
+
+    const logoUrl = logo.darkUrl ?? logo.url;
+    if (logoUrl) {
+        const logoImg = await loadDrawable(logoUrl, authHeaders);
+        if (logoImg) {
+            const { w: lw, h: lh } = drawableSize(logoImg);
+            const dw = logo.size;
+            const dh = lw > 0 ? (lh / lw) * dw : dw * 0.4;
+            ctx.globalAlpha = logo.opacity;
+            ctx.drawImage(logoImg, panelX + panelW - padX - dw, y, dw, dh);
+            ctx.globalAlpha = 1;
+        }
+    }
+
+    y += 48;
+    ctx.fillStyle = headline.color;
+    ctx.font = `${headline.fontWeight} ${headline.fontSize}px ${headingFontFamily(fonts.heading)}`;
+    const headlineLines = [
+        headline.line1,
+        `${headline.line2} ${headline.accentWord}`.trim(),
+    ].filter(Boolean);
+    for (const line of headlineLines) {
+        ctx.fillText(line, contentX, y, contentW);
+        y += headline.fontSize * headline.lineHeight;
+    }
+
+    y += 16;
+    ctx.fillStyle = theme.gold;
+    ctx.fillRect(contentX, y, 36, 1);
+    y += 20;
+
+    ctx.fillStyle = description.color;
+    ctx.font = `${description.fontWeight} ${description.fontSize}px ${bodyFontFamily(fonts.body)}`;
+    const descLines = wrapText(ctx, description.text, contentW);
+    const descLineH = description.fontSize * description.lineHeight;
+    for (const line of descLines.slice(0, 5)) {
+        ctx.fillText(line, contentX, y, contentW);
+        y += descLineH;
+    }
+
+    y += 32;
+    const cols = Math.max(2, amenitiesStyle.columns || 2);
+    const colW = contentW / cols;
+    const iconSize = amenitiesStyle.iconSize;
+    amenities.forEach((item, i) => {
+        const col = i % cols;
+        const row = Math.floor(i / cols);
+        const ax = contentX + col * colW;
+        const ay = y + row * (iconSize + amenitiesStyle.rowGap + 16);
+        const iconImg = amenityIconImgs[i];
+        if (iconImg) ctx.drawImage(iconImg, ax, ay, iconSize, iconSize);
+        ctx.fillStyle = theme.text;
+        ctx.font = `${amenitiesStyle.fontWeight} ${amenitiesStyle.fontSize}px ${bodyFontFamily(fonts.body)}`;
+        const labels = splitAmenityLabelLines(item.label);
+        labels.forEach((label, li) => {
+            ctx.fillText(
+                label.toUpperCase(),
+                ax + iconSize + 10,
+                ay + li * amenitiesStyle.fontSize * 1.2,
+                colW - iconSize - 14,
+            );
+        });
+    });
+
+    const amenityRows = Math.ceil(amenities.length / cols);
+    const footerY = H - layout.contentPaddingBottom - contacts.length * 26 - 56;
+    ctx.fillStyle = button.textColor || theme.gold;
+    ctx.font = `${button.fontWeight} ${button.fontSize}px ${bodyFontFamily(fonts.body)}`;
+    const ctaY = Math.max(y + amenityRows * 50 + 24, footerY - 36);
+    ctx.fillText(button.text, contentX, ctaY);
+    const ctaW = ctx.measureText(button.text).width;
+    ctx.strokeStyle = theme.gold;
+    ctx.lineWidth = 1;
+    ctx.beginPath();
+    ctx.moveTo(contentX, ctaY + button.fontSize + 8);
+    ctx.lineTo(contentX + ctaW + 18, ctaY + button.fontSize + 8);
+    ctx.stroke();
+
+    let contactY = H - layout.contentPaddingBottom - contacts.length * 24;
+    ctx.strokeStyle = POST_TOKENS.colors.divider;
+    ctx.beginPath();
+    ctx.moveTo(contentX, contactY - 16);
+    ctx.lineTo(contentX + contentW, contactY - 16);
+    ctx.stroke();
+
+    contacts.forEach((item, i) => {
+        const iconImg = contactIconImgs[i];
+        if (iconImg) {
+            ctx.drawImage(
+                iconImg,
+                contentX,
+                contactY,
+                contactStyle.iconSize,
+                contactStyle.iconSize,
+            );
+        }
+        ctx.fillStyle = theme.text;
+        ctx.font = `500 ${contactStyle.fontSize}px ${bodyFontFamily(fonts.body)}`;
+        ctx.fillText(
+            item.label,
+            contentX + contactStyle.iconSize + contactStyle.gap,
+            contactY + 1,
+        );
+        contactY += 24;
+    });
+
+    ctx.strokeStyle = layout.borderColor || theme.gold;
+    ctx.lineWidth = layout.borderThickness;
+    roundRect(
+        ctx,
+        borderInset,
+        borderInset,
+        W - borderInset * 2,
+        H - borderInset * 2,
+        layout.borderRadius,
+    );
+    ctx.stroke();
+
+    return canvas;
+}
+
 async function renderPostToCanvas(
     doc: PostDocument,
     scale: number,
@@ -321,6 +572,16 @@ async function renderPostToCanvas(
     ctx.scale(scale, scale);
     ctx.imageSmoothingEnabled = true;
     ctx.imageSmoothingQuality = "high";
+
+    if (resolvePostLayoutVariant(doc.layout) === "gallery-atelier") {
+        return renderGalleryAtelierToCanvas(
+            doc,
+            canvas,
+            ctx,
+            authHeaders,
+            transparent,
+        );
+    }
 
     const {
         layout,

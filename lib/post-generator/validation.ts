@@ -9,9 +9,10 @@ import {
     type PostPresetKey,
 } from "@/lib/post-generator/types";
 
-/** Accepted on create/update so older drafts still save, then coerced to the single layout. */
+/** Accepted on create/update. Legacy aliases collapse to Option 1. */
 const PRESET_KEY_INPUT = z.enum([
     "luxury-editorial",
+    "gallery-atelier",
     "luxury-classic",
     "luxury-gold",
     "boutique-hotel",
@@ -19,9 +20,10 @@ const PRESET_KEY_INPUT = z.enum([
     "dark-luxury",
 ]);
 
-const presetKeySchema = PRESET_KEY_INPUT.transform(
-    (): PostPresetKey => DEFAULT_POST_PRESET,
-);
+const presetKeySchema = PRESET_KEY_INPUT.transform((value): PostPresetKey => {
+    if (value === "gallery-atelier") return "gallery-atelier";
+    return DEFAULT_POST_PRESET;
+});
 
 const amenitySchema = z.object({
     id: z.string().min(1),
@@ -105,12 +107,13 @@ export function parsePostDocument(raw: unknown): PostDocument {
 }
 
 export function isPostPresetKey(value: string): value is PostPresetKey {
-    return value === DEFAULT_POST_PRESET;
+    return value === "luxury-editorial" || value === "gallery-atelier";
 }
 
 export function normalizePostPresetKey(
     value: string | null | undefined,
 ): PostPresetKey | null {
     if (value == null || value === "") return null;
+    if (value === "gallery-atelier") return "gallery-atelier";
     return DEFAULT_POST_PRESET;
 }

@@ -3,39 +3,39 @@ import type { AssetCategory, ContentCategory } from "@/lib/content-studio/types"
 
 const CONCEPT_BANK: Record<AssetCategory, [string, string, string]> = {
     travel: [
-        "A refined leather suitcase standing slightly open, champagne hardware, isolated on a transparent background",
-        "A navy passport, boarding wallet and gold luggage tag arranged as a still life, no text, transparent background",
-        "A pair of tortoiseshell sunglasses resting on folded linen, warm studio light, isolated object",
+        "Elegant hotel key beside premium cognac travel luggage, isolated on a transparent background, refined hospitality editorial photography",
+        "A navy passport, boarding wallet and champagne luggage tag as a still life, no readable text, transparent background",
+        "Open leather weekender bag with folded ivory linen, warm studio light, isolated object",
     ],
     hospitality: [
         "A brass hotel room key on a cream leather fob, soft champagne highlights, isolated, no text",
         "A ceramic cup of black coffee on a linen napkin, steam barely visible, luxury hospitality still life",
-        "A folded ivory towel with a single sprig of greenery, warm studio lighting, transparent background",
+        "Folded ivory towels with a single sprig of greenery, warm studio lighting, transparent background",
     ],
     lifestyle: [
-        "An open notebook with a gold pen on warm stone, no writing visible, editorial still life",
-        "A slim laptop closed beside a ceramic cup, cream environment, isolated objects",
+        "A ceramic coffee cup on warm stone, editorial still life, isolated on transparent background",
+        "An open linen notebook with a gold pen, pages blank, quiet luxury object",
         "Over-ear headphones in cognac leather, soft shadow, transparent background",
     ],
     food: [
+        "A premium wooden crate of vegetables and citrus, isolated on transparent background, refined food editorial",
         "A breakfast plate of fruit and pastry on stoneware, warm ivory light, no logos, isolated",
-        "A single ripe fig cut open on a ceramic plate, editorial food photography, transparent background",
         "A restaurant table setting for one — linen, glass, gold cutlery — isolated composition",
     ],
     abuja: [
-        "An elegant architectural fragment suggesting Abuja skyline at dusk, no text, editorial realism",
-        "A modern city balcony view with warm evening light, isolated photographic subject",
-        "A refined local craft object on stone, suggesting place without cliché landmarks",
+        "An elegant isolated Abuja architectural landmark at golden hour, clean edges, transparent background, editorial realism",
+        "A refined fragment of a modern Abuja skyline, no text, warm champagne light, isolated subject",
+        "A contemporary city balcony planter with warm evening light, isolated photographic subject",
     ],
     business: [
+        "A closed space-grey laptop beside a brass room key, hospitality-business still life, transparent background",
         "A leather laptop sleeve and fountain pen on warm oak, isolated, no text",
-        "A closed notebook, reading glasses and room key card, hospitality-business still life",
         "A slim briefcase in cognac leather, champagne hardware, transparent background",
     ],
     wellness: [
         "A linen robe folded with a small bottle of oil, spa still life, warm cream light",
         "A ceramic water carafe and glass on stone, quiet luxury, isolated",
-        "Rolled yoga mat in sand linen with a single leaf, transparent background",
+        "Rolled sand-linen yoga mat with a single leaf, transparent background",
     ],
     fitness: [
         "A pair of refined leather gym weights on stone, editorial, no logos",
@@ -58,8 +58,8 @@ const CONCEPT_BANK: Record<AssetCategory, [string, string, string]> = {
         "A folded throw in camel wool, soft studio shadow, transparent background",
     ],
     accommodation: [
-        "A luxury hotel key, leather travel wallet and booking folder, no readable text",
-        "A brass room key beside a small plant on stone, warm cream environment",
+        "Elegant hotel key beside premium travel luggage, isolated on transparent background, refined hospitality editorial photography",
+        "A brass room key, leather travel wallet and booking folder, no readable text",
         "An open guest book with a gold pen, pages blank, editorial still life",
     ],
 };
@@ -74,12 +74,20 @@ const TITLE_HINTS: Array<{ pattern: RegExp; concepts: [string, string, string] }
         concepts: CONCEPT_BANK.accommodation,
     },
     {
-        pattern: /\bcoffee|morning|breakfast\b/i,
+        pattern: /\bcoffee|morning|breakfast|new week\b/i,
+        concepts: CONCEPT_BANK.lifestyle,
+    },
+    {
+        pattern: /\babuja|wuye|city|places|hidden gems|explore\b/i,
+        concepts: CONCEPT_BANK.abuja,
+    },
+    {
+        pattern: /\bmarket|produce|eat|food\b/i,
         concepts: CONCEPT_BANK.food,
     },
     {
-        pattern: /\babuja|wuye|city|places\b/i,
-        concepts: CONCEPT_BANK.abuja,
+        pattern: /\bchristmas|eid|holiday|festive\b/i,
+        concepts: CONCEPT_BANK.celebrations,
     },
     {
         pattern: /\bweek|month|begin\b/i,

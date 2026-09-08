@@ -17,7 +17,18 @@ export type LayoutZoneType =
     | "cta"
     | "logo"
     | "footer"
-    | "overlay";
+    | "overlay"
+    | "text-stack"
+    | "rule"
+    | "mark";
+
+export type StackPart = "kicker" | "title" | "subtitle" | "body" | "cta" | "rule" | "mark";
+
+export type AssetTreatment = "cutout" | "hero" | "object" | "accent";
+export type HeadlineSize = "display" | "large" | "editorial" | "compact";
+export type HeadlineCase = "preserve" | "display-stack";
+export type PointsStyle = "magazine" | "grid" | "none";
+export type OverlayStyle = "none" | "panel" | "gradient";
 
 export type LayoutZone = {
     type: LayoutZoneType;
@@ -25,6 +36,22 @@ export type LayoutZone = {
     align?: "left" | "center" | "right";
     columns?: number;
     opacity?: number;
+    include?: StackPart[];
+};
+
+export type LayoutAssetDefaults = {
+    x: number;
+    y: number;
+    width: number;
+    height: number;
+    rotation: number;
+    scale: number;
+    opacity: number;
+    shadow: number;
+    shadowOpacity: number;
+    shadowBlur: number;
+    shadowScale: number;
+    shadowOffsetY: number;
 };
 
 export type LayoutDefinition = {
@@ -35,62 +62,100 @@ export type LayoutDefinition = {
     categories: ContentCategory[];
     footer: FooterVariant;
     assetStyle: "lxh-editorial";
+    assetTreatment: AssetTreatment;
+    headlineSize: HeadlineSize;
+    headlineCase: HeadlineCase;
+    pointsStyle: PointsStyle;
+    overlayStyle: OverlayStyle;
+    showCta: boolean;
     theme: ThemeId;
     imagePosition: "left" | "right" | "center" | "hero" | "accent";
     textPosition: "left" | "right" | "center" | "overlay";
     showFrame: boolean;
     heroBleed: boolean;
+    showGrain: boolean;
+    showVignette: boolean;
     typography: StudioTypography;
-    defaultAsset: {
-        x: number;
-        y: number;
-        width: number;
-        height: number;
-        rotation: number;
-        scale: number;
-        shadow: number;
-    };
+    defaultAsset: LayoutAssetDefaults;
     zones: LayoutZone[];
 };
 
 const TYPE_EDITORIAL: StudioTypography = {
-    titleSize: 64,
+    titleSize: 86,
     titleWeight: 500,
-    titleTracking: -0.02,
-    titleLineHeight: 1.08,
-    bodySize: 20,
+    titleTracking: -0.028,
+    titleLineHeight: 1.02,
+    bodySize: 22,
     kickerSize: 13,
     ctaSize: 13,
 };
 
 const TYPE_MAGAZINE: StudioTypography = {
-    titleSize: 56,
+    titleSize: 58,
     titleWeight: 500,
-    titleTracking: -0.018,
-    titleLineHeight: 1.06,
+    titleTracking: -0.022,
+    titleLineHeight: 1.05,
     bodySize: 17,
     kickerSize: 12,
     ctaSize: 12,
 };
 
 const TYPE_MINIMAL: StudioTypography = {
-    titleSize: 72,
+    titleSize: 118,
     titleWeight: 500,
-    titleTracking: -0.03,
-    titleLineHeight: 1.05,
-    bodySize: 18,
+    titleTracking: -0.035,
+    titleLineHeight: 0.96,
+    bodySize: 20,
     kickerSize: 12,
     ctaSize: 12,
 };
 
-const TYPE_GRID: StudioTypography = {
-    titleSize: 42,
+const TYPE_DISPLAY: StudioTypography = {
+    titleSize: 96,
     titleWeight: 500,
-    titleTracking: -0.015,
-    titleLineHeight: 1.1,
+    titleTracking: -0.032,
+    titleLineHeight: 0.98,
+    bodySize: 20,
+    kickerSize: 13,
+    ctaSize: 12,
+};
+
+const TYPE_GRID: StudioTypography = {
+    titleSize: 48,
+    titleWeight: 500,
+    titleTracking: -0.02,
+    titleLineHeight: 1.08,
     bodySize: 16,
     kickerSize: 12,
     ctaSize: 12,
+};
+
+const TYPE_BLEED: StudioTypography = {
+    titleSize: 62,
+    titleWeight: 500,
+    titleTracking: -0.024,
+    titleLineHeight: 1.04,
+    bodySize: 20,
+    kickerSize: 13,
+    ctaSize: 13,
+};
+
+const CUTOUT_SHADOW = {
+    opacity: 1,
+    shadow: 40,
+    shadowOpacity: 0.2,
+    shadowBlur: 52,
+    shadowScale: 0.68,
+    shadowOffsetY: 36,
+};
+
+const OBJECT_SHADOW = {
+    opacity: 1,
+    shadow: 18,
+    shadowOpacity: 0.16,
+    shadowBlur: 28,
+    shadowScale: 0.7,
+    shadowOffsetY: 18,
 };
 
 export const LAYOUT_DEFINITIONS: Record<LayoutId, LayoutDefinition> = {
@@ -98,7 +163,7 @@ export const LAYOUT_DEFINITIONS: Record<LayoutId, LayoutDefinition> = {
         id: "editorial-split",
         letter: "A",
         name: "Editorial Split",
-        description: "Headline left, transparent asset right, micro footer.",
+        description: "Headline left, large transparent asset right.",
         categories: [
             "new-week",
             "new-month",
@@ -111,36 +176,46 @@ export const LAYOUT_DEFINITIONS: Record<LayoutId, LayoutDefinition> = {
         ],
         footer: "micro",
         assetStyle: "lxh-editorial",
+        assetTreatment: "cutout",
+        headlineSize: "large",
+        headlineCase: "preserve",
+        pointsStyle: "none",
+        overlayStyle: "none",
+        showCta: true,
         theme: "luxury-editorial",
         imagePosition: "right",
         textPosition: "left",
         showFrame: true,
         heroBleed: false,
+        showGrain: true,
+        showVignette: false,
         typography: TYPE_EDITORIAL,
         defaultAsset: {
-            x: 760,
-            y: 620,
-            width: 460,
-            height: 520,
+            x: 790,
+            y: 760,
+            width: 560,
+            height: 700,
             rotation: 0,
-            scale: 1,
-            shadow: 28,
+            scale: 1.08,
+            ...CUTOUT_SHADOW,
         },
         zones: [
-            { type: "kicker", rect: { x: 72, y: 88, w: 460, h: 36 }, align: "left" },
-            { type: "title", rect: { x: 72, y: 140, w: 480, h: 520 }, align: "left" },
-            { type: "body", rect: { x: 72, y: 700, w: 440, h: 220 }, align: "left" },
-            { type: "asset", rect: { x: 540, y: 180, w: 480, h: 860 } },
-            { type: "cta", rect: { x: 72, y: 980, w: 420, h: 56 }, align: "left" },
-            { type: "logo", rect: { x: 72, y: 1188, w: 160, h: 48 }, align: "left" },
-            { type: "footer", rect: { x: 260, y: 1196, w: 748, h: 40 }, align: "right" },
+            {
+                type: "text-stack",
+                rect: { x: 64, y: 92, w: 500, h: 1020 },
+                align: "left",
+                include: ["kicker", "title", "rule", "body", "cta"],
+            },
+            { type: "asset", rect: { x: 500, y: 140, w: 540, h: 1020 } },
+            { type: "logo", rect: { x: 64, y: 1224, w: 132, h: 40 }, align: "left" },
+            { type: "footer", rect: { x: 220, y: 1230, w: 796, h: 32 }, align: "right" },
         ],
     },
     "full-bleed": {
         id: "full-bleed",
         letter: "B",
         name: "Full-Bleed Editorial",
-        description: "Hero visual dominates. Type sits on a controlled overlay.",
+        description: "Hero visual dominates. Type sits inside the photograph.",
         categories: [
             "educational",
             "travel-tips",
@@ -151,36 +226,49 @@ export const LAYOUT_DEFINITIONS: Record<LayoutId, LayoutDefinition> = {
         ],
         footer: "website-only",
         assetStyle: "lxh-editorial",
+        assetTreatment: "hero",
+        headlineSize: "editorial",
+        headlineCase: "preserve",
+        pointsStyle: "none",
+        overlayStyle: "gradient",
+        showCta: true,
         theme: "luxury-editorial",
         imagePosition: "hero",
         textPosition: "overlay",
         showFrame: false,
         heroBleed: true,
-        typography: {
-            ...TYPE_EDITORIAL,
-            titleSize: 52,
-        },
+        showGrain: true,
+        showVignette: true,
+        typography: TYPE_BLEED,
         defaultAsset: {
             x: 540,
-            y: 520,
-            width: 980,
-            height: 1100,
+            y: 675,
+            width: 1080,
+            height: 1350,
             rotation: 0,
             scale: 1,
+            opacity: 1,
             shadow: 0,
+            shadowOpacity: 0,
+            shadowBlur: 0,
+            shadowScale: 1,
+            shadowOffsetY: 0,
         },
         zones: [
             { type: "asset", rect: { x: 0, y: 0, w: 1080, h: 1350 } },
             {
                 type: "overlay",
-                rect: { x: 56, y: 780, w: 968, h: 490 },
-                opacity: 0.88,
+                rect: { x: 0, y: 560, w: 1080, h: 790 },
+                opacity: 0.92,
             },
-            { type: "kicker", rect: { x: 88, y: 812, w: 880, h: 32 }, align: "left" },
-            { type: "title", rect: { x: 88, y: 856, w: 900, h: 220 }, align: "left" },
-            { type: "cta", rect: { x: 88, y: 1100, w: 420, h: 48 }, align: "left" },
-            { type: "logo", rect: { x: 88, y: 1188, w: 140, h: 40 }, align: "left" },
-            { type: "footer", rect: { x: 520, y: 1196, w: 480, h: 36 }, align: "right" },
+            {
+                type: "text-stack",
+                rect: { x: 72, y: 760, w: 936, h: 430 },
+                align: "left",
+                include: ["kicker", "title", "body", "cta"],
+            },
+            { type: "logo", rect: { x: 72, y: 1232, w: 120, h: 36 }, align: "left" },
+            { type: "footer", rect: { x: 520, y: 1238, w: 488, h: 28 }, align: "right" },
         ],
     },
     "typography-first": {
@@ -197,28 +285,39 @@ export const LAYOUT_DEFINITIONS: Record<LayoutId, LayoutDefinition> = {
         ],
         footer: "logo-only",
         assetStyle: "lxh-editorial",
+        assetTreatment: "object",
+        headlineSize: "display",
+        headlineCase: "display-stack",
+        pointsStyle: "none",
+        overlayStyle: "none",
+        showCta: false,
         theme: "luxury-editorial",
         imagePosition: "accent",
         textPosition: "center",
         showFrame: true,
         heroBleed: false,
-        typography: TYPE_MINIMAL,
+        showGrain: true,
+        showVignette: false,
+        typography: TYPE_DISPLAY,
         defaultAsset: {
-            x: 540,
-            y: 1040,
-            width: 220,
-            height: 180,
-            rotation: 0,
+            x: 730,
+            y: 1120,
+            width: 240,
+            height: 210,
+            rotation: 8,
             scale: 1,
-            shadow: 16,
+            ...OBJECT_SHADOW,
         },
         zones: [
-            { type: "kicker", rect: { x: 120, y: 160, w: 840, h: 32 }, align: "center" },
-            { type: "title", rect: { x: 100, y: 280, w: 880, h: 520 }, align: "center" },
-            { type: "body", rect: { x: 180, y: 820, w: 720, h: 80 }, align: "center" },
-            { type: "asset", rect: { x: 400, y: 920, w: 280, h: 200 } },
-            { type: "logo", rect: { x: 440, y: 1200, w: 200, h: 40 }, align: "center" },
-            { type: "footer", rect: { x: 340, y: 1244, w: 400, h: 28 }, align: "center" },
+            {
+                type: "text-stack",
+                rect: { x: 88, y: 168, w: 904, h: 820 },
+                align: "center",
+                include: ["kicker", "title", "rule", "body"],
+            },
+            { type: "asset", rect: { x: 600, y: 980, w: 280, h: 220 } },
+            { type: "logo", rect: { x: 440, y: 1236, w: 200, h: 32 }, align: "center" },
+            { type: "footer", rect: { x: 340, y: 1274, w: 400, h: 22 }, align: "center" },
         ],
     },
     "cut-out": {
@@ -236,32 +335,45 @@ export const LAYOUT_DEFINITIONS: Record<LayoutId, LayoutDefinition> = {
         ],
         footer: "micro",
         assetStyle: "lxh-editorial",
+        assetTreatment: "cutout",
+        headlineSize: "large",
+        headlineCase: "preserve",
+        pointsStyle: "none",
+        overlayStyle: "none",
+        showCta: true,
         theme: "warm-hospitality",
         imagePosition: "right",
         textPosition: "left",
         showFrame: true,
         heroBleed: false,
+        showGrain: true,
+        showVignette: false,
         typography: {
             ...TYPE_EDITORIAL,
-            titleSize: 54,
+            titleSize: 68,
+            bodySize: 21,
         },
         defaultAsset: {
-            x: 720,
-            y: 640,
-            width: 500,
-            height: 560,
-            rotation: -4,
-            scale: 1,
-            shadow: 36,
+            x: 700,
+            y: 860,
+            width: 620,
+            height: 760,
+            rotation: -5,
+            scale: 1.12,
+            ...CUTOUT_SHADOW,
+            shadowScale: 0.62,
+            shadowOffsetY: 42,
         },
         zones: [
-            { type: "kicker", rect: { x: 72, y: 96, w: 500, h: 32 }, align: "left" },
-            { type: "title", rect: { x: 72, y: 150, w: 520, h: 360 }, align: "left" },
-            { type: "body", rect: { x: 72, y: 540, w: 460, h: 280 }, align: "left" },
-            { type: "asset", rect: { x: 500, y: 220, w: 540, h: 860 } },
-            { type: "cta", rect: { x: 72, y: 980, w: 400, h: 52 }, align: "left" },
-            { type: "logo", rect: { x: 72, y: 1192, w: 150, h: 40 }, align: "left" },
-            { type: "footer", rect: { x: 280, y: 1200, w: 728, h: 36 }, align: "right" },
+            {
+                type: "text-stack",
+                rect: { x: 64, y: 88, w: 520, h: 900 },
+                align: "left",
+                include: ["kicker", "title", "rule", "body", "cta"],
+            },
+            { type: "asset", rect: { x: 420, y: 220, w: 620, h: 980 } },
+            { type: "logo", rect: { x: 64, y: 1228, w: 128, h: 36 }, align: "left" },
+            { type: "footer", rect: { x: 220, y: 1234, w: 796, h: 28 }, align: "right" },
         ],
     },
     "magazine-editorial": {
@@ -280,36 +392,50 @@ export const LAYOUT_DEFINITIONS: Record<LayoutId, LayoutDefinition> = {
         ],
         footer: "micro",
         assetStyle: "lxh-editorial",
+        assetTreatment: "cutout",
+        headlineSize: "editorial",
+        headlineCase: "preserve",
+        pointsStyle: "magazine",
+        overlayStyle: "none",
+        showCta: true,
         theme: "luxury-editorial",
         imagePosition: "right",
         textPosition: "left",
         showFrame: true,
         heroBleed: false,
+        showGrain: true,
+        showVignette: false,
         typography: TYPE_MAGAZINE,
         defaultAsset: {
-            x: 800,
-            y: 360,
-            width: 380,
-            height: 380,
-            rotation: 0,
-            scale: 1,
-            shadow: 22,
+            x: 820,
+            y: 300,
+            width: 420,
+            height: 420,
+            rotation: 3,
+            scale: 1.05,
+            ...CUTOUT_SHADOW,
+            shadowBlur: 36,
+            shadowOffsetY: 22,
         },
         zones: [
-            { type: "kicker", rect: { x: 72, y: 80, w: 560, h: 28 }, align: "left" },
-            { type: "title", rect: { x: 72, y: 120, w: 620, h: 280 }, align: "left" },
-            { type: "asset", rect: { x: 640, y: 96, w: 380, h: 400 } },
-            { type: "points", rect: { x: 72, y: 560, w: 936, h: 560 }, columns: 1 },
-            { type: "cta", rect: { x: 72, y: 1144, w: 360, h: 40 }, align: "left" },
-            { type: "logo", rect: { x: 72, y: 1216, w: 140, h: 36 }, align: "left" },
-            { type: "footer", rect: { x: 360, y: 1220, w: 648, h: 32 }, align: "right" },
+            {
+                type: "text-stack",
+                rect: { x: 64, y: 72, w: 620, h: 340 },
+                align: "left",
+                include: ["kicker", "title"],
+            },
+            { type: "asset", rect: { x: 620, y: 64, w: 400, h: 380 } },
+            { type: "points", rect: { x: 64, y: 460, w: 952, h: 700 }, columns: 1 },
+            { type: "cta", rect: { x: 64, y: 1178, w: 400, h: 36 }, align: "left" },
+            { type: "logo", rect: { x: 64, y: 1232, w: 120, h: 32 }, align: "left" },
+            { type: "footer", rect: { x: 280, y: 1236, w: 736, h: 28 }, align: "right" },
         ],
     },
     "information-grid": {
         id: "information-grid",
         letter: "F",
         name: "Information Grid",
-        description: "Clean numbered points with consistent iconography.",
+        description: "Numbered insights in a refined editorial grid.",
         categories: [
             "educational",
             "guest-tips",
@@ -319,35 +445,47 @@ export const LAYOUT_DEFINITIONS: Record<LayoutId, LayoutDefinition> = {
         ],
         footer: "full",
         assetStyle: "lxh-editorial",
+        assetTreatment: "accent",
+        headlineSize: "compact",
+        headlineCase: "preserve",
+        pointsStyle: "grid",
+        overlayStyle: "none",
+        showCta: false,
         theme: "warm-hospitality",
         imagePosition: "accent",
         textPosition: "left",
         showFrame: true,
         heroBleed: false,
+        showGrain: true,
+        showVignette: false,
         typography: TYPE_GRID,
         defaultAsset: {
             x: 940,
-            y: 160,
-            width: 140,
-            height: 140,
+            y: 148,
+            width: 160,
+            height: 160,
             rotation: 0,
             scale: 1,
-            shadow: 10,
+            ...OBJECT_SHADOW,
         },
         zones: [
-            { type: "kicker", rect: { x: 72, y: 80, w: 700, h: 28 }, align: "left" },
-            { type: "title", rect: { x: 72, y: 118, w: 780, h: 160 }, align: "left" },
-            { type: "asset", rect: { x: 880, y: 80, w: 128, h: 128 } },
-            { type: "points", rect: { x: 72, y: 320, w: 936, h: 800 }, columns: 1 },
-            { type: "logo", rect: { x: 72, y: 1208, w: 140, h: 36 }, align: "left" },
-            { type: "footer", rect: { x: 240, y: 1212, w: 768, h: 36 }, align: "right" },
+            {
+                type: "text-stack",
+                rect: { x: 64, y: 72, w: 760, h: 200 },
+                align: "left",
+                include: ["kicker", "title"],
+            },
+            { type: "asset", rect: { x: 860, y: 72, w: 156, h: 156 } },
+            { type: "points", rect: { x: 64, y: 300, w: 952, h: 860 }, columns: 2 },
+            { type: "logo", rect: { x: 64, y: 1224, w: 120, h: 32 }, align: "left" },
+            { type: "footer", rect: { x: 220, y: 1228, w: 796, h: 32 }, align: "right" },
         ],
     },
     "minimal-luxury": {
         id: "minimal-luxury",
         letter: "G",
         name: "Minimal Luxury",
-        description: "Restraint as luxury. Large type, tiny mark, one object.",
+        description: "Restraint as luxury. Huge type, one object, tiny mark.",
         categories: [
             "new-week",
             "new-month",
@@ -358,28 +496,39 @@ export const LAYOUT_DEFINITIONS: Record<LayoutId, LayoutDefinition> = {
         ],
         footer: "logo-only",
         assetStyle: "lxh-editorial",
+        assetTreatment: "object",
+        headlineSize: "display",
+        headlineCase: "display-stack",
+        pointsStyle: "none",
+        overlayStyle: "none",
+        showCta: false,
         theme: "luxury-editorial",
         imagePosition: "accent",
         textPosition: "center",
         showFrame: true,
         heroBleed: false,
+        showGrain: true,
+        showVignette: false,
         typography: TYPE_MINIMAL,
         defaultAsset: {
-            x: 540,
-            y: 980,
-            width: 180,
-            height: 160,
-            rotation: 0,
+            x: 820,
+            y: 1124,
+            width: 220,
+            height: 190,
+            rotation: -8,
             scale: 1,
-            shadow: 14,
+            ...OBJECT_SHADOW,
         },
         zones: [
-            { type: "kicker", rect: { x: 160, y: 220, w: 760, h: 28 }, align: "center" },
-            { type: "title", rect: { x: 90, y: 320, w: 900, h: 420 }, align: "center" },
-            { type: "subtitle", rect: { x: 200, y: 760, w: 680, h: 80 }, align: "center" },
-            { type: "asset", rect: { x: 450, y: 880, w: 180, h: 180 } },
-            { type: "logo", rect: { x: 470, y: 1208, w: 140, h: 32 }, align: "center" },
-            { type: "footer", rect: { x: 340, y: 1248, w: 400, h: 24 }, align: "center" },
+            {
+                type: "text-stack",
+                rect: { x: 80, y: 180, w: 920, h: 780 },
+                align: "center",
+                include: ["kicker", "title", "rule", "subtitle", "mark"],
+            },
+            { type: "asset", rect: { x: 700, y: 1000, w: 250, h: 210 } },
+            { type: "logo", rect: { x: 470, y: 1244, w: 140, h: 28 }, align: "center" },
+            { type: "footer", rect: { x: 340, y: 1278, w: 400, h: 20 }, align: "center" },
         ],
     },
 };
@@ -395,4 +544,11 @@ export function zoneOf(
     type: LayoutZoneType,
 ): LayoutZone | undefined {
     return layout.zones.find((zone) => zone.type === type);
+}
+
+export function expectedAssetCoverage(layout: LayoutDefinition): number {
+    if (layout.assetTreatment === "hero") return 0.72;
+    if (layout.assetTreatment === "cutout") return 0.22;
+    if (layout.assetTreatment === "object") return 0.04;
+    return 0.02;
 }

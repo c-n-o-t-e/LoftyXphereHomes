@@ -22,7 +22,8 @@ describe("content-studio defaults and layouts", () => {
             const json = serializeLayoutJson(layout.id);
             expect(json.layout).toBe(layout.id);
             expect(json.assetStyle).toBe("lxh-editorial");
-            expect(layout.zones.some((zone) => zone.type === "title")).toBe(true);
+            expect(layout.assetTreatment).toBeTruthy();
+            expect(layout.zones.some((zone) => zone.type === "title" || zone.type === "text-stack")).toBe(true);
         }
     });
 

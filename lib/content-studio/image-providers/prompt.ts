@@ -1,14 +1,14 @@
 const STYLE_LOCK = [
-    "premium editorial photography",
-    "luxury hospitality aesthetic",
-    "soft studio lighting",
-    "warm cream environment",
-    "champagne highlights",
+    "LoftyXphere editorial asset style",
+    "premium editorial realism",
+    "sophisticated photorealistic rendering",
+    "luxury hospitality advertising quality",
+    "warm neutral lighting",
+    "cream beige champagne environment",
+    "subtle gold details",
     "realistic materials",
-    "refined proportions",
-    "subtle natural shadow",
-    "isolated object",
-    "transparent background",
+    "elegant controlled depth",
+    "high-end boutique hotel aesthetic",
     "no text",
     "no letters",
     "no logos",
@@ -17,10 +17,40 @@ const STYLE_LOCK = [
     "no clutter",
     "no cartoon",
     "no illustration",
+    "no pixar",
+    "no anime",
+    "no clip art",
     "no neon",
+    "no random background scenery behind the subject",
 ].join(", ");
 
-export function buildAssetPrompt(concept: string): string {
+const CUTOUT_LOCK = [
+    "isolated object",
+    "transparent background",
+    "clean edges",
+    "subtle natural contact shadow only",
+    "subject occupies most of the frame",
+    "studio product photography",
+].join(", ");
+
+const HERO_LOCK = [
+    "full-bleed editorial photograph",
+    "luxury travel magazine cover quality",
+    "warm ivory and champagne colour grade",
+    "cinematic but quiet",
+    "no graphic overlays",
+    "photograph fills the frame",
+].join(", ");
+
+export type AssetPromptTreatment = "cutout" | "hero" | "object" | "accent";
+
+export function buildAssetPrompt(
+    concept: string,
+    treatment: AssetPromptTreatment = "cutout",
+): string {
     const cleaned = concept.replace(/\s+/g, " ").trim();
-    return `${cleaned}. ${STYLE_LOCK}.`;
+    if (treatment === "hero") {
+        return `${cleaned}. ${HERO_LOCK}. ${STYLE_LOCK}.`;
+    }
+    return `${cleaned}. ${CUTOUT_LOCK}. ${STYLE_LOCK}.`;
 }

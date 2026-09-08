@@ -63,11 +63,18 @@ export const DEFAULT_AMENITIES: PostAmenityItem[] = [
 
 export const PRESET_META: Record<
     PostPresetKey,
-    { label: string; description: string }
+    { label: string; description: string; option: "1" | "2" }
 > = {
     "luxury-editorial": {
+        option: "1",
         label: "Luxury Editorial",
         description: "Approved reference — cream panel, gold accents, serif headline",
+    },
+    "gallery-atelier": {
+        option: "2",
+        label: "Gallery Atelier",
+        description:
+            "Lookbook split — full-height photograph, quiet salon column, stacked amenities",
     },
 };
 
@@ -96,6 +103,7 @@ export function createDefaultPostDocument(
             contentPaddingX: POST_TOKENS.spacing.contentPaddingX,
             contentPaddingTop: POST_TOKENS.spacing.contentPaddingTop,
             contentPaddingBottom: POST_TOKENS.spacing.contentPaddingBottom,
+            variant: DEFAULT_POST_PRESET,
         },
         image: {
             url: null,
@@ -294,8 +302,95 @@ function mergeDocumentWithDefaults(
     };
 }
 
-export function applyPreset(_preset: PostPresetKey = DEFAULT_POST_PRESET): PostDocument {
+export function applyPreset(preset: PostPresetKey = DEFAULT_POST_PRESET): PostDocument {
+    if (preset === "gallery-atelier") {
+        return createGalleryAtelierDocument();
+    }
     return createDefaultPostDocument();
+}
+
+function createGalleryAtelierDocument(): PostDocument {
+    const base = createDefaultPostDocument();
+    return createDefaultPostDocument({
+        layout: {
+            ...base.layout,
+            variant: "gallery-atelier",
+            splitPhotoPercent: 58,
+            outerPadding: 32,
+            borderRadius: 18,
+            contentPaddingX: 44,
+            contentPaddingTop: 52,
+            contentPaddingBottom: 36,
+        },
+        overlay: {
+            ...base.overlay,
+            photoHeightPercent: 100,
+            overlapPercent: 0,
+            photoFadePercent: 0,
+            glassEffect: false,
+            opacity: 0,
+            blur: 0,
+            shadow: 0,
+            cardInsetX: 0,
+            cardOffsetY: 0,
+            footerGap: 20,
+        },
+        headline: {
+            ...base.headline,
+            fontSize: 44,
+            letterSpacing: -0.55,
+            lineHeight: 1.06,
+            fontWeight: 500,
+        },
+        description: {
+            ...base.description,
+            fontSize: 14,
+            lineHeight: 1.55,
+            maxWidthPercent: 100,
+        },
+        button: {
+            ...base.button,
+            backgroundColor: "transparent",
+            textColor: POST_TOKENS.colors.gold,
+            borderRadius: 2,
+            paddingX: 0,
+            paddingY: 10,
+            fontSize: 12,
+            letterSpacing: 2,
+            hoverScale: 1.02,
+        },
+        amenitiesStyle: {
+            columns: 2,
+            iconSize: 22,
+            strokeWidth: 1.65,
+            fontSize: 10,
+            fontWeight: 500,
+            rowGap: 22,
+            columnGap: 20,
+            iconLabelGap: 8,
+            goldLabels: false,
+        },
+        logo: {
+            ...base.logo,
+            variant: "dark",
+            position: "top-right",
+            size: 54,
+            padding: 0,
+            opacity: 0.86,
+            showWordmark: false,
+        },
+        contactStyle: {
+            ...base.contactStyle,
+            iconSize: 16,
+            fontSize: 13,
+            gap: 8,
+            paddingY: 4,
+        },
+        fonts: {
+            heading: "Cormorant Garamond",
+            body: "Inter",
+        },
+    });
 }
 
 export function mergePostDocument(

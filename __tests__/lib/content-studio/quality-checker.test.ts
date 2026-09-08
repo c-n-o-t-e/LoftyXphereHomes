@@ -30,9 +30,9 @@ describe("content-studio quality checker", () => {
         const document = createDefaultEditorialDocument({
             layoutId: "minimal-luxury",
         });
-        document.typography.titleSize = 92;
+        document.typography.titleSize = 140;
         document.content.title =
-            "A remarkably long headline that cannot possibly sit inside a restrained luxury composition without colliding with the footer and the supporting object";
+            "A remarkably long headline that cannot possibly sit inside a restrained luxury composition without colliding with the footer and the supporting object in every direction of the page";
         const report = checkEditorialQuality(document);
         expect(report.issues.some((issue) => issue.id === "title-overflow")).toBe(true);
     });

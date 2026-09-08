@@ -64,7 +64,9 @@ const CATEGORY_ASSETS: Record<ContentCategory, AssetCategory> = {
 const LISTICLE = /\b(\d+|five|three|seven|two)\s+(things|ways|places|tips|reasons)\b/i;
 const BEFORE_BOOK = /\bbefore (you )?book|\bwhat to know\b|\bcheck before\b/i;
 const PACK = /\bpack\b|\bluggage\b|\bsuitcase\b/i;
-const PLACES = /\bplaces to (visit|eat|see|go)\b|\bnear wuye\b|\babuja guide\b/i;
+const PLACES = /\bplaces to (visit|eat|see|go)\b|\bnear wuye\b|\babuja guide\b|\bhidden gems\b|\bexplore abuja\b/i;
+const STATEMENT = /\bmore than a room\b|\bwhy a great stay\b|\bphilosophy\b|\bexperience\b/i;
+const CHOOSE = /\bwhy choose\b|\bserviced apartment\b|\breasons to\b/i;
 const NEW_WEEK = /\bhappy new week\b|\bnew week\b/i;
 const NEW_MONTH = /\bhappy new month\b|\bnew month\b|\bwelcome the month\b/i;
 const QUOTE = /\bexperience\b|\bmore than a room\b|\bphilosophy\b/i;
@@ -87,13 +89,19 @@ export function recommendLayout(input: {
     } else if (PACK.test(haystack)) {
         layoutId = "cut-out";
         reason = "Packing and object-led tips belong on a floating cut-out asset.";
+    } else if (/\bhidden gems\b|\bexplore abuja\b/i.test(haystack)) {
+        layoutId = "editorial-split";
+        reason = "Place-led lines work as an editorial split — headline one side, landmark the other.";
     } else if (PLACES.test(haystack)) {
         layoutId = "full-bleed";
         reason = "Destination lists should let the visual dominate.";
+    } else if (CHOOSE.test(haystack)) {
+        layoutId = "information-grid";
+        reason = "Reason-led hospitality copy belongs on a structured information grid.";
     } else if (LISTICLE.test(title) || BEFORE_BOOK.test(title)) {
         layoutId = "magazine-editorial";
         reason = "Numbered or “what to know” titles read best as a magazine editorial.";
-    } else if (QUOTE.test(title) && title.length > 40) {
+    } else if ((QUOTE.test(title) || STATEMENT.test(title)) && title.length > 32) {
         layoutId = "typography-first";
         reason = "A hospitality statement should be typography-led.";
     } else {

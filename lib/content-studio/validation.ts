@@ -93,6 +93,7 @@ export const generateVisualBodySchema = z.object({
     category: z.enum(CONTENT_CATEGORIES).optional(),
     keywords: z.array(z.string().max(40)).max(12).optional(),
     concept: z.string().max(400).optional(),
+    layoutId: z.enum(LAYOUT_IDS).optional(),
 });
 
 export const recommendBodySchema = z.object({

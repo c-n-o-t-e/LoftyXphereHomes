@@ -2,6 +2,7 @@
 
 import { THEME_META } from "@/lib/content-studio/brand-theme";
 import { LAYOUT_LIST } from "@/lib/content-studio/layouts";
+import { STUDIO_BACKGROUNDS } from "@/lib/content-studio/tokens";
 import {
     FOOTER_VARIANTS,
     LOGO_VARIANTS,
@@ -14,6 +15,7 @@ import {
     type ThemeId,
     type VisualAlternative,
 } from "@/lib/content-studio/types";
+import { LayoutThumbnail } from "@/components/admin/ContentStudio/LayoutThumbnail";
 import {
     ColorField,
     EditorSection,
@@ -74,20 +76,23 @@ export function DesignPanel({
                                 key={layout.id}
                                 type="button"
                                 onClick={() => onApplyLayout(layout.id)}
-                                className={`rounded-xl border px-3 py-2.5 text-left transition-colors ${
+                                className={`flex gap-3 rounded-xl border p-2 text-left transition-colors ${
                                     active
                                         ? "border-slate-900 bg-slate-900 text-white"
                                         : "border-slate-200 bg-white hover:border-slate-400"
                                 }`}
                             >
-                                <div className="text-[11px] uppercase tracking-[0.16em] opacity-70">
-                                    Layout {layout.letter}
-                                </div>
-                                <div className="text-sm font-semibold">{layout.name}</div>
-                                <div
-                                    className={`mt-0.5 text-xs ${active ? "text-white/70" : "text-slate-500"}`}
-                                >
-                                    {layout.description}
+                                <LayoutThumbnail layout={layout} active={active} />
+                                <div className="min-w-0 py-0.5">
+                                    <div className="text-[11px] uppercase tracking-[0.16em] opacity-70">
+                                        Layout {layout.letter}
+                                    </div>
+                                    <div className="text-sm font-semibold">{layout.name}</div>
+                                    <div
+                                        className={`mt-0.5 text-xs ${active ? "text-white/70" : "text-slate-500"}`}
+                                    >
+                                        {layout.description}
+                                    </div>
                                 </div>
                             </button>
                         );
@@ -131,6 +136,20 @@ export function DesignPanel({
                         onChange({ theme: { ...document.theme, background } })
                     }
                 />
+                <div className="flex flex-wrap gap-1.5">
+                    {STUDIO_BACKGROUNDS.map((background) => (
+                        <button
+                            key={background}
+                            type="button"
+                            aria-label={background}
+                            onClick={() =>
+                                onChange({ theme: { ...document.theme, background } })
+                            }
+                            className="h-6 w-6 rounded-full ring-1 ring-black/10"
+                            style={{ background }}
+                        />
+                    ))}
+                </div>
                 <ColorField
                     label="Accent"
                     value={document.theme.accent}
@@ -191,7 +210,7 @@ export function DesignPanel({
 
             <EditorSection
                 title="Visual asset"
-                description="Generate an isolated editorial object, then place it in the template."
+                description="Generate an isolated editorial object, then art-direct it on the canvas."
             >
                 {!liveProvider ? (
                     <p className="text-xs text-amber-800">
@@ -225,21 +244,31 @@ export function DesignPanel({
                 </label>
                 {alternatives.length > 0 ? (
                     <div className="grid grid-cols-3 gap-2">
-                        {alternatives.map((alternative) => (
-                            <button
-                                key={alternative.imageUrl}
-                                type="button"
-                                onClick={() => onSelectAlternative(alternative)}
-                                className="overflow-hidden rounded-lg border border-slate-200 bg-[#F6EFE3]"
-                            >
-                                {/* eslint-disable-next-line @next/next/no-img-element */}
-                                <img
-                                    src={alternative.imageUrl}
-                                    alt=""
-                                    className="aspect-[4/5] w-full object-contain"
-                                />
-                            </button>
-                        ))}
+                        {alternatives.map((alternative, index) => {
+                            const selected = document.asset.url === alternative.imageUrl;
+                            return (
+                                <button
+                                    key={alternative.imageUrl}
+                                    type="button"
+                                    onClick={() => onSelectAlternative(alternative)}
+                                    className={`overflow-hidden rounded-lg border bg-[#F6EFE3] ${
+                                        selected
+                                            ? "border-slate-900 ring-1 ring-slate-900"
+                                            : "border-slate-200"
+                                    }`}
+                                >
+                                    {/* eslint-disable-next-line @next/next/no-img-element */}
+                                    <img
+                                        src={alternative.imageUrl}
+                                        alt=""
+                                        className="aspect-[4/5] w-full object-contain"
+                                    />
+                                    <div className="px-1 py-1 text-center text-[10px] font-medium uppercase tracking-[0.14em] text-slate-600">
+                                        Option {String.fromCharCode(65 + index)}
+                                    </div>
+                                </button>
+                            );
+                        })}
                     </div>
                 ) : null}
                 <SliderField
@@ -265,13 +294,61 @@ export function DesignPanel({
                     suffix="°"
                 />
                 <SliderField
-                    label="Shadow"
-                    value={document.asset.shadow}
-                    min={0}
-                    max={60}
-                    onChange={(shadow) =>
-                        onChange({ asset: { ...document.asset, shadow } })
+                    label="Opacity"
+                    value={Math.round((document.asset.opacity ?? 1) * 100)}
+                    min={40}
+                    max={100}
+                    onChange={(value) =>
+                        onChange({
+                            asset: { ...document.asset, opacity: value / 100 },
+                        })
                     }
+                    suffix="%"
+                />
+                <SliderField
+                    label="Shadow opacity"
+                    value={Math.round((document.asset.shadowOpacity ?? 0.18) * 100)}
+                    min={0}
+                    max={40}
+                    onChange={(value) =>
+                        onChange({
+                            asset: { ...document.asset, shadowOpacity: value / 100 },
+                        })
+                    }
+                    suffix="%"
+                />
+                <SliderField
+                    label="Shadow blur"
+                    value={document.asset.shadowBlur ?? document.asset.shadow}
+                    min={0}
+                    max={80}
+                    onChange={(shadowBlur) =>
+                        onChange({
+                            asset: { ...document.asset, shadowBlur, shadow: shadowBlur },
+                        })
+                    }
+                />
+                <SliderField
+                    label="Shadow scale"
+                    value={Math.round((document.asset.shadowScale ?? 0.7) * 100)}
+                    min={40}
+                    max={120}
+                    onChange={(value) =>
+                        onChange({
+                            asset: { ...document.asset, shadowScale: value / 100 },
+                        })
+                    }
+                    suffix="%"
+                />
+                <SliderField
+                    label="Shadow offset"
+                    value={document.asset.shadowOffsetY ?? 24}
+                    min={0}
+                    max={72}
+                    onChange={(shadowOffsetY) =>
+                        onChange({ asset: { ...document.asset, shadowOffsetY } })
+                    }
+                    suffix="px"
                 />
                 <Button
                     type="button"

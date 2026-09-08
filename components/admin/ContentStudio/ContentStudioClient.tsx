@@ -15,14 +15,17 @@ import {
 } from "@/lib/content-studio/export-client";
 import { resolveTheme } from "@/lib/content-studio/brand-theme";
 import { fileToExportableDataUrl } from "@/lib/post-generator/uploadImage";
-import type {
-    EditorialAssetRecord,
-    EditorialDocument,
-    EditorialPostRecord,
-    LayoutId,
-    LayoutRecommendation,
-    StudioExportFormat,
-    VisualAlternative,
+import {
+    STUDIO_CANVAS_HEIGHT,
+    STUDIO_CANVAS_WIDTH,
+    type EditorialAssetRecord,
+    type EditorialDocument,
+    type EditorialPostRecord,
+    type LayoutId,
+    type LayoutRecommendation,
+    type StudioAssetTransform,
+    type StudioExportFormat,
+    type VisualAlternative,
 } from "@/lib/content-studio/types";
 import { ContentComposer } from "@/components/admin/ContentStudio/ContentComposer";
 import { DesignPanel } from "@/components/admin/ContentStudio/DesignPanel";
@@ -136,20 +139,26 @@ export function ContentStudioClient({ postId }: { postId: string }) {
     }, []);
 
     useEffect(() => {
+        if (isLoading) return;
         const el = previewWrapRef.current;
         if (!el) return;
         const update = () => {
             const w = el.clientWidth;
             const h = el.clientHeight;
-            const byWidth = (w - 32) / 1080;
-            const byHeight = (h - 32) / 1350;
-            setPreviewScale(Math.min(1, Math.max(0.22, Math.min(byWidth, byHeight))));
+            if (w < 40 || h < 40) return;
+            const byWidth = (w - 24) / STUDIO_CANVAS_WIDTH;
+            const byHeight = (h - 24) / STUDIO_CANVAS_HEIGHT;
+            const next = Math.min(0.92, Math.max(0.18, Math.min(byWidth, byHeight)));
+            setPreviewScale((prev) => (Math.abs(prev - next) < 0.004 ? prev : next));
         };
-        update();
+        const frame = requestAnimationFrame(update);
         const ro = new ResizeObserver(update);
         ro.observe(el);
-        return () => ro.disconnect();
-    }, [document]);
+        return () => {
+            cancelAnimationFrame(frame);
+            ro.disconnect();
+        };
+    }, [isLoading]);
 
     const save = useCallback(
         async (silent = false) => {
@@ -207,6 +216,15 @@ export function ContentStudioClient({ postId }: { postId: string }) {
         [scheduleSave],
     );
 
+    const patchAsset = useCallback(
+        (patch: Partial<StudioAssetTransform>) => {
+            const live = docRef.current;
+            if (!live) return;
+            updateDocument({ asset: { ...live.asset, ...patch } });
+        },
+        [updateDocument],
+    );
+
     const applyLayoutId = useCallback(
         (layoutId: LayoutId) => {
             setDocument((current) => {
@@ -248,92 +266,111 @@ export function ContentStudioClient({ postId }: { postId: string }) {
         [document],
     );
 
+    const generateVisuals = useCallback(
+        async (source: EditorialDocument) => {
+            setGenerating(true);
+            try {
+                const headers = await authHeaders();
+                const res = await fetch("/api/admin/editorial-assets/generate", {
+                    method: "POST",
+                    headers: { ...headers, "Content-Type": "application/json" },
+                    body: JSON.stringify({
+                        title: source.content.title,
+                        category: source.category,
+                        keywords: source.content.keywords,
+                        concept: source.asset.concept || undefined,
+                        layoutId: source.layoutId,
+                    }),
+                });
+                const data = (await res.json()) as {
+                    alternatives?: VisualAlternative[];
+                    live?: boolean;
+                    error?: string;
+                };
+                if (!res.ok) throw new Error(data.error ?? "Generate failed");
+                setLiveProvider(Boolean(data.live));
+                setAlternatives(data.alternatives ?? []);
+                if (data.alternatives?.[0]) {
+                    skipHistoryRef.current = true;
+                    setDocument((current) => {
+                        const base =
+                            current && current.layoutId === source.layoutId
+                                ? current
+                                : source;
+                        return mergeEditorialDocument(base, {
+                            asset: {
+                                ...base.asset,
+                                url: data.alternatives![0].imageUrl,
+                                concept: data.alternatives![0].concept,
+                            },
+                        });
+                    });
+                    skipHistoryRef.current = false;
+                    scheduleSave();
+                }
+                toast.success(
+                    data.live
+                        ? "Three visual alternatives are ready — pick Option A, B, or C"
+                        : "Placeholder visuals generated — add an API key for photography",
+                );
+            } catch (err) {
+                toast.error(err instanceof Error ? err.message : "Generate failed");
+            } finally {
+                setGenerating(false);
+            }
+        },
+        [authHeaders, scheduleSave],
+    );
+
     const onRecommend = async () => {
-        if (!document) return;
+        const live = docRef.current;
+        if (!live) return;
         setRecommending(true);
         try {
             const local = recommendEditorialDesign({
-                title: document.content.title,
-                category: document.category,
-                keywords: document.content.keywords,
+                title: live.content.title,
+                category: live.category,
+                keywords: live.content.keywords,
             });
             setRecommendation(local);
             const next = applyLayout(
-                mergeEditorialDocument(document, {
-                    category: document.category,
+                mergeEditorialDocument(live, {
+                    category: live.category,
                     themeId: local.themeId,
                     theme: resolveTheme(local.themeId),
                     asset: {
-                        ...document.asset,
+                        ...live.asset,
                         concept: local.visualConcept,
                         category: local.assetCategory,
                     },
-                    footer: { ...document.footer, variant: local.footer },
+                    footer: { ...live.footer, variant: local.footer },
                 }),
                 local.layoutId,
             );
-            setHistory((prev) => [...prev.slice(-(HISTORY_LIMIT - 1)), document]);
+            setHistory((prev) => [...prev.slice(-(HISTORY_LIMIT - 1)), live]);
             setDocument(next);
+            docRef.current = next;
             scheduleSave();
             toast.success(local.reason);
+            setRecommending(false);
+            await generateVisuals(next);
         } finally {
             setRecommending(false);
         }
     };
 
     const onGenerate = async () => {
-        if (!document) return;
-        setGenerating(true);
-        try {
-            const headers = await authHeaders();
-            const res = await fetch("/api/admin/editorial-assets/generate", {
-                method: "POST",
-                headers: { ...headers, "Content-Type": "application/json" },
-                body: JSON.stringify({
-                    title: document.content.title,
-                    category: document.category,
-                    keywords: document.content.keywords,
-                    concept: document.asset.concept || undefined,
-                }),
-            });
-            const data = (await res.json()) as {
-                alternatives?: VisualAlternative[];
-                live?: boolean;
-                error?: string;
-            };
-            if (!res.ok) throw new Error(data.error ?? "Generate failed");
-            setLiveProvider(Boolean(data.live));
-            setAlternatives(data.alternatives ?? []);
-            if (data.alternatives?.[0]) {
-                updateDocument({
-                    asset: {
-                        ...document.asset,
-                        url: data.alternatives[0].imageUrl,
-                        concept: data.alternatives[0].concept,
-                    },
-                });
-            }
-            toast.success(
-                data.live
-                    ? "Three visual alternatives are ready"
-                    : "Placeholder visuals generated — add an API key for photography",
-            );
-        } catch (err) {
-            toast.error(err instanceof Error ? err.message : "Generate failed");
-        } finally {
-            setGenerating(false);
-        }
+        const live = docRef.current;
+        if (!live) return;
+        await generateVisuals(live);
     };
 
     const onUploadAsset = async (file: File) => {
         try {
             const url = await fileToExportableDataUrl(file);
-            updateDocument({
-                asset: {
-                    ...document.asset,
-                    url,
-                    concept: file.name.replace(/\.[^.]+$/, ""),
-                },
+            patchAsset({
+                url,
+                concept: file.name.replace(/\.[^.]+$/, ""),
             });
             toast.success("Visual placed on the canvas");
         } catch (err) {
@@ -342,7 +379,8 @@ export function ContentStudioClient({ postId }: { postId: string }) {
     };
 
     const onSaveAsset = async () => {
-        if (!document?.asset.url) return;
+        const live = docRef.current;
+        if (!live?.asset.url) return;
         setSavingAsset(true);
         try {
             const headers = await authHeaders();
@@ -350,10 +388,10 @@ export function ContentStudioClient({ postId }: { postId: string }) {
                 method: "POST",
                 headers: { ...headers, "Content-Type": "application/json" },
                 body: JSON.stringify({
-                    name: document.asset.concept || document.content.title || "Editorial asset",
-                    category: document.asset.category,
-                    prompt: document.asset.concept,
-                    imageUrl: document.asset.url,
+                    name: live.asset.concept || live.content.title || "Editorial asset",
+                    category: live.asset.category,
+                    prompt: live.asset.concept,
+                    imageUrl: live.asset.url,
                     approved: true,
                 }),
             });
@@ -372,17 +410,18 @@ export function ContentStudioClient({ postId }: { postId: string }) {
     };
 
     const onExport = async () => {
-        if (!document || !quality?.ready) {
+        const live = docRef.current;
+        if (!live || !quality?.ready) {
             toast.error("Resolve design issues before export");
             return;
         }
         setExporting(true);
         try {
             const headers = await authHeaders();
-            await exportEditorialDocument(document, {
+            await exportEditorialDocument(live, {
                 format: exportFormat,
                 scale: 2,
-                fileName: resolveStudioExportFileName(document),
+                fileName: resolveStudioExportFileName(live),
                 authHeaders: headers,
             });
             toast.success("Exported — check Downloads");
@@ -403,8 +442,8 @@ export function ContentStudioClient({ postId }: { postId: string }) {
     }
 
     return (
-        <div className="flex min-h-[calc(100vh-8rem)] flex-col gap-4">
-            <div className="flex flex-wrap items-center justify-between gap-3">
+        <div className="flex h-[calc(100dvh-7.5rem)] flex-col gap-3 overflow-hidden max-xl:h-auto max-xl:overflow-visible">
+            <div className="flex shrink-0 flex-wrap items-center justify-between gap-3">
                 <div className="flex min-w-0 items-center gap-3">
                     <Button variant="outline" size="sm" asChild>
                         <Link href="/admin/content-studio">
@@ -468,13 +507,17 @@ export function ContentStudioClient({ postId }: { postId: string }) {
                 </div>
             </div>
 
-            {quality ? <QualityGate report={quality} /> : null}
+            {quality ? (
+                <div className="shrink-0">
+                    <QualityGate report={quality} />
+                </div>
+            ) : null}
             {recommendation ? (
-                <p className="text-xs text-slate-500">{recommendation.reason}</p>
+                <p className="shrink-0 text-xs text-slate-500">{recommendation.reason}</p>
             ) : null}
 
-            <div className="grid min-h-0 flex-1 gap-4 xl:grid-cols-[300px_minmax(0,1fr)_320px]">
-                <div className="min-h-0 overflow-y-auto pr-1">
+            <div className="grid min-h-0 flex-1 gap-4 overflow-hidden xl:grid-cols-[280px_minmax(0,1fr)_300px] max-xl:overflow-visible">
+                <div className="min-h-0 overflow-y-auto pr-1 max-xl:overflow-visible">
                     <ContentComposer
                         document={document}
                         onChange={updateDocument}
@@ -484,17 +527,20 @@ export function ContentStudioClient({ postId }: { postId: string }) {
                 </div>
                 <div
                     ref={previewWrapRef}
-                    className="flex min-h-[520px] items-center justify-center overflow-auto rounded-2xl bg-[#d8cfc0] p-4"
+                    className="relative flex h-[min(70dvh,720px)] min-h-0 items-center justify-center overflow-hidden rounded-2xl bg-[#d8cfc0] p-3 xl:h-full"
                 >
+                    {generating ? (
+                        <div className="absolute top-4 left-1/2 z-10 -translate-x-1/2 rounded-full bg-black/55 px-3 py-1 text-xs text-white">
+                            Generating visual options…
+                        </div>
+                    ) : null}
                     <PreviewCanvas
                         document={document}
                         scale={previewScale}
-                        onAssetChange={(asset) =>
-                            updateDocument({ asset: { ...document.asset, ...asset } })
-                        }
+                        onAssetChange={patchAsset}
                     />
                 </div>
-                <div className="min-h-0 overflow-y-auto pl-1">
+                <div className="min-h-0 overflow-y-auto pl-1 max-xl:overflow-visible">
                     <DesignPanel
                         document={document}
                         onChange={updateDocument}
@@ -503,23 +549,17 @@ export function ContentStudioClient({ postId }: { postId: string }) {
                         generating={generating}
                         onGenerate={() => void onGenerate()}
                         onSelectAlternative={(alternative) =>
-                            updateDocument({
-                                asset: {
-                                    ...document.asset,
-                                    url: alternative.imageUrl,
-                                    concept: alternative.concept,
-                                },
+                            patchAsset({
+                                url: alternative.imageUrl,
+                                concept: alternative.concept,
                             })
                         }
                         assets={assets}
                         onUseAsset={(asset) =>
-                            updateDocument({
-                                asset: {
-                                    ...document.asset,
-                                    url: asset.imageUrl,
-                                    concept: asset.name,
-                                    category: asset.category,
-                                },
+                            patchAsset({
+                                url: asset.imageUrl,
+                                concept: asset.name,
+                                category: asset.category,
                             })
                         }
                         onSaveAsset={() => void onSaveAsset()}

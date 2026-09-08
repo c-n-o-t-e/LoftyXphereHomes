@@ -5,6 +5,7 @@ import { ArrowRight } from "lucide-react";
 import {
     POST_CANVAS_HEIGHT,
     POST_CANVAS_WIDTH,
+    resolvePostLayoutVariant,
     type PostDocument,
 } from "@/lib/post-generator/types";
 import { ImageCanvas } from "@/components/admin/PostGenerator/ImageCanvas";
@@ -20,6 +21,7 @@ import {
 } from "@/lib/post-generator/defaults";
 import { splitAmenityLabelLines } from "@/lib/post-generator/amenityLabel";
 import { goldDivider, POST_TOKENS } from "@/lib/post-generator/tokens";
+import { GalleryAtelierCanvas } from "@/components/admin/PostGenerator/GalleryAtelierCanvas";
 
 type PreviewCanvasProps = {
     document: PostDocument;
@@ -49,6 +51,10 @@ export function PreviewCanvas({
     exportMode = false,
     className,
 }: PreviewCanvasProps) {
+    if (resolvePostLayoutVariant(doc.layout) === "gallery-atelier") {
+        return <GalleryAtelierCanvas document={doc} className={className} />;
+    }
+
     const { layout, overlay, theme, fonts, headline, description, button, logo } =
         doc;
     const amenitiesStyle = {

@@ -61,3 +61,12 @@ export const POST_TOKENS = {
 export function goldDivider(alpha = 0.18): string {
     return `rgba(200,166,106,${alpha})`;
 }
+
+/** Option 2 — lookbook split. Does not alter the approved stacked editorial. */
+export const ATELIER_TOKENS = {
+    photoWidthPercent: 58,
+    hairline: 1,
+    panelPadX: 44,
+    panelPadTop: 52,
+    panelPadBottom: 40,
+} as const;

@@ -16,7 +16,7 @@ export function applyLayout(
     document: EditorialDocument,
     layoutId: LayoutId,
 ): EditorialDocument {
-    return applyLayoutToDocument(document, layoutId, { keepAssetUrl: true });
+    return applyLayoutToDocument(document, layoutId, { keepAssetUrl: true, keepTheme: true });
 }
 
 export function assetOverlapsZone(
@@ -52,7 +52,8 @@ export function assetWithinCanvas(document: EditorialDocument): boolean {
 }
 
 export function titleSafeZone(layoutId: LayoutId): StudioRect | undefined {
-    return zoneOf(getLayout(layoutId), "title")?.rect;
+    const layout = getLayout(layoutId);
+    return zoneOf(layout, "text-stack")?.rect ?? zoneOf(layout, "title")?.rect;
 }
 
 export function estimateTitleOverflow(
@@ -76,6 +77,7 @@ export function serializeLayoutJson(layoutId: LayoutId) {
         textPosition: layout.textPosition,
         footer: layout.footer,
         assetStyle: layout.assetStyle,
+        assetTreatment: layout.assetTreatment,
         theme: layout.theme,
     };
 }

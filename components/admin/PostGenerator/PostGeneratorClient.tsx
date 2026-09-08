@@ -9,6 +9,7 @@ import {
 import { parsePostDocument } from "@/lib/post-generator/validation";
 import type {
     PostDocument,
+    PostPresetKey,
     PostTemplateRecord,
 } from "@/lib/post-generator/types";
 import {
@@ -38,7 +39,8 @@ import {
     type SmartThemeResult,
 } from "@/lib/post-generator/smart-theme";
 import { Button } from "@/components/ui/button";
-import { Download, Eye, Loader2 } from "lucide-react";
+import { ArrowLeft, Download, Eye, Loader2 } from "lucide-react";
+import Link from "next/link";
 import { toast } from "sonner";
 
 type ApartmentOption = { id: string; name: string; status: string };
@@ -46,10 +48,10 @@ type ApartmentOption = { id: string; name: string; status: string };
 const HISTORY_LIMIT = 50;
 
 export function PostGeneratorClient({ templateId }: { templateId: string }) {
-    const [record, setRecord] = useState<PostTemplateRecord | null>(null);
+    const [, setRecord] = useState<PostTemplateRecord | null>(null);
     const [title, setTitle] = useState("");
     const [document, setDocument] = useState<PostDocument | null>(null);
-    const [presetKey, setPresetKey] = useState<typeof DEFAULT_POST_PRESET | null>(
+    const [presetKey, setPresetKey] = useState<PostPresetKey | null>(
         DEFAULT_POST_PRESET,
     );
     const [apartments, setApartments] = useState<ApartmentOption[]>([]);
@@ -148,18 +150,26 @@ export function PostGeneratorClient({ templateId }: { templateId: string }) {
     }, []);
 
     useEffect(() => {
+        if (isLoading) return;
         const el = previewWrapRef.current;
         if (!el) return;
         const update = () => {
             const w = el.clientWidth;
-            const scale = Math.min(1, Math.max(0.28, (w - 24) / POST_CANVAS_WIDTH));
-            setPreviewScale(scale);
+            const h = el.clientHeight;
+            if (w < 40 || h < 40) return;
+            const byWidth = (w - 24) / POST_CANVAS_WIDTH;
+            const byHeight = (h - 24) / POST_CANVAS_HEIGHT;
+            const next = Math.min(0.92, Math.max(0.18, Math.min(byWidth, byHeight)));
+            setPreviewScale((prev) => (Math.abs(prev - next) < 0.004 ? prev : next));
         };
-        update();
+        const frame = requestAnimationFrame(update);
         const ro = new ResizeObserver(update);
         ro.observe(el);
-        return () => ro.disconnect();
-    }, [document]);
+        return () => {
+            cancelAnimationFrame(frame);
+            ro.disconnect();
+        };
+    }, [isLoading]);
 
     const save = useCallback(
         async (silent = false) => {
@@ -403,26 +413,34 @@ export function PostGeneratorClient({ templateId }: { templateId: string }) {
         [applyPatch, authHeaders],
     );
 
-    const onApplyPreset = useCallback(() => {
-            const next = applyPreset(DEFAULT_POST_PRESET);
-            // Preserve current image / apartment when resetting look
+    const onApplyPreset = useCallback(
+        (key: PostPresetKey) => {
+            const next = applyPreset(key);
             const merged = mergePostDocument(next, {
                 apartmentId: document?.apartmentId ?? null,
                 apartmentName: document?.apartmentName ?? "",
                 apartmentSlug: document?.apartmentSlug ?? null,
                 bookingUrl: document?.bookingUrl ?? null,
                 image: document?.image,
+                amenities: document?.amenities,
+                contact: document?.contact,
+                headline: document?.headline,
+                description: document?.description,
+                button: document
+                    ? { ...next.button, text: document.button.text }
+                    : next.button,
             });
-            setPresetKey(DEFAULT_POST_PRESET);
+            setPresetKey(key);
             setDocument(merged);
             pushHistory(merged);
             scheduleSave();
-            toast.success("Reset to Luxury Editorial");
-        }, [document, pushHistory, scheduleSave]);
-
-    const previewHeight = useMemo(
-        () => POST_CANVAS_HEIGHT * previewScale,
-        [previewScale],
+            toast.success(
+                key === "gallery-atelier"
+                    ? "Switched to Gallery Atelier"
+                    : "Switched to Luxury Editorial",
+            );
+        },
+        [document, pushHistory, scheduleSave],
     );
 
     const fileName = useMemo(
@@ -467,82 +485,31 @@ export function PostGeneratorClient({ templateId }: { templateId: string }) {
     }
 
     return (
-        <div className="space-y-4">
-            <Toolbar
-                title={title}
-                onTitleChange={(t) => {
-                    setTitle(t);
-                    scheduleSave();
-                }}
-                isSaving={isSaving}
-                isDownloading={isDownloading}
-                canUndo={history.length > 1}
-                canRedo={future.length > 0}
-                onUndo={undo}
-                onRedo={redo}
-                onSave={() => void save(false)}
-                onPreview={() => setPreviewOpen(true)}
-                onDownload={() => void handleDownload()}
-            />
-
-            {/* LIVE PREVIEW */}
-            <div
-                ref={previewWrapRef}
-                className="overflow-hidden rounded-2xl border border-slate-200 bg-[#ebe4d8] p-4 shadow-sm"
-            >
-                <div className="mb-3 flex flex-wrap items-center justify-between gap-2">
-                    <p className="text-[11px] font-semibold uppercase tracking-[0.16em] text-slate-500">
-                        Live post preview · Instagram 4:5
-                        {record
-                            ? ` · Updated ${new Date(record.updatedAt).toLocaleString()}`
-                            : ""}
-                    </p>
-                    <div className="flex gap-2">
-                        <Button
-                            type="button"
-                            variant="outline"
-                            size="sm"
-                            className="bg-white"
-                            onClick={() => setPreviewOpen(true)}
-                        >
-                            <Eye className="mr-1.5 h-4 w-4" />
-                            Preview
-                        </Button>
-                        <Button
-                            type="button"
-                            size="sm"
-                            className="bg-[#C4A574] text-white hover:bg-[#b39463]"
-                            onClick={() => void handleDownload()}
-                            disabled={isDownloading}
-                        >
-                            {isDownloading ? (
-                                <Loader2 className="mr-1.5 h-4 w-4 animate-spin" />
-                            ) : (
-                                <Download className="mr-1.5 h-4 w-4" />
-                            )}
-                            Download
-                        </Button>
-                    </div>
-                </div>
-                <div
-                    className="mx-auto overflow-hidden"
-                    style={{
-                        width: POST_CANVAS_WIDTH * previewScale,
-                        height: previewHeight,
-                    }}
-                >
-                    <div
-                        style={{
-                            transform: `scale(${previewScale})`,
-                            transformOrigin: "top left",
-                            width: POST_CANVAS_WIDTH,
-                            height: POST_CANVAS_HEIGHT,
+        <div className="flex h-[calc(100dvh-7.5rem)] flex-col gap-3 overflow-hidden max-xl:h-auto max-xl:overflow-visible">
+            <div className="flex shrink-0 items-center gap-2">
+                <Button variant="outline" size="sm" asChild className="shrink-0">
+                    <Link href="/admin/post-generator">
+                        <ArrowLeft className="h-3.5 w-3.5" />
+                        Library
+                    </Link>
+                </Button>
+                <div className="min-w-0 flex-1">
+                    <Toolbar
+                        title={title}
+                        onTitleChange={(t) => {
+                            setTitle(t);
+                            scheduleSave();
                         }}
-                    >
-                        <div ref={canvasRef}>
-                            <PreviewCanvas document={document} />
-                        </div>
-                    </div>
+                        isSaving={isSaving}
+                        isDownloading={isDownloading}
+                        canUndo={history.length > 1}
+                        canRedo={future.length > 0}
+                        onUndo={undo}
+                        onRedo={redo}
+                        onSave={() => void save(false)}
+                        onPreview={() => setPreviewOpen(true)}
+                        onDownload={() => void handleDownload()}
+                    />
                 </div>
             </div>
 
@@ -555,49 +522,112 @@ export function PostGeneratorClient({ templateId }: { templateId: string }) {
                 onDownload={() => void handleDownload()}
             />
 
-            {/* EDITOR PANEL */}
-            <div className="grid gap-4 lg:grid-cols-2 xl:grid-cols-3">
-                <TemplateLibrary onApplyPreset={onApplyPreset} />
-                <ImageEditor
-                    document={document}
-                    apartments={apartments}
-                    onChange={applyPatch}
-                    onSelectApartment={onSelectApartment}
-                />
-                <SmartThemePanel
-                    analyzing={smartAnalyzing}
-                    result={smartTheme}
-                    activeThemeId={activeSmartThemeId}
-                    hasPhoto={Boolean(document.image.url)}
-                    error={smartError}
-                    onApplyTheme={onApplySmartTheme}
-                    onReanalyze={() => {
-                        const url = document.image.url;
-                        if (!url) return;
-                        // Flip Imaginative Soft ↔ Bold; re-apply only if that theme is active
-                        const keepImaginative =
-                            activeSmartThemeId === "imaginative";
-                        void runAnalysis(url, {
-                            force: true,
-                            autoApply: keepImaginative,
-                            preferThemeId: keepImaginative
-                                ? "imaginative"
-                                : undefined,
-                        });
-                    }}
-                />
-                <OverlayEditor document={document} onChange={applyPatch} />
-                <FontEditor document={document} onChange={applyPatch} />
-                <ButtonEditor document={document} onChange={applyPatch} />
-                <LogoEditor document={document} onChange={applyPatch} />
-                <AmenitiesEditor document={document} onChange={applyPatch} />
-                <ContactEditor document={document} onChange={applyPatch} />
-                <ThemeEditor document={document} onChange={applyPatch} />
-                <ExportPanel
-                    document={document}
-                    fileName={fileName}
-                    getAuthHeaders={authHeaders}
-                />
+            <div className="grid min-h-0 flex-1 gap-4 overflow-hidden xl:grid-cols-[300px_minmax(0,1fr)_300px] max-xl:overflow-visible">
+                <div className="min-h-0 space-y-4 overflow-y-auto pr-1 max-xl:overflow-visible">
+                    <TemplateLibrary
+                        activePreset={presetKey ?? DEFAULT_POST_PRESET}
+                        onApplyPreset={onApplyPreset}
+                    />
+                    <ImageEditor
+                        document={document}
+                        apartments={apartments}
+                        onChange={applyPatch}
+                        onSelectApartment={onSelectApartment}
+                    />
+                    <AmenitiesEditor document={document} onChange={applyPatch} />
+                    <ContactEditor document={document} onChange={applyPatch} />
+                    <ButtonEditor document={document} onChange={applyPatch} />
+                </div>
+
+                <div
+                    ref={previewWrapRef}
+                    className="flex h-[min(70dvh,720px)] min-h-0 flex-col overflow-hidden rounded-2xl bg-[#ebe4d8] p-3 xl:h-full"
+                >
+                    <div className="mb-2 flex shrink-0 items-center justify-between gap-2">
+                        <p className="text-[11px] font-semibold uppercase tracking-[0.16em] text-slate-500">
+                            Live post · 4:5
+                        </p>
+                        <div className="flex gap-2">
+                            <Button
+                                type="button"
+                                variant="outline"
+                                size="sm"
+                                className="h-7 bg-white px-2"
+                                onClick={() => setPreviewOpen(true)}
+                            >
+                                <Eye className="h-3.5 w-3.5" />
+                            </Button>
+                            <Button
+                                type="button"
+                                size="sm"
+                                className="h-7 bg-[#C4A574] px-2 text-white hover:bg-[#b39463]"
+                                onClick={() => void handleDownload()}
+                                disabled={isDownloading}
+                            >
+                                {isDownloading ? (
+                                    <Loader2 className="h-3.5 w-3.5 animate-spin" />
+                                ) : (
+                                    <Download className="h-3.5 w-3.5" />
+                                )}
+                            </Button>
+                        </div>
+                    </div>
+                    <div className="flex min-h-0 flex-1 items-center justify-center">
+                        <div
+                            className="relative shrink-0 overflow-hidden rounded-sm shadow-[0_24px_80px_rgba(36,26,20,0.18)] ring-1 ring-black/10"
+                            style={{
+                                width: POST_CANVAS_WIDTH * previewScale,
+                                height: POST_CANVAS_HEIGHT * previewScale,
+                            }}
+                        >
+                            <div
+                                className="absolute top-0 left-0 origin-top-left"
+                                style={{
+                                    width: POST_CANVAS_WIDTH,
+                                    height: POST_CANVAS_HEIGHT,
+                                    transform: `scale(${previewScale})`,
+                                }}
+                            >
+                                <div ref={canvasRef}>
+                                    <PreviewCanvas document={document} />
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <div className="min-h-0 space-y-4 overflow-y-auto pl-1 max-xl:overflow-visible">
+                    <SmartThemePanel
+                        analyzing={smartAnalyzing}
+                        result={smartTheme}
+                        activeThemeId={activeSmartThemeId}
+                        hasPhoto={Boolean(document.image.url)}
+                        error={smartError}
+                        onApplyTheme={onApplySmartTheme}
+                        onReanalyze={() => {
+                            const url = document.image.url;
+                            if (!url) return;
+                            const keepImaginative =
+                                activeSmartThemeId === "imaginative";
+                            void runAnalysis(url, {
+                                force: true,
+                                autoApply: keepImaginative,
+                                preferThemeId: keepImaginative
+                                    ? "imaginative"
+                                    : undefined,
+                            });
+                        }}
+                    />
+                    <OverlayEditor document={document} onChange={applyPatch} />
+                    <FontEditor document={document} onChange={applyPatch} />
+                    <LogoEditor document={document} onChange={applyPatch} />
+                    <ThemeEditor document={document} onChange={applyPatch} />
+                    <ExportPanel
+                        document={document}
+                        fileName={fileName}
+                        getAuthHeaders={authHeaders}
+                    />
+                </div>
             </div>
         </div>
     );

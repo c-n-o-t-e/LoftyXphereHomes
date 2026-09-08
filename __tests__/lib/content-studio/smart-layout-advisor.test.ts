@@ -52,4 +52,22 @@ describe("content-studio layout advisor", () => {
         expect(result.themeId).toBeTruthy();
         expect(result.visualConcept.toLowerCase()).toMatch(/key|wallet|book/);
     });
+
+    it("gives the five studio examples distinct luxury compositions", () => {
+        const examples = [
+            { title: "Happy New Week", layout: "minimal-luxury" },
+            { title: "5 Things To Know Before Booking A Shortlet", layout: "magazine-editorial" },
+            { title: "Explore Abuja's Hidden Gems", layout: "editorial-split" },
+            { title: "What To Pack For Your Stay", layout: "cut-out" },
+            { title: "Why A Great Stay Is About More Than A Room", layout: "typography-first" },
+        ] as const;
+
+        const layouts = examples.map((example) => {
+            const result = recommendLayout({ title: example.title });
+            expect(result.layoutId).toBe(example.layout);
+            return result.layoutId;
+        });
+
+        expect(new Set(layouts).size).toBe(5);
+    });
 });

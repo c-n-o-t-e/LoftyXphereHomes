@@ -6,18 +6,39 @@
 export const STUDIO_PALETTE = {
     ivory: "#F6EFE3",
     cream: "#EEE1D0",
+    sand: "#E7D5B9",
     charcoal: "#241A14",
-    brown: "#5B4636",
+    espresso: "#2B211A",
+    umber: "#4C3A2E",
+    brown: "#5A4331",
     gold: "#C8A66A",
-    terracotta: "#9E4E2E",
+    terracotta: "#A44D2D",
     white: "#FFFFFF",
 } as const;
+
+export const STUDIO_BACKGROUNDS = [
+    STUDIO_PALETTE.ivory,
+    STUDIO_PALETTE.cream,
+    STUDIO_PALETTE.sand,
+    STUDIO_PALETTE.espresso,
+    STUDIO_PALETTE.umber,
+] as const;
+
+export const STUDIO_CTAS = [
+    "Book your stay",
+    "Discover more",
+    "Explore Abuja",
+    "Read more",
+    "Plan your stay",
+    "Save this",
+    "Share this",
+] as const;
 
 export const STUDIO_TOKENS = {
     colors: STUDIO_PALETTE,
     frame: {
-        inset: 36,
-        thickness: 1.25,
+        inset: 42,
+        thickness: 1,
         radius: 0,
     },
     type: {
@@ -25,21 +46,16 @@ export const STUDIO_TOKENS = {
         sans: '"Inter", "Helvetica Neue", sans-serif',
     },
     spacing: {
-        page: 72,
-        tight: 28,
-        footer: 40,
+        page: 64,
+        tight: 22,
+        footer: 36,
     },
     asset: {
-        style: "lxh-editorial",
+        style: "lxh-editorial" as const,
         shadow: "0 28px 60px rgba(36, 26, 20, 0.16)",
     },
     cta: {
-        language: [
-            "Discover more",
-            "Enquire to stay",
-            "Book a stay",
-            "Visit loftyxpherehomes.com",
-        ],
+        language: STUDIO_CTAS,
     },
 } as const;
 

@@ -309,6 +309,30 @@ describe("post-generator defaults", () => {
         ).toBe(createDefaultPostDocument().overlay.opacity);
     });
 
+    it("applies the gallery-atelier lookbook without changing editorial defaults", () => {
+        const editorial = applyPreset("luxury-editorial");
+        const atelier = applyPreset("gallery-atelier");
+        expect(editorial.layout.variant).toBe("luxury-editorial");
+        expect(atelier.layout.variant).toBe("gallery-atelier");
+        expect(atelier.layout.splitPhotoPercent).toBe(58);
+        expect(atelier.amenitiesStyle.columns).toBe(2);
+        expect(editorial.overlay.photoHeightPercent).toBe(
+            createDefaultPostDocument().overlay.photoHeightPercent,
+        );
+        expect(editorial.amenitiesStyle.columns).toBe(8);
+        expect(atelier.fonts.heading).toBe("Cormorant Garamond");
+        expect(editorial.fonts.heading).toBe("Playfair Display");
+    });
+
+    it("keeps gallery-atelier through validation", () => {
+        const created = createPostTemplateBodySchema.parse({
+            title: "Lookbook",
+            presetKey: "gallery-atelier",
+        });
+        expect(created.presetKey).toBe("gallery-atelier");
+        expect(normalizePostPresetKey("gallery-atelier")).toBe("gallery-atelier");
+    });
+
     it("coerces leftover preset keys to luxury-editorial", () => {
         const created = createPostTemplateBodySchema.parse({
             title: "Test",

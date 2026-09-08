@@ -17,7 +17,7 @@ describe("content-studio color advisor", () => {
             title: "A festive stay in Abuja",
         });
         expect(result.themeId).toBe("seasonal");
-        expect(result.theme.accent).toBe("#9E4E2E");
+        expect(result.theme.accent).toBe("#A44D2D");
     });
 
     it("uses charcoal for announcements", () => {
@@ -26,6 +26,6 @@ describe("content-studio color advisor", () => {
             title: "Now open",
         });
         expect(result.themeId).toBe("dark-editorial");
-        expect(result.theme.background).toBe("#241A14");
+        expect(result.theme.background).toBe("#2B211A");
     });
 });

@@ -9,7 +9,9 @@ export type PostDocumentVersion = 1 | typeof POST_DOCUMENT_VERSION;
 export type PostTemplateStatus = "DRAFT" | "PUBLISHED" | "ARCHIVED";
 
 export const DEFAULT_POST_PRESET = "luxury-editorial" as const;
-export type PostPresetKey = typeof DEFAULT_POST_PRESET;
+export const POST_PRESET_KEYS = ["luxury-editorial", "gallery-atelier"] as const;
+export type PostPresetKey = (typeof POST_PRESET_KEYS)[number];
+export type PostLayoutVariant = PostPresetKey;
 
 export type HeadingFont =
     | "Playfair Display"
@@ -243,6 +245,13 @@ export type PostLayout = {
     contentPaddingX: number;
     contentPaddingTop: number;
     contentPaddingBottom: number;
+    /**
+     * Composition. Missing on older drafts — treat as luxury-editorial.
+     * Do not change luxury-editorial metrics when this is unset.
+     */
+    variant?: PostLayoutVariant;
+    /** Gallery Atelier only: photo column as % of canvas width. */
+    splitPhotoPercent?: number;
 };
 
 export type PostDocument = {
@@ -279,3 +288,11 @@ export type PostTemplateRecord = {
 
 export type PostExportFormat = "png" | "jpeg" | "webp";
 export type PostExportScale = 1 | 2 | 4;
+
+export function resolvePostLayoutVariant(
+    layout: PostLayout | undefined,
+): PostLayoutVariant {
+    return layout?.variant === "gallery-atelier"
+        ? "gallery-atelier"
+        : "luxury-editorial";
+}

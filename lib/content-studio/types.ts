@@ -164,7 +164,13 @@ export type StudioAssetTransform = {
     height: number;
     rotation: number;
     scale: number;
+    opacity: number;
+    /** @deprecated Prefer shadowBlur / shadowOpacity. Kept as a coarse blur fallback. */
     shadow: number;
+    shadowOpacity: number;
+    shadowBlur: number;
+    shadowScale: number;
+    shadowOffsetY: number;
 };
 
 export type StudioLogo = {

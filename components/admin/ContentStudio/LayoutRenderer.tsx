@@ -1,6 +1,7 @@
 "use client";
 
 import { logoSrc } from "@/lib/content-studio/brand-theme";
+import { composeTextStack } from "@/lib/content-studio/fit-typography";
 import { getLayout, type LayoutZone } from "@/lib/content-studio/layouts";
 import { STUDIO_TOKENS } from "@/lib/content-studio/tokens";
 import type { EditorialDocument, StudioIconKey } from "@/lib/content-studio/types";
@@ -31,9 +32,9 @@ function FooterCopy({ document }: { document: EditorialDocument }) {
         return (
             <>
                 {footer.instagram}
-                <span className="mx-2 opacity-50">·</span>
+                <span className="mx-2 opacity-40">·</span>
                 {footer.whatsapp}
-                <span className="mx-2 opacity-50">·</span>
+                <span className="mx-2 opacity-40">·</span>
                 {footer.website}
             </>
         );
@@ -41,9 +42,288 @@ function FooterCopy({ document }: { document: EditorialDocument }) {
     return (
         <>
             {footer.instagram}
-            <span className="mx-2 opacity-50">·</span>
+            <span className="mx-2 opacity-40">·</span>
             {footer.website}
         </>
+    );
+}
+
+function TextStack({
+    document,
+    zone,
+}: {
+    document: EditorialDocument;
+    zone: LayoutZone;
+}) {
+    const items = composeTextStack(document, zone);
+    const theme = document.theme;
+    const align = textAlign(zone);
+
+    return (
+        <div
+            className="pointer-events-none absolute z-[6]"
+            style={{
+                left: zone.rect.x,
+                top: zone.rect.y,
+                width: zone.rect.w,
+                height: zone.rect.h,
+            }}
+        >
+            {items.map((item, index) => {
+                if (item.type === "kicker") {
+                    return (
+                        <div
+                            key={`${item.type}-${index}`}
+                            style={{
+                                position: "absolute",
+                                left: item.x - zone.rect.x,
+                                top: item.y - zone.rect.y,
+                                width: item.w,
+                                color: theme.accent,
+                                fontFamily: bodyStack(document),
+                                fontSize: document.typography.kickerSize,
+                                fontWeight: 600,
+                                letterSpacing: "0.28em",
+                                textTransform: "uppercase",
+                                textAlign: align,
+                                lineHeight: 1.3,
+                            }}
+                        >
+                            {item.text}
+                        </div>
+                    );
+                }
+                if (item.type === "title") {
+                    return (
+                        <div
+                            key={`${item.type}-${index}`}
+                            style={{
+                                position: "absolute",
+                                left: item.x - zone.rect.x,
+                                top: item.y - zone.rect.y,
+                                width: item.w,
+                                color: theme.text,
+                                fontFamily: headingStack(document),
+                                fontSize: item.fontSize,
+                                fontWeight: document.typography.titleWeight,
+                                letterSpacing: `${document.typography.titleTracking}em`,
+                                lineHeight: document.typography.titleLineHeight,
+                                textAlign: align,
+                                whiteSpace: "pre-wrap",
+                                textTransform: item.uppercase ? "uppercase" : "none",
+                            }}
+                        >
+                            {item.text}
+                        </div>
+                    );
+                }
+                if (item.type === "rule") {
+                    return (
+                        <div
+                            key={`${item.type}-${index}`}
+                            style={{
+                                position: "absolute",
+                                left: item.x - zone.rect.x,
+                                top: item.y - zone.rect.y,
+                                width: item.w,
+                                height: item.h,
+                                background: theme.gold,
+                                opacity: 0.85,
+                            }}
+                        />
+                    );
+                }
+                if (item.type === "subtitle") {
+                    return (
+                        <div
+                            key={`${item.type}-${index}`}
+                            style={{
+                                position: "absolute",
+                                left: item.x - zone.rect.x,
+                                top: item.y - zone.rect.y,
+                                width: item.w,
+                                color: theme.textMuted,
+                                fontFamily: headingStack(document),
+                                fontSize: document.typography.bodySize + 2,
+                                fontWeight: 500,
+                                fontStyle: "italic",
+                                lineHeight: 1.35,
+                                textAlign: align,
+                            }}
+                        >
+                            {item.text}
+                        </div>
+                    );
+                }
+                if (item.type === "body") {
+                    return (
+                        <div
+                            key={`${item.type}-${index}`}
+                            style={{
+                                position: "absolute",
+                                left: item.x - zone.rect.x,
+                                top: item.y - zone.rect.y,
+                                width: item.w,
+                                color: theme.textMuted,
+                                fontFamily: bodyStack(document),
+                                fontSize: document.typography.bodySize,
+                                fontWeight: 400,
+                                lineHeight: 1.48,
+                                textAlign: align,
+                            }}
+                        >
+                            {item.text}
+                        </div>
+                    );
+                }
+                if (item.type === "cta") {
+                    return (
+                        <div
+                            key={`${item.type}-${index}`}
+                            style={{
+                                position: "absolute",
+                                left: item.x - zone.rect.x,
+                                top: item.y - zone.rect.y,
+                                width: item.w,
+                                color: theme.accent,
+                                fontFamily: bodyStack(document),
+                                fontSize: document.typography.ctaSize,
+                                fontWeight: 500,
+                                letterSpacing: "0.22em",
+                                textTransform: "uppercase",
+                                textAlign: align,
+                            }}
+                        >
+                            {item.text}
+                            <div
+                                style={{
+                                    width: 48,
+                                    height: 1,
+                                    marginTop: 10,
+                                    marginLeft: align === "center" ? "auto" : 0,
+                                    marginRight: align === "center" ? "auto" : align === "right" ? 0 : undefined,
+                                    background: theme.gold,
+                                    opacity: 0.7,
+                                }}
+                            />
+                        </div>
+                    );
+                }
+                return (
+                    <div
+                        key={`${item.type}-${index}`}
+                        style={{
+                            position: "absolute",
+                            left: item.x - zone.rect.x,
+                            top: item.y - zone.rect.y,
+                            width: item.w,
+                            height: item.h,
+                            border: `1px solid ${theme.gold}`,
+                            transform: "rotate(45deg)",
+                            opacity: 0.8,
+                        }}
+                    />
+                );
+            })}
+        </div>
+    );
+}
+
+function PointsBlock({
+    document,
+    zone,
+}: {
+    document: EditorialDocument;
+    zone: LayoutZone;
+}) {
+    const layout = getLayout(document.layoutId);
+    const theme = document.theme;
+    const points = document.content.points.filter(
+        (point) => point.heading.trim() || point.body.trim(),
+    );
+    const columns = zone.columns ?? (layout.pointsStyle === "grid" ? 2 : 1);
+    const isGrid = layout.pointsStyle === "grid" || columns > 1;
+
+    return (
+        <div
+            className="pointer-events-none absolute z-[6]"
+            style={{
+                left: zone.rect.x,
+                top: zone.rect.y,
+                width: zone.rect.w,
+                height: zone.rect.h,
+                display: "grid",
+                gridTemplateColumns: `repeat(${columns}, minmax(0, 1fr))`,
+                columnGap: isGrid ? 48 : 0,
+                rowGap: isGrid ? 0 : 8,
+                alignContent: "start",
+            }}
+        >
+            {points.map((point, index) => (
+                <div
+                    key={point.id}
+                    style={{
+                        display: "grid",
+                        gridTemplateColumns: isGrid ? "72px 28px 1fr" : "92px 1fr",
+                        gap: isGrid ? 14 : 18,
+                        paddingTop: 22,
+                        paddingBottom: 22,
+                        paddingRight: isGrid && index % 2 === 0 ? 12 : 0,
+                        paddingLeft: isGrid && index % 2 === 1 ? 12 : 0,
+                        borderTop: `1px solid ${theme.gold}33`,
+                        borderRight:
+                            isGrid && index % 2 === 0 ? `1px solid ${theme.gold}22` : "none",
+                    }}
+                >
+                    <div
+                        style={{
+                            color: theme.gold,
+                            fontFamily: headingStack(document),
+                            fontSize: isGrid ? 32 : 42,
+                            lineHeight: 1,
+                            letterSpacing: "-0.04em",
+                            paddingTop: 2,
+                        }}
+                    >
+                        {point.number}
+                    </div>
+                    {isGrid ? (
+                        <div className="pt-1">
+                            <StudioIcon
+                                name={point.icon as StudioIconKey}
+                                color={theme.gold}
+                                size={18}
+                            />
+                        </div>
+                    ) : null}
+                    <div className="min-w-0">
+                        <div
+                            style={{
+                                color: theme.text,
+                                fontFamily: bodyStack(document),
+                                fontSize: isGrid ? 15 : 16,
+                                fontWeight: 600,
+                                letterSpacing: "0.14em",
+                                textTransform: "uppercase",
+                            }}
+                        >
+                            {point.heading}
+                        </div>
+                        <div
+                            style={{
+                                color: theme.textMuted,
+                                fontFamily: bodyStack(document),
+                                fontSize: isGrid ? 15 : 16,
+                                lineHeight: 1.45,
+                                marginTop: 8,
+                            }}
+                        >
+                            {point.body}
+                        </div>
+                    </div>
+                </div>
+            ))}
+        </div>
     );
 }
 
@@ -69,15 +349,11 @@ export function LayoutRenderer({
                 color: theme.text,
             }}
         >
-            {layout.showFrame ? (
-                <div
-                    className="pointer-events-none absolute"
-                    style={{
-                        inset: STUDIO_TOKENS.frame.inset,
-                        border: `${STUDIO_TOKENS.frame.thickness}px solid ${theme.border}`,
-                    }}
-                />
-            ) : null}
+            <DraggableAsset
+                document={document}
+                scale={previewScale}
+                onChange={onAssetChange}
+            />
 
             {layout.zones.map((zone, index) => {
                 const style: React.CSSProperties = {
@@ -87,12 +363,28 @@ export function LayoutRenderer({
                     width: zone.rect.w,
                     height: zone.rect.h,
                     textAlign: textAlign(zone),
+                    zIndex: zone.type === "overlay" ? 2 : 6,
                 };
 
+                if (zone.type === "asset") return null;
+
                 if (zone.type === "overlay") {
+                    if (layout.overlayStyle === "gradient") {
+                        return (
+                            <div
+                                key={`${zone.type}-${index}`}
+                                className="pointer-events-none"
+                                style={{
+                                    ...style,
+                                    background: `linear-gradient(to top, ${theme.background} 8%, ${theme.overlay} 46%, transparent 100%)`,
+                                }}
+                            />
+                        );
+                    }
                     return (
                         <div
                             key={`${zone.type}-${index}`}
+                            className="pointer-events-none"
                             style={{
                                 ...style,
                                 background: theme.overlay,
@@ -102,99 +394,39 @@ export function LayoutRenderer({
                     );
                 }
 
-                if (zone.type === "asset") {
+                if (zone.type === "text-stack") {
                     return (
-                        <div key={`${zone.type}-${index}`} style={style} className="pointer-events-none" />
+                        <TextStack
+                            key={`${zone.type}-${index}`}
+                            document={document}
+                            zone={zone}
+                        />
                     );
                 }
 
-                if (zone.type === "kicker") {
+                if (zone.type === "points") {
                     return (
-                        <div
+                        <PointsBlock
                             key={`${zone.type}-${index}`}
-                            style={{
-                                ...style,
-                                color: theme.accent,
-                                fontFamily: bodyStack(document),
-                                fontSize: document.typography.kickerSize,
-                                fontWeight: 600,
-                                letterSpacing: "0.22em",
-                                textTransform: "uppercase",
-                                lineHeight: 1.3,
-                            }}
-                        >
-                            {document.content.kicker}
-                        </div>
-                    );
-                }
-
-                if (zone.type === "title") {
-                    return (
-                        <div
-                            key={`${zone.type}-${index}`}
-                            style={{
-                                ...style,
-                                color: theme.text,
-                                fontFamily: headingStack(document),
-                                fontSize: document.typography.titleSize,
-                                fontWeight: document.typography.titleWeight,
-                                letterSpacing: `${document.typography.titleTracking}em`,
-                                lineHeight: document.typography.titleLineHeight,
-                            }}
-                        >
-                            {document.content.title}
-                        </div>
-                    );
-                }
-
-                if (zone.type === "subtitle") {
-                    return (
-                        <div
-                            key={`${zone.type}-${index}`}
-                            style={{
-                                ...style,
-                                color: theme.textMuted,
-                                fontFamily: bodyStack(document),
-                                fontSize: document.typography.bodySize,
-                                fontWeight: 500,
-                                lineHeight: 1.4,
-                            }}
-                        >
-                            {document.content.subtitle}
-                        </div>
-                    );
-                }
-
-                if (zone.type === "body") {
-                    return (
-                        <div
-                            key={`${zone.type}-${index}`}
-                            style={{
-                                ...style,
-                                color: theme.textMuted,
-                                fontFamily: bodyStack(document),
-                                fontSize: document.typography.bodySize,
-                                fontWeight: 400,
-                                lineHeight: 1.45,
-                            }}
-                        >
-                            {document.content.body}
-                        </div>
+                            document={document}
+                            zone={zone}
+                        />
                     );
                 }
 
                 if (zone.type === "cta") {
-                    if (!document.content.cta) return null;
+                    if (!layout.showCta || !document.content.cta) return null;
                     return (
                         <div
                             key={`${zone.type}-${index}`}
+                            className="pointer-events-none"
                             style={{
                                 ...style,
                                 color: theme.accent,
                                 fontFamily: bodyStack(document),
                                 fontSize: document.typography.ctaSize,
                                 fontWeight: 500,
-                                letterSpacing: "0.16em",
+                                letterSpacing: "0.22em",
                                 textTransform: "uppercase",
                                 display: "flex",
                                 alignItems: "center",
@@ -211,76 +443,12 @@ export function LayoutRenderer({
                     );
                 }
 
-                if (zone.type === "points") {
-                    const points = document.content.points.filter(
-                        (point) => point.heading.trim() || point.body.trim(),
-                    );
-                    return (
-                        <div
-                            key={`${zone.type}-${index}`}
-                            style={{
-                                ...style,
-                                display: "flex",
-                                flexDirection: "column",
-                                justifyContent: "space-between",
-                            }}
-                        >
-                            {points.map((point) => (
-                                <div key={point.id} className="flex gap-5">
-                                    <div
-                                        style={{
-                                            color: theme.gold,
-                                            fontFamily: headingStack(document),
-                                            fontSize: 22,
-                                            width: 56,
-                                            flexShrink: 0,
-                                        }}
-                                    >
-                                        {point.number}
-                                    </div>
-                                    <div className="pt-0.5">
-                                        <StudioIcon
-                                            name={point.icon as StudioIconKey}
-                                            color={theme.gold}
-                                            size={22}
-                                        />
-                                    </div>
-                                    <div className="min-w-0 flex-1">
-                                        <div
-                                            style={{
-                                                color: theme.text,
-                                                fontFamily: bodyStack(document),
-                                                fontSize: 18,
-                                                fontWeight: 600,
-                                                letterSpacing: "0.08em",
-                                                textTransform: "uppercase",
-                                            }}
-                                        >
-                                            {point.heading}
-                                        </div>
-                                        <div
-                                            style={{
-                                                color: theme.textMuted,
-                                                fontFamily: bodyStack(document),
-                                                fontSize: 16,
-                                                lineHeight: 1.4,
-                                                marginTop: 6,
-                                            }}
-                                        >
-                                            {point.body}
-                                        </div>
-                                    </div>
-                                </div>
-                            ))}
-                        </div>
-                    );
-                }
-
                 if (zone.type === "logo") {
                     const src = logoSrc(document.logo.variant);
                     return (
                         <div
                             key={`${zone.type}-${index}`}
+                            className="pointer-events-none"
                             style={{
                                 ...style,
                                 display: "flex",
@@ -315,12 +483,14 @@ export function LayoutRenderer({
                     return (
                         <div
                             key={`${zone.type}-${index}`}
+                            className="pointer-events-none"
                             style={{
                                 ...style,
                                 color: theme.textMuted,
                                 fontFamily: bodyStack(document),
-                                fontSize: 15,
+                                fontSize: 13,
                                 fontWeight: 500,
+                                letterSpacing: "0.06em",
                                 display: "flex",
                                 alignItems: "center",
                                 justifyContent:
@@ -339,11 +509,36 @@ export function LayoutRenderer({
                 return null;
             })}
 
-            <DraggableAsset
-                asset={document.asset}
-                scale={previewScale}
-                onChange={onAssetChange}
-            />
+            {layout.showFrame ? (
+                <div
+                    className="pointer-events-none absolute z-10"
+                    style={{
+                        inset: STUDIO_TOKENS.frame.inset,
+                        border: `${STUDIO_TOKENS.frame.thickness}px solid ${theme.border}`,
+                        opacity: 0.72,
+                    }}
+                />
+            ) : null}
+
+            {layout.showVignette ? (
+                <div
+                    className="pointer-events-none absolute inset-0 z-20"
+                    style={{
+                        background:
+                            "radial-gradient(ellipse at center, rgba(36,26,20,0) 42%, rgba(36,26,20,0.28) 100%)",
+                    }}
+                />
+            ) : null}
+
+            {layout.showGrain ? (
+                <div
+                    className="pointer-events-none absolute inset-0 z-20 opacity-[0.11] mix-blend-multiply"
+                    style={{
+                        backgroundImage:
+                            "url(\"data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='180' height='180'><filter id='n'><feTurbulence type='fractalNoise' baseFrequency='0.85' numOctaves='4' stitchTiles='stitch'/></filter><rect width='180' height='180' filter='url(%23n)' opacity='0.55'/></svg>\")",
+                    }}
+                />
+            ) : null}
         </div>
     );
 }

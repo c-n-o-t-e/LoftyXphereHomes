@@ -2,7 +2,20 @@
 
 import type { QualityReport } from "@/lib/content-studio/types";
 
+const PASSED = [
+    "Text overflow",
+    "Element collisions",
+    "Visual asset overflow",
+    "Contrast",
+    "Logo visibility",
+    "CTA visibility",
+    "Safe margins",
+    "Footer visibility",
+];
+
 export function QualityGate({ report }: { report: QualityReport }) {
+    const failed = new Set(report.issues.map((issue) => issue.id));
+
     return (
         <div
             className={`rounded-xl border px-3 py-2 text-sm ${
@@ -24,9 +37,14 @@ export function QualityGate({ report }: { report: QualityReport }) {
                 </ul>
             ) : (
                 <p className="mt-1 text-xs opacity-80">
-                    Contrast, collision, logo, and CTA checks passed.
+                    {PASSED.map((label) => `✓ ${label}`).join("   ")}
                 </p>
             )}
+            {report.ready && report.issues.length > 0 ? (
+                <p className="mt-1 text-[11px] opacity-70">
+                    Warnings will not block export. Failed checks: {failed.size}.
+                </p>
+            ) : null}
         </div>
     );
 }

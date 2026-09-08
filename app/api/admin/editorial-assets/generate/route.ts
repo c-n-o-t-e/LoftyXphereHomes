@@ -49,14 +49,24 @@ export async function POST(request: NextRequest) {
             ? [parsed.data.concept, visuals.concepts[1], visuals.concepts[2]]
             : [...visuals.concepts];
 
+        const layoutId = parsed.data.layoutId;
+        const treatment =
+            layoutId === "full-bleed"
+                ? "hero"
+                : layoutId === "typography-first" || layoutId === "minimal-luxury"
+                  ? "object"
+                  : layoutId === "information-grid"
+                    ? "accent"
+                    : "cutout";
+
         const provider = resolveImageProvider();
         const alternatives = await Promise.all(
             concepts.slice(0, 3).map(async (concept) => {
-                const prompt = buildAssetPrompt(concept);
+                const prompt = buildAssetPrompt(concept, treatment);
                 const result = await provider.generate({
                     prompt,
-                    size: "1024x1536",
-                    transparent: true,
+                    size: treatment === "hero" ? "1024x1536" : "1024x1536",
+                    transparent: treatment !== "hero",
                 });
                 return {
                     concept,

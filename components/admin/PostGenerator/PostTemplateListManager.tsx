@@ -8,11 +8,20 @@ import { getSupabaseClient } from "@/lib/supabase/client";
 import { PRESET_META } from "@/lib/post-generator/defaults";
 import {
     DEFAULT_POST_PRESET,
+    POST_PRESET_KEYS,
+    type PostPresetKey,
     type PostTemplateRecord,
 } from "@/lib/post-generator/types";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
+import {
+    Select,
+    SelectContent,
+    SelectItem,
+    SelectTrigger,
+    SelectValue,
+} from "@/components/ui/select";
 import { toast } from "sonner";
 
 export function PostTemplateListManager() {
@@ -21,6 +30,7 @@ export function PostTemplateListManager() {
     const [loading, setLoading] = useState(true);
     const [creating, setCreating] = useState(false);
     const [title, setTitle] = useState("Luxury Editorial Post");
+    const [presetKey, setPresetKey] = useState<PostPresetKey>(DEFAULT_POST_PRESET);
 
     const authHeaders = useCallback(async () => {
         const supabase = getSupabaseClient();
@@ -61,7 +71,7 @@ export function PostTemplateListManager() {
             const res = await fetch("/api/admin/post-templates", {
                 method: "POST",
                 headers: { ...headers, "Content-Type": "application/json" },
-                body: JSON.stringify({ title, presetKey: DEFAULT_POST_PRESET }),
+                body: JSON.stringify({ title, presetKey }),
             });
             const data = (await res.json()) as {
                 template?: PostTemplateRecord;
@@ -122,7 +132,8 @@ export function PostTemplateListManager() {
                     New Instagram post template
                 </h2>
                 <p className="mt-1 text-sm text-slate-500">
-                    Starts from the approved luxury editorial layout.
+                    Choose Option 1 (stacked editorial) or Option 2 (gallery split) for
+                    this apartment photograph.
                 </p>
                 <div className="mt-4 flex flex-col gap-3 sm:flex-row">
                     <Input
@@ -131,6 +142,21 @@ export function PostTemplateListManager() {
                         placeholder="Template title"
                         className="sm:flex-1"
                     />
+                    <Select
+                        value={presetKey}
+                        onValueChange={(value) => setPresetKey(value as PostPresetKey)}
+                    >
+                        <SelectTrigger className="h-9 sm:w-[220px]">
+                            <SelectValue />
+                        </SelectTrigger>
+                        <SelectContent>
+                            {POST_PRESET_KEYS.map((key) => (
+                                <SelectItem key={key} value={key}>
+                                    Option {PRESET_META[key].option} · {PRESET_META[key].label}
+                                </SelectItem>
+                            ))}
+                        </SelectContent>
+                    </Select>
                     <Button
                         onClick={() => void create()}
                         disabled={creating || !title.trim()}
@@ -167,7 +193,7 @@ export function PostTemplateListManager() {
                                     {tpl.title}
                                 </Link>
                                 <p className="mt-1 text-xs text-slate-500">
-                                    {PRESET_META[DEFAULT_POST_PRESET].label}{" "}
+                                    {PRESET_META[tpl.presetKey ?? DEFAULT_POST_PRESET].label}{" "}
                                     · {tpl.status} ·{" "}
                                     {new Date(tpl.updatedAt).toLocaleString()}
                                 </p>

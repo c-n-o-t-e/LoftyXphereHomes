@@ -2,6 +2,7 @@
 
 import { CATEGORY_LABELS } from "@/lib/content-studio/defaults";
 import { STUDIO_ICON_KEYS } from "@/lib/content-studio/icons";
+import { STUDIO_CTAS } from "@/lib/content-studio/tokens";
 import {
     CONTENT_CATEGORIES,
     type ContentCategory,
@@ -44,7 +45,7 @@ export function ContentComposer({
         <div className="space-y-4">
             <EditorSection
                 title="Content"
-                description="Write the post. The studio recommends layout, colour, and a visual — you stay in control."
+                description="Write the post. Recommend layout & visual will choose a composition, then generate three asset options."
             >
                 <FieldRow label="Category">
                     <Select
@@ -101,6 +102,29 @@ export function ContentComposer({
                         placeholder="Discover more"
                     />
                 </FieldRow>
+                <div className="flex flex-wrap gap-1.5">
+                    <button
+                        type="button"
+                        className="rounded-full border border-slate-200 px-2 py-0.5 text-[10px] uppercase tracking-[0.12em] text-slate-500 hover:border-slate-400"
+                        onClick={() => patchContent({ cta: "" })}
+                    >
+                        No CTA
+                    </button>
+                    {STUDIO_CTAS.map((cta) => (
+                        <button
+                            key={cta}
+                            type="button"
+                            className={`rounded-full border px-2 py-0.5 text-[10px] uppercase tracking-[0.12em] ${
+                                content.cta.toLowerCase() === cta.toLowerCase()
+                                    ? "border-slate-900 bg-slate-900 text-white"
+                                    : "border-slate-200 text-slate-600 hover:border-slate-400"
+                            }`}
+                            onClick={() => patchContent({ cta })}
+                        >
+                            {cta}
+                        </button>
+                    ))}
+                </div>
                 <FieldRow label="Keywords">
                     <Input
                         value={content.keywords.join(", ")}

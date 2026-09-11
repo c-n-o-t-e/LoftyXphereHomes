@@ -3,6 +3,16 @@ import { buildSecurityHeaders } from "./lib/security/headers";
 
 const nextConfig: NextConfig = {
     serverExternalPackages: ["sharp", "@supabase/supabase-js", "ffmpeg-static"],
+    // sharp 0.35 loads libvips via dlopen; NFT does not trace that .so into the
+    // Vercel function, which 500s any route that imports sharp.
+    outputFileTracingIncludes: {
+        "/*": [
+            "./node_modules/@img/sharp-libvips-linux-x64/**/*",
+            "./node_modules/@img/sharp-linux-x64/**/*",
+            "./node_modules/sharp/node_modules/@img/sharp-libvips-linux-x64/**/*",
+            "./node_modules/sharp/node_modules/@img/sharp-linux-x64/**/*",
+        ],
+    },
     experimental: {
         proxyClientMaxBodySize: "300mb",
         serverActions: {

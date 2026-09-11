@@ -7,7 +7,7 @@ import {
     normalizeApartmentId,
 } from "@/lib/data/apartments";
 import { getApartmentImageSets } from "@/lib/data/getApartmentImages";
-import { getPublicApartmentVideo } from "@/lib/admin/apartmentVideo";
+import { getPublicApartmentVideo } from "@/lib/data/apartmentVideo";
 import { MapPin } from "lucide-react";
 import { AmenityWithIcon } from "@/components/AmenityWithIcon";
 import { ApartmentImageGallery } from "@/components/ApartmentImageGallery";

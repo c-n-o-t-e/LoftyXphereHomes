@@ -1,5 +1,5 @@
 import { NextResponse } from "next/server";
-import { getPublicHeroVideo } from "@/lib/admin/heroVideo";
+import { getPublicHeroVideo } from "@/lib/data/heroVideo";
 
 export async function GET() {
     try {

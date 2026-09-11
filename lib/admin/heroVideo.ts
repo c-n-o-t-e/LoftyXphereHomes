@@ -1,6 +1,6 @@
-import { unstable_noStore as noStore } from "next/cache";
 import { randomUUID } from "crypto";
 import { prisma } from "@/lib/db";
+import { getActiveHeroVideo } from "@/lib/data/heroVideo";
 import { HERO_VIDEO_BUCKET } from "@/lib/videos/constants";
 import {
     extractHeroVideoPoster,
@@ -14,19 +14,13 @@ import {
     downloadHeroRawUpload,
     uploadHeroVideoVariants,
 } from "@/lib/videos/storage";
-import type { HeroVideoConfig, HeroVideoUploadSlot } from "@/lib/videos/types";
+import type { HeroVideoUploadSlot } from "@/lib/videos/types";
 
-type HeroVideoRow = {
-    id: string;
-    mobileMp4Url: string;
-    desktopMp4Url: string;
-    posterUrl: string;
-    mobilePosterUrl: string | null;
-    storageKeyBase: string;
-    isActive: boolean;
-    createdAt: Date;
-    updatedAt: Date;
-};
+export {
+    getActiveHeroVideo,
+    getPublicHeroVideo,
+    serializeHeroVideo,
+} from "@/lib/data/heroVideo";
 
 type HeroVideoUploadMeta = {
     mimeType: string;
@@ -45,35 +39,6 @@ function validateUploadMeta(args: HeroVideoUploadMeta, label: string) {
             statusCode: 400,
         });
     }
-}
-
-export function serializeHeroVideo(row: HeroVideoRow): HeroVideoConfig {
-    return {
-        id: row.id,
-        mobileMp4Url: row.mobileMp4Url,
-        desktopMp4Url: row.desktopMp4Url,
-        posterUrl: row.posterUrl,
-        mobilePosterUrl: row.mobilePosterUrl,
-        updatedAt: row.updatedAt.toISOString(),
-    };
-}
-
-export async function getActiveHeroVideo(): Promise<HeroVideoRow | null> {
-    try {
-        return await prisma.heroVideo.findFirst({
-            where: { isActive: true },
-            orderBy: { updatedAt: "desc" },
-        });
-    } catch (err) {
-        console.error("Failed to load hero video:", err);
-        return null;
-    }
-}
-
-export async function getPublicHeroVideo(): Promise<HeroVideoConfig | null> {
-    noStore();
-    const row = await getActiveHeroVideo();
-    return row ? serializeHeroVideo(row) : null;
 }
 
 export async function initHeroVideoPairUpload(args: {

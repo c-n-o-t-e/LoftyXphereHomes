@@ -31,7 +31,7 @@ jest.mock('@/lib/data/getApartmentImages', () => ({
   ]),
 }))
 
-jest.mock('@/lib/admin/apartmentVideo', () => ({
+jest.mock('@/lib/data/apartmentVideo', () => ({
   getPublicApartmentVideo: jest.fn(async () => null),
 }))
 

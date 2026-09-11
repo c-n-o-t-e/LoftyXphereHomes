@@ -7,7 +7,7 @@ import BlogSection from "@/components/BlogSection";
 import { FeaturedApartmentsSection } from "@/components/home/FeaturedApartmentsSection";
 import { FeaturedApartmentsSkeleton } from "@/components/home/FeaturedApartmentsSkeleton";
 import { PropertyExperienceSectionLoader } from "@/components/home/PropertyExperienceSectionLoader";
-import { getPublicHeroVideo } from "@/lib/admin/heroVideo";
+import { getPublicHeroVideo } from "@/lib/data/heroVideo";
 import { Button } from "@/components/ui/button";
 import Link from "next/link";
 import { ArrowRight } from "lucide-react";

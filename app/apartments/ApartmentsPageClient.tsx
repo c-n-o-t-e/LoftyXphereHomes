@@ -15,6 +15,8 @@ import { Button } from "@/components/ui/button";
 import { SITE_NAME } from "@/lib/constants";
 import { LOCATION_SEO } from "@/lib/content/seoCopy";
 
+// doing some testing here
+
 type ApartmentsPageClientProps = {
     initialImageSets: Record<string, ApartmentImageSet[]>;
     initialVideoSummaries: Record<string, ApartmentVideoSummary>;

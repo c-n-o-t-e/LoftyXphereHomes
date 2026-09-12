@@ -4,7 +4,9 @@ export type SecurityHeader = {
 };
 
 export function buildContentSecurityPolicy(isDev: boolean): string {
-    const gaEnabled = Boolean(process.env.NEXT_PUBLIC_GA_MEASUREMENT_ID?.trim());
+    const gaEnabled = Boolean(
+        process.env.NEXT_PUBLIC_GA_MEASUREMENT_ID?.trim(),
+    );
     const metaEnabled = Boolean(process.env.NEXT_PUBLIC_META_PIXEL_ID?.trim());
 
     const scriptSrcParts = ["'self'", "'unsafe-inline'"];
@@ -27,7 +29,9 @@ export function buildContentSecurityPolicy(isDev: boolean): string {
         connectSrcParts.push(
             "https://www.google-analytics.com",
             "https://*.google-analytics.com",
+            "https://analytics.google.com",
             "https://*.analytics.google.com",
+            "https://www.google.com",
             "https://www.googletagmanager.com",
             "https://stats.g.doubleclick.net",
         );

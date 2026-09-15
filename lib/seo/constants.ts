@@ -36,12 +36,20 @@ export const SITE_CONTACT = {
   phone: "+2348161122328",
   email: "hello@loftyxpherehomes.com",
   address: {
-    streetAddress: "430 Magnus Abe Street",
+    streetAddress: "8 Magnus Abe Street",
     addressLocality: "Wuye",
     addressRegion: "Abuja",
     addressCountry: "NG",
   },
 } as const;
+
+export const SITE_ADDRESS_LINE = [
+  SITE_CONTACT.address.streetAddress,
+  SITE_CONTACT.address.addressLocality,
+  SITE_CONTACT.address.addressRegion,
+].join(", ");
+
+export const SITE_ADDRESS_FULL = `${SITE_ADDRESS_LINE}, Nigeria`;
 
 /** Verified public social profiles (omit placeholder links). */
 export const SITE_SOCIAL_PROFILES = [

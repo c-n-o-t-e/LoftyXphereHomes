@@ -14,7 +14,7 @@ describe('Contact Page', () => {
     expect(screen.getAllByText('Email').length).toBeGreaterThan(0)
     expect(screen.getByText('Location')).toBeInTheDocument()
     // Address appears in both contact card and map component
-    expect(screen.getAllByText(/430 Magnus Abe Street/i).length).toBeGreaterThan(0)
+    expect(screen.getAllByText(/8 Magnus Abe Street/i).length).toBeGreaterThan(0)
   })
 
   it('renders contact form', () => {
@@ -28,7 +28,7 @@ describe('Contact Page', () => {
     expect(screen.getByText('+234 8161122328')).toBeInTheDocument()
     expect(screen.getByText('hello@loftyxpherehomes.com')).toBeInTheDocument()
     // Address appears multiple times (contact card and map)
-    expect(screen.getAllByText(/430 Magnus Abe Street/i).length).toBeGreaterThan(0)
+    expect(screen.getAllByText(/8 Magnus Abe Street/i).length).toBeGreaterThan(0)
   })
 
   it('renders Google Map', () => {

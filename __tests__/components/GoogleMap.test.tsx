@@ -1,5 +1,6 @@
 import { render, screen } from '@testing-library/react'
 import GoogleMap from '@/components/GoogleMap'
+import { SITE_ADDRESS_FULL, SITE_CONTACT } from '@/lib/seo/constants'
 
 describe('GoogleMap', () => {
   it('renders the map iframe', () => {
@@ -9,12 +10,12 @@ describe('GoogleMap', () => {
     // Check that iframe has src attribute with the address
     const src = iframe.getAttribute('src')
     expect(src).toBeTruthy()
-    expect(src).toContain('430')
+    expect(src).toContain(encodeURIComponent(SITE_CONTACT.address.streetAddress))
   })
 
   it('displays the address', () => {
     render(<GoogleMap />)
-    expect(screen.getByText(/430 Magnus Abe Street, Wuye, Abuja/i)).toBeInTheDocument()
+    expect(screen.getByText(SITE_ADDRESS_FULL)).toBeInTheDocument()
   })
 
   it('renders location heading', () => {

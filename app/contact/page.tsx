@@ -4,6 +4,7 @@ import GoogleMap from "@/components/GoogleMap";
 import { Mail, Phone, MapPin } from "lucide-react";
 import { SITE_NAME } from "@/lib/constants";
 import { LOCATION_SEO } from "@/lib/content/seoCopy";
+import { SITE_ADDRESS_LINE } from "@/lib/seo/constants";
 
 export const metadata: Metadata = {
   title: "Contact Us",
@@ -45,7 +46,7 @@ export default function ContactPage() {
               <MapPin className="h-6 w-6 sm:h-7 sm:w-7" />
             </div>
             <h3 className="font-semibold text-black mb-2 text-base sm:text-lg">Location</h3>
-            <p className="text-black/70 text-sm sm:text-base break-words px-2">430 Magnus Abe Street, Wuye, Abuja</p>
+            <p className="text-black/70 text-sm sm:text-base break-words px-2">{SITE_ADDRESS_LINE}</p>
           </div>
         </div>
 

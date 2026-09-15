@@ -5,7 +5,8 @@ import { SiFacebook, SiInstagram, SiX } from "react-icons/si";
 import { TrackedPhoneLink } from "@/components/analytics/TrackedPhoneLink";
 import { CookieSettingsLink } from "@/components/analytics/CookieSettingsLink";
 import { SITE_DESCRIPTION, SITE_NAME } from "@/lib/constants";
-import { LOGO_ALT, LOCATION_SEO, SITE_SOCIAL_LINKS } from "@/lib/content/seoCopy";
+import { LOGO_ALT, SITE_SOCIAL_LINKS } from "@/lib/content/seoCopy";
+import { SITE_ADDRESS_FULL } from "@/lib/seo/constants";
 
 export default function Footer() {
   const currentYear = new Date().getFullYear();
@@ -132,7 +133,7 @@ export default function Footer() {
               </li>
               <li className="flex items-start space-x-3">
                 <MapPin className="h-5 w-5 mt-0.5 shrink-0 text-white/80" />
-                <span className="text-sm sm:text-base text-white/80 break-words">430 Magnus Abe Street, {LOCATION_SEO}</span>
+                <span className="text-sm sm:text-base text-white/80 break-words">{SITE_ADDRESS_FULL}</span>
               </li>
             </ul>
           </div>

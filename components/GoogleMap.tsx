@@ -2,12 +2,11 @@
 
 import { MapPin } from "lucide-react";
 import { SITE_NAME } from "@/lib/constants";
-
-const MAP_ADDRESS = "430 Magnus Abe Street, Wuye, Abuja, Nigeria";
+import { SITE_ADDRESS_FULL } from "@/lib/seo/constants";
 
 export default function GoogleMap() {
   // Using Google Maps embed URL (no API key required for basic embed)
-  const mapEmbedUrl = `https://www.google.com/maps?q=${encodeURIComponent(MAP_ADDRESS)}&output=embed`;
+  const mapEmbedUrl = `https://www.google.com/maps?q=${encodeURIComponent(SITE_ADDRESS_FULL)}&output=embed`;
 
   return (
     <div className="w-full">
@@ -20,7 +19,7 @@ export default function GoogleMap() {
           allowFullScreen
           loading="lazy"
           referrerPolicy="no-referrer-when-downgrade"
-          title={`${SITE_NAME} — 430 Magnus Abe Street, Wuye, Abuja, Nigeria`}
+          title={`${SITE_NAME} — ${SITE_ADDRESS_FULL}`}
           className="w-full h-full"
         />
       </div>
@@ -29,9 +28,9 @@ export default function GoogleMap() {
           <MapPin className="h-5 w-5 text-gray-700 mt-0.5 flex-shrink-0" />
           <div>
             <p className="font-semibold text-gray-900 mb-1">Our Location</p>
-            <p className="text-sm text-gray-600 mb-3">{MAP_ADDRESS}</p>
+            <p className="text-sm text-gray-600 mb-3">{SITE_ADDRESS_FULL}</p>
             <a
-              href={`https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(MAP_ADDRESS)}`}
+              href={`https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(SITE_ADDRESS_FULL)}`}
               target="_blank"
               rel="noopener noreferrer"
               className="text-sm text-blue-600 hover:text-blue-800 font-medium inline-flex items-center transition-colors"
